@@ -145,7 +145,7 @@ A file exercising advanced or edge-case features.
 - **Be precise about syntax.** "Strings use double quotes" is not enough — specify: can they span lines? What escapes are supported? Are empty strings allowed? Is there a max length?
 - **Capture every token type.** The tokenizer needs to handle every possible character sequence. If the spec mentions a syntax element, it needs a token.
 - **Include EBNF or equivalent.** For each structural type, write out the grammar. This directly maps to parser actions.
-- **Preserve examples verbatim.** Copy examples from the spec exactly — do not paraphrase or simplify syntax examples.
+- **Handle spec examples carefully.** When necessary, quote only short excerpts from the spec with exact citations (section/page). Otherwise, describe the behavior in your own words and create original examples that illustrate the same syntax and edge cases; do not reproduce long examples verbatim.
 - **Flag ambiguities.** If the spec is unclear or contradictory, note it explicitly with a `> **Ambiguity:**` callout so the implementer can make an informed decision.
 - **Do not invent.** If the spec does not define something, do not guess. Note it as unspecified.
 
