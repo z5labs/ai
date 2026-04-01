@@ -30,10 +30,16 @@ Every file library package has three core components:
 
 ## Before You Start
 
-1. Read the target package's source files (tokenizer, parser, printer) to understand the current state and package-specific patterns
-2. Read any `CLAUDE.md` in the package or repo root for project-specific conventions
-3. Read the existing test files to match the established test style
-4. Identify which tokens, AST types, and printer logic need to change
+1. **Check for a format specification.** Look for a `SPEC.md` file in the target package directory (e.g., `<package>/SPEC.md`). This file is produced by the `extract-file-spec` or `extract-binary-spec` agents and contains the complete format reference — token definitions, grammar rules, type structures, semantics, and examples. If present, use it as your primary reference throughout implementation:
+   - **Lexical Elements / Tokens** section → drives tokenizer implementation (Step 1–2)
+   - **Structure / Grammar** section → drives parser implementation (Step 3–4)
+   - **Examples** section → use as test fixtures and for validating round-trip behavior
+   - **Semantics** section → informs AST design decisions
+   - **Ambiguities** (marked with `> **Ambiguity:**`) → flag these to the user before making implementation choices
+2. Read the target package's source files (tokenizer, parser, printer) to understand the current state and package-specific patterns
+3. Read any `CLAUDE.md` in the package or repo root for project-specific conventions
+4. Read the existing test files to match the established test style
+5. Identify which tokens, AST types, and printer logic need to change
 
 ## Critical Workflow Rules
 
