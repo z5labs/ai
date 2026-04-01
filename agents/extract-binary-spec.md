@@ -39,9 +39,15 @@ Use a **sectioned extraction** approach:
 
    Use `run_in_background: true` for independent sections so they run in parallel.
 
-3. **Consolidate.** After all subagents complete, read the scratch files and merge them into the final output file. Resolve any cross-references, deduplicate shared definitions, and ensure consistent terminology.
+3. **Consolidate incrementally.** After all subagents complete, build the final output file one section at a time. For each scratch file:
+   - Read the scratch file
+   - Resolve any cross-references or terminology inconsistencies against the output so far
+   - Append the section to the final output file
+   - Delete the scratch file before moving to the next
 
-4. **Clean up.** Delete the scratch files.
+   This avoids loading all extracted content into context at once, which would defeat the purpose of sectioned extraction for large specs.
+
+4. **Clean up.** Delete any remaining scratch files (including `_spec_toc.md`).
 
 ### Subagent Prompt Template
 
