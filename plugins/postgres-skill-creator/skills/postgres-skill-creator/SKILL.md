@@ -23,6 +23,8 @@ Postgres schemas are often too large to keep in working memory, but most ad-hoc 
 
 The bundled `scripts/introspect.sh` does step 1 and 2. Read it before running so you understand what queries it issues — you may need to adapt if a query fails (e.g. older Postgres versions lack a column).
 
+If the host can't reach the database via the connection string as-is (common on Linux when the DB is on `localhost`), set `PG_DOCKER_ARGS=--network=host` before invoking the script. Override `PSQL_IMAGE` to pin a different psql major version when the server is older than the default.
+
 ## Step 1: Run introspection
 
 ```bash
@@ -45,7 +47,7 @@ If any query fails, look at the script's error output and either fix the query i
 
 ## Step 2: Write the generated skill
 
-Create these files under `./.claude/skills/pg-<dbname>/` (where `<dbname>` is parsed from the connection string). If the directory already exists, **delete it first** — overwrite is intentional, schemas drift and stale references mislead.
+Create these files under `./.claude/skills/pg-<dbname>/` (where `<dbname>` is parsed from the connection string). Before using `<dbname>` in the path or deleting anything, validate that it is non-empty and matches `^[A-Za-z0-9_-]+$`. If validation fails, stop and ask the user to confirm the database name or supply a safe override; do not delete any directory. If the validated target directory already exists, **delete it first** — overwrite is intentional, schemas drift and stale references mislead.
 
 ### `SKILL.md`
 
