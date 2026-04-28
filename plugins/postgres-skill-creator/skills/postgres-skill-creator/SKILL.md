@@ -23,7 +23,9 @@ Postgres schemas are often too large to keep in working memory, but most ad-hoc 
 
 The bundled `scripts/introspect.sh` does step 1 and 2. Read it before running so you understand what queries it issues — you may need to adapt if a query fails (e.g. older Postgres versions lack a column).
 
-If the host can't reach the database via the connection string as-is (common on Linux when the DB is on `localhost`), set `PG_DOCKER_ARGS=--network=host` before invoking the script. Override `PSQL_IMAGE` to pin a different psql major version when the server is older than the default.
+If the host can't reach the database via the connection string as-is (common on Linux when the DB is on `localhost`), set `PG_DOCKER_ARGS=--network=host` before invoking the script.
+
+Override `PSQL_IMAGE` when the default `docker.io/alpine/psql` won't work — either to pin a psql major version that matches an older server, or to pull from a private registry in environments where docker.io is blocked (e.g. `PSQL_IMAGE=registry.internal.example.com/alpine/psql:17.7`). Authentication to the private registry (`docker login` / `podman login`) is the user's responsibility; the script just passes the image reference through. The generated skill's `query.sh` reads `PSQL_IMAGE` too, so users in locked-down environments should export it persistently (e.g. in their shell profile) rather than only for the generation run.
 
 ## Step 1: Run introspection
 
@@ -116,13 +118,16 @@ else
   echo "neither docker nor podman found on PATH" >&2
   exit 1
 fi
+PSQL_IMAGE="${PSQL_IMAGE:-docker.io/alpine/psql:17.7}"
 CONN="<connection-string-without-password>"
 if [ $# -eq 0 ]; then
-  exec "$RUNTIME" run --rm -i -e PGPASSWORD docker.io/alpine/psql "$CONN"
+  exec "$RUNTIME" run --rm -i -e PGPASSWORD "$PSQL_IMAGE" "$CONN"
 else
-  exec "$RUNTIME" run --rm -i -e PGPASSWORD docker.io/alpine/psql "$CONN" -c "$1"
+  exec "$RUNTIME" run --rm -i -e PGPASSWORD "$PSQL_IMAGE" "$CONN" -c "$1"
 fi
 ```
+
+Keep the `PSQL_IMAGE` default in `query.sh` aligned with the default in `introspect.sh` so the generated skill works out of the box without the env var set.
 
 If the user-supplied connection string had a password embedded (`postgresql://user:pw@host/db`), strip it before substituting into `CONN` — passwords belong in `PGPASSWORD`, not in a file the user might commit. `chmod +x` the script after writing.
 
@@ -199,4 +204,5 @@ Tell the user:
 - The path the skill was written to
 - The number of tables, views, and enums captured
 - That `PGPASSWORD` must be exported in any session that uses the generated skill
+- If `PSQL_IMAGE` was set during generation (private registry / pinned version), that the same value must be exported in any session that uses the generated skill
 - That re-running this generator will overwrite the skill in place when the schema drifts
