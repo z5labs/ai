@@ -74,11 +74,10 @@ Keep it minimal. Add a separate `DecodeWithOptions` rather than overloading `Dec
 ### Errors — one helper, every site
 ```go
 func (d *decoder) wrapErr(field string, err error) error {
-    if err == nil { return nil }
     return &FieldError{Field: field, Err: &OffsetError{Offset: d.r.n, Err: err}}
 }
 ```
-Every `readX` method funnels its errors through `d.wrapErr("Header.Length", err)`. Never construct `FieldError` or `OffsetError` directly outside the helper, or the offset will drift.
+Every `readX` method funnels its errors through `d.wrapErr("Header.Length", err)` — always inside the `if err != nil` branch, so the helper never sees a nil error and doesn't need to guard for one. Never construct `FieldError` or `OffsetError` directly outside the helper, or the offset will drift.
 
 For nested fields, either re-wrap with the parent's name (`return d.wrapErr("Header." + childErr.Field, errors.Unwrap(childErr))`) or let the parent's call site name the field as `"Header"` and let the child's `wrapErr` name the leaf. Pick one convention per package and document it in the package `CLAUDE.md`.
 

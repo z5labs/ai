@@ -28,11 +28,9 @@ func newDecoder(r io.Reader) *decoder {
 }
 
 // wrapErr funnels every error site into the FieldError → OffsetError → leaf chain.
-// All decode-time errors must go through this helper so the offset stays accurate.
+// Always called inside an `if err != nil` branch, so it doesn't guard against
+// nil errors itself.
 func (d *decoder) wrapErr(field string, err error) error {
-	if err == nil {
-		return nil
-	}
 	return &FieldError{Field: field, Err: &OffsetError{Offset: d.r.n, Err: err}}
 }
 

@@ -28,10 +28,8 @@ func newEncoder(w io.Writer) *encoder {
 }
 
 // wrapErr funnels every error site into the FieldError → OffsetError → leaf chain.
+// Always called inside an `if err != nil` branch.
 func (e *encoder) wrapErr(field string, err error) error {
-	if err == nil {
-		return nil
-	}
 	return &FieldError{Field: field, Err: &OffsetError{Offset: e.w.n, Err: err}}
 }
 

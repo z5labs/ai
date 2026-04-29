@@ -71,12 +71,11 @@ The decoder gets a small helper:
 
 ```go
 func (d *decoder) wrapErr(field string, err error) error {
-    if err == nil { return nil }
     return &FieldError{Field: field, Err: &OffsetError{Offset: d.r.n, Err: err}}
 }
 ```
 
-Every `readX` method funnels its errors through `d.wrapErr("Header.Length", err)`. The encoder has a symmetric `e.wrapErr`. This keeps the chain shape uniform — never construct `FieldError` or `OffsetError` directly outside the helper, or the offset will drift.
+Every `readX` method funnels its errors through `d.wrapErr("Header.Length", err)` — always inside the `if err != nil` branch, so the helper never sees a nil error and doesn't need to guard for one. The encoder has a symmetric `e.wrapErr`. This keeps the chain shape uniform — never construct `FieldError` or `OffsetError` directly outside the helper, or the offset will drift.
 
 ### Nested fields
 
