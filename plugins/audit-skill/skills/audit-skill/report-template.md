@@ -49,7 +49,7 @@ Hand this report back to `skill-creator` to revise: `/skill-creator <path-to-thi
 
 ### Inline review comments
 
-One per finding whose `file:line` falls on a line modified in the PR. Body is a single paragraph:
+One per finding whose `file:line` falls on a line modified in the PR. The body is one short paragraph, optionally followed by a one-sentence suggestion on its own line:
 
 ```
 **<Objective>** — <one-line description>.
@@ -61,7 +61,7 @@ The objective name (in bold) makes the category scannable in the PR thread. Keep
 
 ### Top-level review summary
 
-A single review posted via `gh api -X POST /pulls/{n}/reviews -f event=COMMENT` (see `references/pr-mode.md` for the full invocation). The first line is a deduplication marker: re-running the audit on the same head commit looks for this marker and short-circuits, so the format is load-bearing — keep the angle-bracket comment exactly as shown:
+A single non-blocking review (see `references/pr-mode.md` for the exact `gh api` invocation against `repos/$OWNER/$REPO/pulls/$PR_NUMBER/reviews`). The first line of the review body is a deduplication marker: re-running the audit on the same head commit looks for this marker and short-circuits, so the format is load-bearing — keep the angle-bracket comment exactly as shown:
 
 ```
 <!-- audit-skill: $HEAD_SHA -->

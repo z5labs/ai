@@ -14,16 +14,16 @@ This skill is itself bound by the same four objectives. If you find yourself wan
 This skill is idempotent in both modes; re-running on the same target is a documented refresh path.
 
 - **File mode** — overwrites `audit-<skill-name>-<YYYY-MM-DD>.md` on re-run. Two runs on different days produce two dated reports (intentional — the date is part of the path).
-- **PR mode** — deduplicates against prior audits via a marker line (`<!-- audit-skill: <head-sha> -->`) on the summary review. If a marker matches the current head SHA, skip posting and tell the user the existing review URL; if a marker is for an older SHA, dismiss it before posting fresh. See `references/pr-mode.md` for the exact procedure.
+- **PR mode** — deduplicates against prior audits via a marker line (`<!-- audit-skill: $HEAD_SHA -->`, where `$HEAD_SHA` is replaced with the actual commit SHA) on the summary review. If a marker matches the current head SHA, skip posting and tell the user the existing review URL; if a marker is for an older SHA, dismiss it before posting fresh. See `references/pr-mode.md` for the exact procedure.
 
 ## Inputs
 
-- **Target skill** — a name (e.g. `extract-text-spec`) or absolute path. If a name, resolve in this order, first match wins:
-  1. `~/.claude/skills/<name>/`
-  2. `./.claude/skills/<name>/`
-  3. `./plugins/*/skills/<name>/`
+- **Target skill** — a name (e.g. `extract-text-spec`) or absolute path. If a name, search in these locations:
+  - `~/.claude/skills/<name>/`
+  - `./.claude/skills/<name>/`
+  - `./plugins/*/skills/<name>/`
   
-  If multiple paths match, list them all and ask the user which to audit. If none match, stop and report the search paths tried.
+  If exactly one path matches, audit it. If multiple paths match, list them all and ask the user which to audit. If none match, stop and report the search paths tried.
 
 - **Output mode** — auto-detected. Run `gh pr view --json number,headRefName,baseRefName 2>/dev/null`. Exit 0 with JSON ⇒ PR mode. Anything else ⇒ file mode.
 
