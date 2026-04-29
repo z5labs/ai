@@ -12,7 +12,7 @@ This skill is **idempotent**: re-running on the same input file overwrites the r
 
 ## Inputs
 
-- `path` (required, positional CLI arg): absolute or repo-relative path to a regular file. Validation: must exist (`[ -f "$path" ]`) and be a text file (test with `file --mime-type`; reject if it doesn't start with `text/`).
+- `path` (required, positional CLI arg): absolute or repo-relative path to a regular file. Validation: must exist (`[ -f "$path" ]`) and be a text file (test with `file --brief --mime-type "$path"` — `--brief` strips the leading `<path>:` prefix so the raw output is the mime type; reject if it doesn't start with `text/`).
 
 ## Output
 
