@@ -106,7 +106,7 @@
       "id": "tests-parallel",
       "text": "test files call t.Parallel() at both function and subtest level",
       "passed": true,
-      "evidence": "t.Parallel() appears 8 times across test files (\u22656)"
+      "evidence": "t.Parallel() appears \u22652\u00d7 in every test file (total 8)"
     },
     {
       "id": "tests-testify-require",

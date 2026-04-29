@@ -36,7 +36,7 @@ type tokenizerAction func(t *tokenizer, yield func(Token, error) bool) tokenizer
 
 An action reads some runes, optionally calls `yield(tok, nil)` to emit a token, and returns the next action. Returning `nil` ends the iteration.
 
-The closure pattern is the workhorse: when an action needs to capture state across rune reads (the start position of a string literal, the accumulated digits of a number), it returns a closure that holds that state. No mutable fields on the tokenizer, no resumable goroutines, no parser callbacks. Just a function that takes the tokenizer and yields tokens.
+The closure pattern is the workhorse: when an action needs to capture state across rune reads (the start position of a string literal, the accumulated digits of a number), it returns a closure that holds that state. The tokenizer still owns the reader and position cursor — that's its job — but no per-token accumulation fields creep onto the struct, no resumable goroutines, no parser callbacks. Just a function that takes the tokenizer and yields tokens.
 
 ### The tokenizer struct
 

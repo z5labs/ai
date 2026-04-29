@@ -108,27 +108,15 @@ def check(pkg_dir: Path, verify_log: str, pkg_name: str, aid: str, atext: str) -
 
     # Tests
     if aid == "tests-parallel":
-        # Each test file must call t.Parallel() at function level AND inside a subtest body
-        files = [tok_t, par_t, pri_t]
-        for label, t in zip(["tokenizer_test", "parser_test", "printer_test"], files):
-            if t.count("t.Parallel()") < 2 and "t.Parallel()" not in t:
-                return False, f"{label}.go has no t.Parallel()"
-        # Heuristic: at least 2 occurrences of t.Parallel() per file (fn + subtest)
-        for label, t in zip(["tokenizer_test", "parser_test", "printer_test"], files):
-            count = t.count("t.Parallel()")
-            if count < 2:
-                # allow fn-level only if no subtests; but skill calls for both
-                pass
-        # Global check: total occurrences across 3 files at least 6 (2 per file ideal)
-        total = sum(t.count("t.Parallel()") for t in files)
-        if total >= 6:
-            return True, f"t.Parallel() appears {total} times across test files (≥6)"
-        if total >= 3:
-            # at least once per file
-            per_file = all(t.count("t.Parallel()") >= 1 for t in files)
-            if per_file:
-                return True, f"t.Parallel() at function level in all three test files (total {total})"
-        return False, f"insufficient t.Parallel() coverage (total {total})"
+        # The assertion requires t.Parallel() at BOTH function and subtest level
+        # in every test file, so every file must contain at least 2 calls.
+        files = list(zip(["tokenizer_test", "parser_test", "printer_test"], [tok_t, par_t, pri_t]))
+        counts = [(label, t.count("t.Parallel()")) for label, t in files]
+        deficient = [f"{label}.go has {c}" for label, c in counts if c < 2]
+        if deficient:
+            return False, f"t.Parallel() must appear ≥2× per test file (function + subtest); {', '.join(deficient)}"
+        total = sum(c for _, c in counts)
+        return True, f"t.Parallel() appears ≥2× in every test file (total {total})"
 
     if aid == "tests-testify-require":
         for label, t in zip(["tokenizer_test", "parser_test", "printer_test"], [tok_t, par_t, pri_t]):
