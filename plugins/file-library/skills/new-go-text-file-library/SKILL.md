@@ -52,7 +52,7 @@ Scaffold with:
 
 ### 5. `$ARGUMENTS[0]/parser_test.go`
 Scaffold with:
-- One placeholder table-driven test (`TestParser`) with a single empty-input case calling `Parse(strings.NewReader(""))` and asserting `*File{}` (or equivalent zero value) and no error.
+- One placeholder table-driven test (`TestParser`) with a single empty-input case calling `Parse(strings.NewReader(""))` and asserting equality against `&File{}` (the zero-value `*File`) and no error.
 - Tests must call `Parse()` with real source strings — never construct AST nodes by hand. Document this rule in the package `CLAUDE.md` so the implementer doesn't drift.
 - `t.Parallel()` at both levels; `require` from testify.
 

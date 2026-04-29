@@ -1,16 +1,17 @@
 {
   "metadata": {
     "skill_name": "new-go-text-file-library",
-    "skill_path": "<path/to/skill>",
-    "executor_model": "<model-name>",
-    "analyzer_model": "<model-name>",
+    "skill_path": "plugins/file-library/skills/new-go-text-file-library",
+    "executor_model": "claude-opus-4-7",
+    "analyzer_model": "claude-opus-4-7",
     "timestamp": "2026-04-29T21:38:55Z",
     "evals_run": [
       0,
       1,
       2
     ],
-    "runs_per_configuration": 3
+    "runs_per_configuration": 1,
+    "delta_direction": "old_minus_with"
   },
   "runs": [
     {
