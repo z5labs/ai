@@ -71,14 +71,14 @@ Scaffold with:
 - `t.Parallel()` at both levels; `require` from testify.
 
 ### 8. `$ARGUMENTS[0]/CLAUDE.md`
-Document for future contributors:
+Write a **self-contained** package-level guide. Inline the relevant patterns directly; do not point readers at the skill's `references/architecture.md` — that file is the skill's own scratchpad and does not exist in the user's repo, so any link to it will dangle. Cover:
 - The tokenizer / parser / printer pipeline and where each component lives.
 - The action-loop state machine pattern with the package's three action types and what `nil` means for each.
 - Helper signatures and when to use them (yield-then-continue, write-then-continue, expect).
-- The "for complex/nested types, use the inner action loop pattern — no inline for-loops" rule from `references/architecture.md`. This is the single rule most likely to be violated by a fast implementer; call it out.
+- The "for complex/nested types, use the inner action loop pattern — no inline for-loops" rule. This is the single rule most likely to be violated by a fast implementer; call it out.
 - Testing style: parser tests must drive the public `Parse()`, printer tests must include round-trips, `t.Parallel()` at both levels, `require` from testify, table-driven.
 
-Base the structure on any existing package-level `CLAUDE.md` in the repo, or write fresh from `references/architecture.md`.
+If a package-level `CLAUDE.md` already exists elsewhere in the repo, mirror its structure and tone; otherwise write fresh.
 
 ## After Scaffolding
 

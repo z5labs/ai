@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """Grade scaffolded text-file-library packages against assertion sets."""
 import json
-import os
 import re
-import subprocess
-import sys
 from pathlib import Path
 
 ITERATION = Path(__file__).parent
