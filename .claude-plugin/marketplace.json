@@ -9,6 +9,12 @@
       "source": "./plugins/postgres-skill-creator",
       "description": "Introspect a Postgres database and generate a project-level skill that bakes its schema into a reference for ad-hoc query and exploration work",
       "version": "0.1.0"
+    },
+    {
+      "name": "file-library",
+      "source": "./plugins/file-library",
+      "description": "Tools for building Go file library packages: scaffolding, spec extraction, and feature implementation",
+      "version": "0.1.0"
     }
   ]
 }

@@ -1,0 +1,3 @@
+# Skill-creator iteration workspaces — local scratch, not source of truth.
+# Re-runnable from evals/evals.json + the skill itself.
+plugins/*/skills/*-workspace/

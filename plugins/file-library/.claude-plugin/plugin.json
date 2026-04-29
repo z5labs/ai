@@ -1,0 +1,8 @@
+{
+  "name": "file-library",
+  "description": "Tools for building Go file library packages: scaffolding, spec extraction, and feature implementation",
+  "version": "0.1.0",
+  "author": {
+    "name": "z5labs"
+  }
+}
