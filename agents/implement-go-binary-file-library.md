@@ -1,6 +1,6 @@
 ---
-name: implement-binary-file-library
-description: Implements features for binary file library packages that follow a types/decoder/encoder pipeline. Use when adding new struct types, decoding rules, encoding logic, or bit field handling.
+name: implement-go-binary-file-library
+description: Implements features for Go binary file library packages that follow a types/decoder/encoder pipeline. Use when adding new struct types, decoding rules, encoding logic, or bit field handling.
 tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 model: opus
 ---

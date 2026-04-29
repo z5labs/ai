@@ -5,7 +5,7 @@ description: Extract binary file format specifications (RFCs, vendor HTML docs, 
 
 # extract-binary-spec
 
-Read a binary format specification from any source (RFC, PDF, vendor HTML, local file) and produce a chunked, progressive-disclosure markdown reference suitable for the `implement-binary-file-library` agent. The output is per-structure so consumers load only what they need — important for mainframe-scale formats with hundreds of record types.
+Read a binary format specification from any source (RFC, PDF, vendor HTML, local file) and produce a chunked, progressive-disclosure markdown reference suitable for the `implement-go-binary-file-library` agent. The output is per-structure so consumers load only what they need — important for mainframe-scale formats with hundreds of record types.
 
 ## Output layout
 
@@ -85,4 +85,4 @@ For Tier 3, wave-dispatch (parallel within a wave, sequential between waves) so 
 
 ## Next step for the user
 
-Once extraction is complete, the typical next step is to scaffold the package with `/new-file-library <name>` and then invoke the `implement-binary-file-library` agent. That agent partitions `SPEC.md` and the `structures/` / `encoding-tables/` / `examples/` directories across types/decoder/encoder subagents.
+Once extraction is complete, the typical next step is to scaffold the package with `/new-go-binary-file-library <name>` and then invoke the `implement-go-binary-file-library` agent. That agent partitions `SPEC.md` and the `structures/` / `encoding-tables/` / `examples/` directories across types/decoder/encoder subagents.

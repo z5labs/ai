@@ -1,0 +1,23 @@
+{
+  "eval_id": 1,
+  "eval_name": "scaffold-gzip",
+  "prompt": "scaffold a new go binary file library package for the gzip format. call it gzip.",
+  "assertions": [
+    {"id": "files-doc-go", "text": "gzip/doc.go exists"},
+    {"id": "files-types-go", "text": "gzip/types.go exists"},
+    {"id": "files-types-test", "text": "gzip/types_test.go exists"},
+    {"id": "files-decoder-go", "text": "gzip/decoder.go exists"},
+    {"id": "files-decoder-test", "text": "gzip/decoder_test.go exists"},
+    {"id": "files-encoder-go", "text": "gzip/encoder.go exists"},
+    {"id": "files-encoder-test", "text": "gzip/encoder_test.go exists"},
+    {"id": "files-claude-md", "text": "gzip/CLAUDE.md exists"},
+    {"id": "go-build-passes", "text": "go build ./gzip/... exits cleanly"},
+    {"id": "go-test-passes", "text": "go test ./gzip/... exits cleanly with all tests passing"},
+    {"id": "decode-signature", "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)"},
+    {"id": "encode-signature", "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)"},
+    {"id": "byte-order-field", "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field"},
+    {"id": "tests-parallel", "text": "test files call t.Parallel() at both function and subtest level"},
+    {"id": "tests-testify-require", "text": "test files import github.com/stretchr/testify/require"},
+    {"id": "claude-md-content", "text": "gzip/CLAUDE.md documents byte order, error-wrapping convention, and testing style"}
+  ]
+}

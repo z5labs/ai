@@ -1,6 +1,6 @@
 ---
-name: implement-text-file-library
-description: Implements features for text file library packages that follow a tokenizer/parser/printer pipeline. Use when adding new token types, parser rules, AST nodes, or printer logic.
+name: implement-go-text-file-library
+description: Implements features for Go text file library packages that follow a tokenizer/parser/printer pipeline. Use when adding new token types, parser rules, AST nodes, or printer logic.
 tools: Read, Write, Edit, Glob, Grep, Bash, Agent
 model: opus
 ---

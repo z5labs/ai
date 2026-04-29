@@ -1,6 +1,6 @@
 # Output format
 
-The `extract-binary-spec` skill produces a directory tree, not a single file. Each file follows a strict template so the consumer (`implement-binary-file-library` agent) can partition and load only what it needs — important when a format defines hundreds of record types.
+The `extract-binary-spec` skill produces a directory tree, not a single file. Each file follows a strict template so the consumer (`implement-go-binary-file-library` agent) can partition and load only what it needs — important when a format defines hundreds of record types.
 
 ## Directory layout
 
@@ -225,7 +225,7 @@ Generate original hex (do not copy hex dumps verbatim from the spec). The bytes 
 - **Capture every field.** A decoder must consume every byte. Every wire field needs a row in some field table.
 - **Always state byte order explicitly.** Globally in `SPEC.md#Conventions`; per-structure when it differs.
 - **Distinguish bytes from bits.** Column headers `Offset (bytes)` and `Bit(s)`. Never mix without labels.
-- **Map to Go types.** The Type column must hold a Go type name the implement-binary-file-library agent can drop directly into a struct definition — never a paraphrase like "32-bit IPv4 address" or "domain name reference". Allowed forms:
+- **Map to Go types.** The Type column must hold a Go type name the implement-go-binary-file-library agent can drop directly into a struct definition — never a paraphrase like "32-bit IPv4 address" or "domain name reference". Allowed forms:
   - Fixed integers: `uint8`, `uint16`, `uint32`, `uint64`, `int8`–`int64`
   - Fixed-size byte arrays: `[4]byte`, `[16]byte`
   - Variable-length byte arrays: `[]byte`

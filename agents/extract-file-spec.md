@@ -156,4 +156,4 @@ A file exercising advanced or edge-case features.
    - The output file path
    - Total spec size and how many sections were extracted
    - Any ambiguities or gaps flagged
-   - Suggested next step: scaffold with `/new-file-library` then implement with `@agents/implement-file-library.md`
+   - Suggested next step: scaffold with `/new-go-text-file-library` then implement with `@agents/implement-go-text-file-library.md`

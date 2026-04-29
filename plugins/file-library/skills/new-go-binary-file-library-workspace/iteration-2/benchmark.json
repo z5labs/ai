@@ -1,0 +1,1079 @@
+{
+  "metadata": {
+    "skill_name": "new-go-binary-file-library",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-29T04:01:59Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.64,
+        "passed": 16,
+        "failed": 9,
+        "total": 25,
+        "time_seconds": 120.9,
+        "tokens": 42488,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "tlv/doc.go exists",
+          "passed": true,
+          "evidence": "doc.go present"
+        },
+        {
+          "id": "files-types-go",
+          "text": "tlv/types.go exists",
+          "passed": true,
+          "evidence": "types.go present"
+        },
+        {
+          "id": "files-types-test",
+          "text": "tlv/types_test.go exists",
+          "passed": true,
+          "evidence": "types_test.go present"
+        },
+        {
+          "id": "files-decoder-go",
+          "text": "tlv/decoder.go exists",
+          "passed": true,
+          "evidence": "decoder.go present"
+        },
+        {
+          "id": "files-decoder-test",
+          "text": "tlv/decoder_test.go exists",
+          "passed": true,
+          "evidence": "decoder_test.go present"
+        },
+        {
+          "id": "files-encoder-go",
+          "text": "tlv/encoder.go exists",
+          "passed": true,
+          "evidence": "encoder.go present"
+        },
+        {
+          "id": "files-encoder-test",
+          "text": "tlv/encoder_test.go exists",
+          "passed": true,
+          "evidence": "encoder_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "tlv/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./tlv/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./tlv/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0"
+        },
+        {
+          "id": "decode-signature",
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "func Decode(r io.Reader) (*File, error)"
+        },
+        {
+          "id": "encode-signature",
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "func Encode(w io.Writer, f *File) error"
+        },
+        {
+          "id": "byte-order-field",
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+          "passed": true,
+          "evidence": "both"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "types=4, decoder=2, encoder=4"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "found"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "tlv/CLAUDE.md documents byte order, error-wrapping convention, and testing style",
+          "passed": true,
+          "evidence": "byte order=True, errors=True, testing=True"
+        },
+        {
+          "id": "err-unimplemented-defined",
+          "text": "types.go defines `errUnimplemented` (or equivalent) so the chain has a leaf to assert against",
+          "passed": false,
+          "evidence": "missing"
+        },
+        {
+          "id": "offset-error-type",
+          "text": "types.go defines an OffsetError type with Offset int64 and Err error fields, implementing Unwrap()",
+          "passed": false,
+          "evidence": "struct=False offset/int64=False unwrap=False"
+        },
+        {
+          "id": "field-error-type",
+          "text": "types.go defines a FieldError type with Field string and Err error fields, implementing Unwrap()",
+          "passed": false,
+          "evidence": "struct=False field/string=True unwrap=True"
+        },
+        {
+          "id": "counting-reader",
+          "text": "decoder.go defines an unexported counting reader that tracks bytes-read offset",
+          "passed": false,
+          "evidence": "no counting reader"
+        },
+        {
+          "id": "counting-writer",
+          "text": "encoder.go defines an unexported counting writer that tracks bytes-written offset",
+          "passed": false,
+          "evidence": "no counting writer"
+        },
+        {
+          "id": "wrap-err-decoder",
+          "text": "decoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": false,
+          "evidence": "wrapErr=False FieldError=False OffsetError=False"
+        },
+        {
+          "id": "wrap-err-encoder",
+          "text": "encoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": false,
+          "evidence": "wrapErr=False FieldError=False OffsetError=False"
+        },
+        {
+          "id": "test-asserts-chain",
+          "text": "test files use errors.Is/ErrorIs to assert errUnimplemented AND errors.As/ErrorAs to assert the FieldError field path",
+          "passed": false,
+          "evidence": "Is=True As=False errUnimpl=True FieldError=False"
+        },
+        {
+          "id": "claude-md-error-chain",
+          "text": "tlv/CLAUDE.md explains the FieldError \u2192 OffsetError \u2192 leaf error-chain convention",
+          "passed": false,
+          "evidence": "chain=True offset=False"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.64,
+        "passed": 16,
+        "failed": 9,
+        "total": 25,
+        "time_seconds": 94.8,
+        "tokens": 30515,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "gzip/doc.go exists",
+          "passed": true,
+          "evidence": "doc.go present"
+        },
+        {
+          "id": "files-types-go",
+          "text": "gzip/types.go exists",
+          "passed": true,
+          "evidence": "types.go present"
+        },
+        {
+          "id": "files-types-test",
+          "text": "gzip/types_test.go exists",
+          "passed": true,
+          "evidence": "types_test.go present"
+        },
+        {
+          "id": "files-decoder-go",
+          "text": "gzip/decoder.go exists",
+          "passed": true,
+          "evidence": "decoder.go present"
+        },
+        {
+          "id": "files-decoder-test",
+          "text": "gzip/decoder_test.go exists",
+          "passed": true,
+          "evidence": "decoder_test.go present"
+        },
+        {
+          "id": "files-encoder-go",
+          "text": "gzip/encoder.go exists",
+          "passed": true,
+          "evidence": "encoder.go present"
+        },
+        {
+          "id": "files-encoder-test",
+          "text": "gzip/encoder_test.go exists",
+          "passed": true,
+          "evidence": "encoder_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "gzip/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./gzip/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./gzip/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0"
+        },
+        {
+          "id": "decode-signature",
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "func Decode(r io.Reader) (*File, error)"
+        },
+        {
+          "id": "encode-signature",
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "func Encode(w io.Writer, f *File) error"
+        },
+        {
+          "id": "byte-order-field",
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+          "passed": true,
+          "evidence": "both"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "types=4, decoder=2, encoder=4"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "found"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "gzip/CLAUDE.md documents byte order, error-wrapping convention, and testing style",
+          "passed": true,
+          "evidence": "byte order=True, errors=True, testing=True"
+        },
+        {
+          "id": "err-unimplemented-defined",
+          "text": "types.go defines `errUnimplemented` (or equivalent) so the chain has a leaf to assert against",
+          "passed": false,
+          "evidence": "missing"
+        },
+        {
+          "id": "offset-error-type",
+          "text": "types.go defines an OffsetError type with Offset int64 and Err error fields, implementing Unwrap()",
+          "passed": false,
+          "evidence": "struct=False offset/int64=False unwrap=False"
+        },
+        {
+          "id": "field-error-type",
+          "text": "types.go defines a FieldError type with Field string and Err error fields, implementing Unwrap()",
+          "passed": false,
+          "evidence": "struct=False field/string=True unwrap=True"
+        },
+        {
+          "id": "counting-reader",
+          "text": "decoder.go defines an unexported counting reader that tracks bytes-read offset",
+          "passed": false,
+          "evidence": "no counting reader"
+        },
+        {
+          "id": "counting-writer",
+          "text": "encoder.go defines an unexported counting writer that tracks bytes-written offset",
+          "passed": false,
+          "evidence": "no counting writer"
+        },
+        {
+          "id": "wrap-err-decoder",
+          "text": "decoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": false,
+          "evidence": "wrapErr=False FieldError=False OffsetError=False"
+        },
+        {
+          "id": "wrap-err-encoder",
+          "text": "encoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": false,
+          "evidence": "wrapErr=False FieldError=False OffsetError=False"
+        },
+        {
+          "id": "test-asserts-chain",
+          "text": "test files use errors.Is/ErrorIs to assert errUnimplemented AND errors.As/ErrorAs to assert the FieldError field path",
+          "passed": false,
+          "evidence": "Is=False As=False errUnimpl=False FieldError=False"
+        },
+        {
+          "id": "claude-md-error-chain",
+          "text": "gzip/CLAUDE.md explains the FieldError \u2192 OffsetError \u2192 leaf error-chain convention",
+          "passed": false,
+          "evidence": "chain=True offset=False"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.64,
+        "passed": 16,
+        "failed": 9,
+        "total": 25,
+        "time_seconds": 102.8,
+        "tokens": 31200,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "dns/doc.go exists",
+          "passed": true,
+          "evidence": "doc.go present"
+        },
+        {
+          "id": "files-types-go",
+          "text": "dns/types.go exists",
+          "passed": true,
+          "evidence": "types.go present"
+        },
+        {
+          "id": "files-types-test",
+          "text": "dns/types_test.go exists",
+          "passed": true,
+          "evidence": "types_test.go present"
+        },
+        {
+          "id": "files-decoder-go",
+          "text": "dns/decoder.go exists",
+          "passed": true,
+          "evidence": "decoder.go present"
+        },
+        {
+          "id": "files-decoder-test",
+          "text": "dns/decoder_test.go exists",
+          "passed": true,
+          "evidence": "decoder_test.go present"
+        },
+        {
+          "id": "files-encoder-go",
+          "text": "dns/encoder.go exists",
+          "passed": true,
+          "evidence": "encoder.go present"
+        },
+        {
+          "id": "files-encoder-test",
+          "text": "dns/encoder_test.go exists",
+          "passed": true,
+          "evidence": "encoder_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "dns/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./dns/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./dns/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0"
+        },
+        {
+          "id": "decode-signature",
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "func Decode(r io.Reader) (*File, error)"
+        },
+        {
+          "id": "encode-signature",
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "func Encode(w io.Writer, f *File) error"
+        },
+        {
+          "id": "byte-order-field",
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+          "passed": true,
+          "evidence": "both"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "types=4, decoder=2, encoder=4"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "found"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "dns/CLAUDE.md documents byte order, error-wrapping convention, and testing style",
+          "passed": true,
+          "evidence": "byte order=True, errors=True, testing=True"
+        },
+        {
+          "id": "err-unimplemented-defined",
+          "text": "types.go defines `errUnimplemented` (or equivalent) so the chain has a leaf to assert against",
+          "passed": false,
+          "evidence": "missing"
+        },
+        {
+          "id": "offset-error-type",
+          "text": "types.go defines an OffsetError type with Offset int64 and Err error fields, implementing Unwrap()",
+          "passed": false,
+          "evidence": "struct=False offset/int64=False unwrap=False"
+        },
+        {
+          "id": "field-error-type",
+          "text": "types.go defines a FieldError type with Field string and Err error fields, implementing Unwrap()",
+          "passed": false,
+          "evidence": "struct=False field/string=True unwrap=True"
+        },
+        {
+          "id": "counting-reader",
+          "text": "decoder.go defines an unexported counting reader that tracks bytes-read offset",
+          "passed": false,
+          "evidence": "no counting reader"
+        },
+        {
+          "id": "counting-writer",
+          "text": "encoder.go defines an unexported counting writer that tracks bytes-written offset",
+          "passed": false,
+          "evidence": "no counting writer"
+        },
+        {
+          "id": "wrap-err-decoder",
+          "text": "decoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": false,
+          "evidence": "wrapErr=False FieldError=False OffsetError=False"
+        },
+        {
+          "id": "wrap-err-encoder",
+          "text": "encoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": false,
+          "evidence": "wrapErr=False FieldError=False OffsetError=False"
+        },
+        {
+          "id": "test-asserts-chain",
+          "text": "test files use errors.Is/ErrorIs to assert errUnimplemented AND errors.As/ErrorAs to assert the FieldError field path",
+          "passed": false,
+          "evidence": "Is=True As=False errUnimpl=True FieldError=False"
+        },
+        {
+          "id": "claude-md-error-chain",
+          "text": "dns/CLAUDE.md explains the FieldError \u2192 OffsetError \u2192 leaf error-chain convention",
+          "passed": false,
+          "evidence": "chain=True offset=False"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 25,
+        "failed": 0,
+        "total": 25,
+        "time_seconds": 145.5,
+        "tokens": 38235,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "tlv/doc.go exists",
+          "passed": true,
+          "evidence": "doc.go present"
+        },
+        {
+          "id": "files-types-go",
+          "text": "tlv/types.go exists",
+          "passed": true,
+          "evidence": "types.go present"
+        },
+        {
+          "id": "files-types-test",
+          "text": "tlv/types_test.go exists",
+          "passed": true,
+          "evidence": "types_test.go present"
+        },
+        {
+          "id": "files-decoder-go",
+          "text": "tlv/decoder.go exists",
+          "passed": true,
+          "evidence": "decoder.go present"
+        },
+        {
+          "id": "files-decoder-test",
+          "text": "tlv/decoder_test.go exists",
+          "passed": true,
+          "evidence": "decoder_test.go present"
+        },
+        {
+          "id": "files-encoder-go",
+          "text": "tlv/encoder.go exists",
+          "passed": true,
+          "evidence": "encoder.go present"
+        },
+        {
+          "id": "files-encoder-test",
+          "text": "tlv/encoder_test.go exists",
+          "passed": true,
+          "evidence": "encoder_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "tlv/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./tlv/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./tlv/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0"
+        },
+        {
+          "id": "decode-signature",
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "func Decode(r io.Reader) (*File, error)"
+        },
+        {
+          "id": "encode-signature",
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "func Encode(w io.Writer, f *File) error"
+        },
+        {
+          "id": "byte-order-field",
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+          "passed": true,
+          "evidence": "both"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "types=9, decoder=2, encoder=4"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "found"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "tlv/CLAUDE.md documents byte order, error-wrapping convention, and testing style",
+          "passed": true,
+          "evidence": "byte order=True, errors=True, testing=True"
+        },
+        {
+          "id": "err-unimplemented-defined",
+          "text": "types.go defines `errUnimplemented` (or equivalent) so the chain has a leaf to assert against",
+          "passed": true,
+          "evidence": "errUnimplemented found in types.go"
+        },
+        {
+          "id": "offset-error-type",
+          "text": "types.go defines an OffsetError type with Offset int64 and Err error fields, implementing Unwrap()",
+          "passed": true,
+          "evidence": "struct=True offset/int64=True unwrap=True"
+        },
+        {
+          "id": "field-error-type",
+          "text": "types.go defines a FieldError type with Field string and Err error fields, implementing Unwrap()",
+          "passed": true,
+          "evidence": "struct=True field/string=True unwrap=True"
+        },
+        {
+          "id": "counting-reader",
+          "text": "decoder.go defines an unexported counting reader that tracks bytes-read offset",
+          "passed": true,
+          "evidence": "counting reader present"
+        },
+        {
+          "id": "counting-writer",
+          "text": "encoder.go defines an unexported counting writer that tracks bytes-written offset",
+          "passed": true,
+          "evidence": "counting writer present"
+        },
+        {
+          "id": "wrap-err-decoder",
+          "text": "decoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": true,
+          "evidence": "wrapErr=True FieldError=True OffsetError=True"
+        },
+        {
+          "id": "wrap-err-encoder",
+          "text": "encoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": true,
+          "evidence": "wrapErr=True FieldError=True OffsetError=True"
+        },
+        {
+          "id": "test-asserts-chain",
+          "text": "test files use errors.Is/ErrorIs to assert errUnimplemented AND errors.As/ErrorAs to assert the FieldError field path",
+          "passed": true,
+          "evidence": "Is=True As=True errUnimpl=True FieldError=True"
+        },
+        {
+          "id": "claude-md-error-chain",
+          "text": "tlv/CLAUDE.md explains the FieldError \u2192 OffsetError \u2192 leaf error-chain convention",
+          "passed": true,
+          "evidence": "chain=True offset=True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 25,
+        "failed": 0,
+        "total": 25,
+        "time_seconds": 182.8,
+        "tokens": 39690,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "gzip/doc.go exists",
+          "passed": true,
+          "evidence": "doc.go present"
+        },
+        {
+          "id": "files-types-go",
+          "text": "gzip/types.go exists",
+          "passed": true,
+          "evidence": "types.go present"
+        },
+        {
+          "id": "files-types-test",
+          "text": "gzip/types_test.go exists",
+          "passed": true,
+          "evidence": "types_test.go present"
+        },
+        {
+          "id": "files-decoder-go",
+          "text": "gzip/decoder.go exists",
+          "passed": true,
+          "evidence": "decoder.go present"
+        },
+        {
+          "id": "files-decoder-test",
+          "text": "gzip/decoder_test.go exists",
+          "passed": true,
+          "evidence": "decoder_test.go present"
+        },
+        {
+          "id": "files-encoder-go",
+          "text": "gzip/encoder.go exists",
+          "passed": true,
+          "evidence": "encoder.go present"
+        },
+        {
+          "id": "files-encoder-test",
+          "text": "gzip/encoder_test.go exists",
+          "passed": true,
+          "evidence": "encoder_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "gzip/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./gzip/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./gzip/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0"
+        },
+        {
+          "id": "decode-signature",
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "func Decode(r io.Reader) (*File, error)"
+        },
+        {
+          "id": "encode-signature",
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "func Encode(w io.Writer, f *File) error"
+        },
+        {
+          "id": "byte-order-field",
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+          "passed": true,
+          "evidence": "both"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "types=8, decoder=2, encoder=4"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "found"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "gzip/CLAUDE.md documents byte order, error-wrapping convention, and testing style",
+          "passed": true,
+          "evidence": "byte order=True, errors=True, testing=True"
+        },
+        {
+          "id": "err-unimplemented-defined",
+          "text": "types.go defines `errUnimplemented` (or equivalent) so the chain has a leaf to assert against",
+          "passed": true,
+          "evidence": "errUnimplemented found in types.go"
+        },
+        {
+          "id": "offset-error-type",
+          "text": "types.go defines an OffsetError type with Offset int64 and Err error fields, implementing Unwrap()",
+          "passed": true,
+          "evidence": "struct=True offset/int64=True unwrap=True"
+        },
+        {
+          "id": "field-error-type",
+          "text": "types.go defines a FieldError type with Field string and Err error fields, implementing Unwrap()",
+          "passed": true,
+          "evidence": "struct=True field/string=True unwrap=True"
+        },
+        {
+          "id": "counting-reader",
+          "text": "decoder.go defines an unexported counting reader that tracks bytes-read offset",
+          "passed": true,
+          "evidence": "counting reader present"
+        },
+        {
+          "id": "counting-writer",
+          "text": "encoder.go defines an unexported counting writer that tracks bytes-written offset",
+          "passed": true,
+          "evidence": "counting writer present"
+        },
+        {
+          "id": "wrap-err-decoder",
+          "text": "decoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": true,
+          "evidence": "wrapErr=True FieldError=True OffsetError=True"
+        },
+        {
+          "id": "wrap-err-encoder",
+          "text": "encoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": true,
+          "evidence": "wrapErr=True FieldError=True OffsetError=True"
+        },
+        {
+          "id": "test-asserts-chain",
+          "text": "test files use errors.Is/ErrorIs to assert errUnimplemented AND errors.As/ErrorAs to assert the FieldError field path",
+          "passed": true,
+          "evidence": "Is=True As=True errUnimpl=True FieldError=True"
+        },
+        {
+          "id": "claude-md-error-chain",
+          "text": "gzip/CLAUDE.md explains the FieldError \u2192 OffsetError \u2192 leaf error-chain convention",
+          "passed": true,
+          "evidence": "chain=True offset=True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 25,
+        "failed": 0,
+        "total": 25,
+        "time_seconds": 130.3,
+        "tokens": 37452,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "dns/doc.go exists",
+          "passed": true,
+          "evidence": "doc.go present"
+        },
+        {
+          "id": "files-types-go",
+          "text": "dns/types.go exists",
+          "passed": true,
+          "evidence": "types.go present"
+        },
+        {
+          "id": "files-types-test",
+          "text": "dns/types_test.go exists",
+          "passed": true,
+          "evidence": "types_test.go present"
+        },
+        {
+          "id": "files-decoder-go",
+          "text": "dns/decoder.go exists",
+          "passed": true,
+          "evidence": "decoder.go present"
+        },
+        {
+          "id": "files-decoder-test",
+          "text": "dns/decoder_test.go exists",
+          "passed": true,
+          "evidence": "decoder_test.go present"
+        },
+        {
+          "id": "files-encoder-go",
+          "text": "dns/encoder.go exists",
+          "passed": true,
+          "evidence": "encoder.go present"
+        },
+        {
+          "id": "files-encoder-test",
+          "text": "dns/encoder_test.go exists",
+          "passed": true,
+          "evidence": "encoder_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "dns/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./dns/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./dns/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0"
+        },
+        {
+          "id": "decode-signature",
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "func Decode(r io.Reader) (*File, error)"
+        },
+        {
+          "id": "encode-signature",
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "func Encode(w io.Writer, f *File) error"
+        },
+        {
+          "id": "byte-order-field",
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+          "passed": true,
+          "evidence": "both"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "types=6, decoder=2, encoder=4"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "found"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "dns/CLAUDE.md documents byte order, error-wrapping convention, and testing style",
+          "passed": true,
+          "evidence": "byte order=True, errors=True, testing=True"
+        },
+        {
+          "id": "err-unimplemented-defined",
+          "text": "types.go defines `errUnimplemented` (or equivalent) so the chain has a leaf to assert against",
+          "passed": true,
+          "evidence": "errUnimplemented found in types.go"
+        },
+        {
+          "id": "offset-error-type",
+          "text": "types.go defines an OffsetError type with Offset int64 and Err error fields, implementing Unwrap()",
+          "passed": true,
+          "evidence": "struct=True offset/int64=True unwrap=True"
+        },
+        {
+          "id": "field-error-type",
+          "text": "types.go defines a FieldError type with Field string and Err error fields, implementing Unwrap()",
+          "passed": true,
+          "evidence": "struct=True field/string=True unwrap=True"
+        },
+        {
+          "id": "counting-reader",
+          "text": "decoder.go defines an unexported counting reader that tracks bytes-read offset",
+          "passed": true,
+          "evidence": "counting reader present"
+        },
+        {
+          "id": "counting-writer",
+          "text": "encoder.go defines an unexported counting writer that tracks bytes-written offset",
+          "passed": true,
+          "evidence": "counting writer present"
+        },
+        {
+          "id": "wrap-err-decoder",
+          "text": "decoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": true,
+          "evidence": "wrapErr=True FieldError=True OffsetError=True"
+        },
+        {
+          "id": "wrap-err-encoder",
+          "text": "encoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain",
+          "passed": true,
+          "evidence": "wrapErr=True FieldError=True OffsetError=True"
+        },
+        {
+          "id": "test-asserts-chain",
+          "text": "test files use errors.Is/ErrorIs to assert errUnimplemented AND errors.As/ErrorAs to assert the FieldError field path",
+          "passed": true,
+          "evidence": "Is=True As=True errUnimpl=True FieldError=True"
+        },
+        {
+          "id": "claude-md-error-chain",
+          "text": "dns/CLAUDE.md explains the FieldError \u2192 OffsetError \u2192 leaf error-chain convention",
+          "passed": true,
+          "evidence": "chain=True offset=True"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "old_skill": {
+      "pass_rate": {
+        "mean": 0.64,
+        "stddev": 0.0,
+        "min": 0.64,
+        "max": 0.64
+      },
+      "time_seconds": {
+        "mean": 106.1667,
+        "stddev": 13.3717,
+        "min": 94.8,
+        "max": 120.9
+      },
+      "tokens": {
+        "mean": 34734.3333,
+        "stddev": 6723.6014,
+        "min": 30515,
+        "max": 42488
+      }
+    },
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 152.8667,
+        "stddev": 27.0141,
+        "min": 130.3,
+        "max": 182.8
+      },
+      "tokens": {
+        "mean": 38459.0,
+        "stddev": 1135.6905,
+        "min": 37452,
+        "max": 39690
+      }
+    },
+    "delta": {
+      "pass_rate": "-0.36",
+      "time_seconds": "-46.7",
+      "tokens": "-3725"
+    }
+  },
+  "notes": [
+    "Iteration 2 vs iteration-1 snapshot: 100% (25/25) vs 64% (16/25). The iter-2 skill picks up 9/9 new error-chain assertions; the snapshot picks up 0/9 (none of the new pieces existed yet).",
+    "All 9 new assertions discriminate cleanly: errUnimplemented sentinel, OffsetError + FieldError types, countingReader/Writer, wrapErr helpers (decoder + encoder), test chain assertions, CLAUDE.md error-chain section.",
+    "Cost: iter-2 with-skill ~38\u201340k tokens / 130\u2013183s vs old_skill ~30\u201342k / 95\u2013121s. ~30-50% extra cost for the richer scaffold \u2014 load is in reading the longer SKILL.md and architecture.md.",
+    "The 16 carry-over assertions (file structure, build/test pass, signatures, byte-order field, etc.) all still pass for both configs \u2014 the new skill didn't break anything.",
+    "Delta sign note: aggregator picked old_skill as primary alphabetically, so the -0.36 delta means with_skill is +36pp better."
+  ]
+}

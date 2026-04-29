@@ -1,6 +1,6 @@
 ---
-name: new-file-library
-description: Scaffold a new file library package with tokenizer, parser, printer, and tests
+name: new-go-text-file-library
+description: Scaffold a new Go text file library package with tokenizer, parser, printer, and tests
 disable-model-invocation: true
 argument-hint: "[package-name]"
 ---

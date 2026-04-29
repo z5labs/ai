@@ -1,0 +1,23 @@
+{
+  "eval_id": 2,
+  "eval_name": "scaffold-dns",
+  "prompt": "I need to start a new Go package called `dns` for working with DNS wire-format messages. I'll be using the implement-binary-file-library agent afterward to fill in the real types from the RFC, but I want the boilerplate in place now.",
+  "assertions": [
+    {"id": "files-doc-go", "text": "dns/doc.go exists"},
+    {"id": "files-types-go", "text": "dns/types.go exists"},
+    {"id": "files-types-test", "text": "dns/types_test.go exists"},
+    {"id": "files-decoder-go", "text": "dns/decoder.go exists"},
+    {"id": "files-decoder-test", "text": "dns/decoder_test.go exists"},
+    {"id": "files-encoder-go", "text": "dns/encoder.go exists"},
+    {"id": "files-encoder-test", "text": "dns/encoder_test.go exists"},
+    {"id": "files-claude-md", "text": "dns/CLAUDE.md exists"},
+    {"id": "go-build-passes", "text": "go build ./dns/... exits cleanly"},
+    {"id": "go-test-passes", "text": "go test ./dns/... exits cleanly with all tests passing"},
+    {"id": "decode-signature", "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)"},
+    {"id": "encode-signature", "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)"},
+    {"id": "byte-order-field", "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field"},
+    {"id": "tests-parallel", "text": "test files call t.Parallel() at both function and subtest level"},
+    {"id": "tests-testify-require", "text": "test files import github.com/stretchr/testify/require"},
+    {"id": "claude-md-content", "text": "dns/CLAUDE.md documents byte order, error-wrapping convention, and testing style"}
+  ]
+}

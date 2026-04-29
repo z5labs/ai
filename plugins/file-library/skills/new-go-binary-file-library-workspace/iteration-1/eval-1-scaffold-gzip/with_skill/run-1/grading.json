@@ -1,0 +1,106 @@
+{
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "total": 16,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "gzip/doc.go exists",
+      "passed": true,
+      "evidence": "exists: doc.go",
+      "id": "files-doc-go"
+    },
+    {
+      "text": "gzip/types.go exists",
+      "passed": true,
+      "evidence": "exists: types.go",
+      "id": "files-types-go"
+    },
+    {
+      "text": "gzip/types_test.go exists",
+      "passed": true,
+      "evidence": "exists: types_test.go",
+      "id": "files-types-test"
+    },
+    {
+      "text": "gzip/decoder.go exists",
+      "passed": true,
+      "evidence": "exists: decoder.go",
+      "id": "files-decoder-go"
+    },
+    {
+      "text": "gzip/decoder_test.go exists",
+      "passed": true,
+      "evidence": "exists: decoder_test.go",
+      "id": "files-decoder-test"
+    },
+    {
+      "text": "gzip/encoder.go exists",
+      "passed": true,
+      "evidence": "exists: encoder.go",
+      "id": "files-encoder-go"
+    },
+    {
+      "text": "gzip/encoder_test.go exists",
+      "passed": true,
+      "evidence": "exists: encoder_test.go",
+      "id": "files-encoder-test"
+    },
+    {
+      "text": "gzip/CLAUDE.md exists",
+      "passed": true,
+      "evidence": "exists: CLAUDE.md",
+      "id": "files-claude-md"
+    },
+    {
+      "text": "go build ./gzip/... exits cleanly",
+      "passed": true,
+      "evidence": "BUILD_RC=0",
+      "id": "go-build-passes"
+    },
+    {
+      "text": "go test ./gzip/... exits cleanly with all tests passing",
+      "passed": true,
+      "evidence": "TEST_RC=0",
+      "id": "go-test-passes"
+    },
+    {
+      "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)",
+      "passed": true,
+      "evidence": "61: func Decode(r io.Reader) (*File, error) {",
+      "id": "decode-signature"
+    },
+    {
+      "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)",
+      "passed": true,
+      "evidence": "43: func Encode(w io.Writer, f *File) error {",
+      "id": "encode-signature"
+    },
+    {
+      "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+      "passed": true,
+      "evidence": "decoder: 36: byteOrder binary.ByteOrder | encoder: 19: byteOrder binary.ByteOrder",
+      "id": "byte-order-field"
+    },
+    {
+      "text": "test files call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "types_test.go:4, decoder_test.go:2, encoder_test.go:4",
+      "id": "tests-parallel"
+    },
+    {
+      "text": "test files import github.com/stretchr/testify/require",
+      "passed": true,
+      "evidence": "decoder_test.go:12: \"github.com/stretchr/testify/require\"; encoder_test.go:12: \"github.com/stretchr/testify/require\"; types_test.go:12: \"github.com/stretchr/testify/require\"",
+      "id": "tests-testify-require"
+    },
+    {
+      "text": "# gzip\n\ngo binary file library for the gzip format. follows the **types / decoder / encoder** pipeline pattern.\n\n## pipeline\n\n```\nbytes  \u2500\u2500\u2500 decode \u2500\u25ba  *file (typed ast)  \u2500\u2500\u2500 encode \u2500\u25ba  bytes\n              \u2502              \u2502                  \u2502\n           decoder.go     types.go           encoder.go\n```\n\n- `types.go` \u2014 go translation of the wire format. one struct per structure, typed-integer enums with `string()` methods, mask/shift constants for bit fields, and sentinel/struct error types.\n- `decoder.go` \u2014 pull-based reader. internal `decoder` struct wraps `io.reader` and stores `binary.byteorder`. methods named `readx` (`readfile`, future `readheader`, etc.). public surface is `decode(r io.reader) (*file, error)`.\n- `encoder.go` \u2014 inverse of the decoder. internal `encoder` wraps `io.writer` with the same byte order. methods named `writex`. public surface is `encode(w io.writer, f *file) error`.\n\n## byte order\n\ndefault scaffold uses `binary.bigendian` per the `new-go-binary-file-library` skill's default. the real gzip wire format is **little-endian**; switch both `newdecoder` and `newencoder` to `binary.littleendian` when wiring up real reads/writes. the decoder and encoder must always agree.\n\n## error wrapping convention\n\nevery non-trivial decode/encode error is wrapped with structural context so a hex-dump debugger can locate the offending field:\n\n```go\nfmt.errorf(\"decoding %s: %w\", structname, err)\nfmt.errorf(\"encoding %s: %w\", structname, err)\n```\n\nexamples:\n- `decoding file: unimplemented`\n- `decoding header.length: unexpected eof`\n- `encoding trailer.crc32: short write`\n\nuse `unexpectedeoferror` (or a typed variant) when the bytes ran out, and `errinvalid` / `invalidfielderror` when the bytes were fine but the value was illegal.\n\n## testing style\n\n- hex byte literals for inputs and outputs: `[]byte{0x1f, 0x8b, 0x08, 0x00, ...}` with field-labeling comments above each block.\n- `bytes.newreader` for decode inputs, `bytes.buffer` for encode outputs.\n- table-driven tests: a `testcases` slice plus `t.run(tc.name, ...)`.\n- `t.parallel()` at **both** the test function and each subtest. the action functions are pure; parallelism catches hidden global state.\n- assertions via `github.com/stretchr/testify/require` (not `assert`) \u2014 a binary test that keeps running after the first failure produces noise.\n- **round-trip tests for every encoder method**: `encode \u2192 decode \u2192 require.equal` against the original. round-trip is the cheapest end-to-end correctness check available.\n- a `binary.size()` test per fixed-size struct documents the wire-size invariant.\n\n## next steps for the implementer\n\n1. define the real `file`, header, optional fields, and trailer types in `types.go` from `spec.md`.\n2. switch byte order to `binary.littleendian` in `newdecoder` and `newencoder`.\n3. replace the unimplemented stubs in `decoder.go` and `encoder.go` with real reads/writes, wrapping each field with structural context.\n4. replace the placeholder tests with real spec-example inputs/outputs and turn the round-trip test green.\n",
+      "passed": true,
+      "evidence": "byte order=True, error wrapping=True, testing=True",
+      "id": "claude-md-content"
+    }
+  ]
+}

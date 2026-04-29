@@ -1,0 +1,107 @@
+{
+  "eval_id": 1,
+  "eval_name": "scaffold-gzip",
+  "prompt": "scaffold a new go binary file library package for the gzip format. call it gzip.",
+  "assertions": [
+    {
+      "id": "files-doc-go",
+      "text": "gzip/doc.go exists"
+    },
+    {
+      "id": "files-types-go",
+      "text": "gzip/types.go exists"
+    },
+    {
+      "id": "files-types-test",
+      "text": "gzip/types_test.go exists"
+    },
+    {
+      "id": "files-decoder-go",
+      "text": "gzip/decoder.go exists"
+    },
+    {
+      "id": "files-decoder-test",
+      "text": "gzip/decoder_test.go exists"
+    },
+    {
+      "id": "files-encoder-go",
+      "text": "gzip/encoder.go exists"
+    },
+    {
+      "id": "files-encoder-test",
+      "text": "gzip/encoder_test.go exists"
+    },
+    {
+      "id": "files-claude-md",
+      "text": "gzip/CLAUDE.md exists"
+    },
+    {
+      "id": "go-build-passes",
+      "text": "go build ./gzip/... exits cleanly"
+    },
+    {
+      "id": "go-test-passes",
+      "text": "go test ./gzip/... exits cleanly with all tests passing"
+    },
+    {
+      "id": "decode-signature",
+      "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)`"
+    },
+    {
+      "id": "encode-signature",
+      "text": "encoder.go defines `func Encode(w io.Writer, f *File) error`"
+    },
+    {
+      "id": "byte-order-field",
+      "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field"
+    },
+    {
+      "id": "tests-parallel",
+      "text": "test files call t.Parallel() at both function and subtest level"
+    },
+    {
+      "id": "tests-testify-require",
+      "text": "test files import github.com/stretchr/testify/require"
+    },
+    {
+      "id": "claude-md-content",
+      "text": "gzip/CLAUDE.md documents byte order, error-wrapping convention, and testing style"
+    },
+    {
+      "id": "err-unimplemented-defined",
+      "text": "types.go defines `errUnimplemented` (or equivalent) so the chain has a leaf to assert against"
+    },
+    {
+      "id": "offset-error-type",
+      "text": "types.go defines an OffsetError type with Offset int64 and Err error fields, implementing Unwrap()"
+    },
+    {
+      "id": "field-error-type",
+      "text": "types.go defines a FieldError type with Field string and Err error fields, implementing Unwrap()"
+    },
+    {
+      "id": "counting-reader",
+      "text": "decoder.go defines an unexported counting reader that tracks bytes-read offset"
+    },
+    {
+      "id": "counting-writer",
+      "text": "encoder.go defines an unexported counting writer that tracks bytes-written offset"
+    },
+    {
+      "id": "wrap-err-decoder",
+      "text": "decoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain"
+    },
+    {
+      "id": "wrap-err-encoder",
+      "text": "encoder.go has a wrapErr helper or equivalent that produces FieldError \u2192 OffsetError \u2192 leaf chain"
+    },
+    {
+      "id": "test-asserts-chain",
+      "text": "test files use errors.Is/ErrorIs to assert errUnimplemented AND errors.As/ErrorAs to assert the FieldError field path"
+    },
+    {
+      "id": "claude-md-error-chain",
+      "text": "gzip/CLAUDE.md explains the FieldError \u2192 OffsetError \u2192 leaf error-chain convention"
+    }
+  ]
+}

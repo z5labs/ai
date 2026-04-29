@@ -1,0 +1,755 @@
+{
+  "metadata": {
+    "skill_name": "new-go-binary-file-library",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-29T03:50:55Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 16,
+        "failed": 0,
+        "total": 16,
+        "time_seconds": 305.0,
+        "tokens": 54512,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "tlv/doc.go exists",
+          "passed": true,
+          "evidence": "exists: doc.go",
+          "id": "files-doc-go"
+        },
+        {
+          "text": "tlv/types.go exists",
+          "passed": true,
+          "evidence": "exists: types.go",
+          "id": "files-types-go"
+        },
+        {
+          "text": "tlv/types_test.go exists",
+          "passed": true,
+          "evidence": "exists: types_test.go",
+          "id": "files-types-test"
+        },
+        {
+          "text": "tlv/decoder.go exists",
+          "passed": true,
+          "evidence": "exists: decoder.go",
+          "id": "files-decoder-go"
+        },
+        {
+          "text": "tlv/decoder_test.go exists",
+          "passed": true,
+          "evidence": "exists: decoder_test.go",
+          "id": "files-decoder-test"
+        },
+        {
+          "text": "tlv/encoder.go exists",
+          "passed": true,
+          "evidence": "exists: encoder.go",
+          "id": "files-encoder-go"
+        },
+        {
+          "text": "tlv/encoder_test.go exists",
+          "passed": true,
+          "evidence": "exists: encoder_test.go",
+          "id": "files-encoder-test"
+        },
+        {
+          "text": "tlv/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "exists: CLAUDE.md",
+          "id": "files-claude-md"
+        },
+        {
+          "text": "go build ./tlv/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0",
+          "id": "go-build-passes"
+        },
+        {
+          "text": "go test ./tlv/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0",
+          "id": "go-test-passes"
+        },
+        {
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)",
+          "passed": true,
+          "evidence": "67: func Decode(r io.Reader) (*File, error) {",
+          "id": "decode-signature"
+        },
+        {
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)",
+          "passed": true,
+          "evidence": "38: func Encode(w io.Writer, f *File) error {",
+          "id": "encode-signature"
+        },
+        {
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field (not scattered hardcoded calls)",
+          "passed": true,
+          "evidence": "decoder: 42: byteOrder binary.ByteOrder | encoder: 17: byteOrder binary.ByteOrder",
+          "id": "byte-order-field"
+        },
+        {
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "types_test.go:4, decoder_test.go:2, encoder_test.go:4",
+          "id": "tests-parallel"
+        },
+        {
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "decoder_test.go:10: \"github.com/stretchr/testify/require\"; encoder_test.go:10: \"github.com/stretchr/testify/require\"; types_test.go:10: \"github.com/stretchr/testify/require\"",
+          "id": "tests-testify-require"
+        },
+        {
+          "text": "# tlv\n\na go binary file library for the tlv (type-length-value) wire format.\n\nthis package follows the **types / decoder / encoder** pipeline pattern\ndocumented in the repo-level `references/architecture.md`. each component owns\none concern and can be tested in isolation.\n\n## pipeline\n\n```\nbytes  \u2500\u2500\u2500 decode \u2500\u25ba  *file (typed ast)  \u2500\u2500\u2500 encode \u2500\u25ba  bytes\n              \u2502              \u2502                  \u2502\n           decoder.go     types.go           encoder.go\n```\n\n- `types.go` \u2014 go translation of the wire format. structs, enums (with\n  `string()`), bit-field mask/shift constants, and error types live here.\n- `decoder.go` \u2014 pull-based reader. owns the `io.reader` and the byte order;\n  exposes `decode(r) (*file, error)` plus internal `readx` methods.\n- `encoder.go` \u2014 the decoder's inverse. owns the `io.writer` and the byte\n  order; exposes `encode(w, f) error` plus internal `writex` methods.\n\n## byte order\n\nthis package uses `binary.bigendian`. most network and container formats are\nbig-endian, and that's the scaffold's default. if the real tlv spec turns out\nto be little-endian, change the constant in **both** `newdecoder` and\n`newencoder` \u2014 they must agree, otherwise round-trip tests will fail in\nconfusing ways.\n\n## error wrapping convention\n\nevery non-trivial error wraps with structural context so a hex-dump debugger\ncan find the offending field:\n\n- decoder: `fmt.errorf(\"decoding %s: %w\", structname, err)`\n- encoder: `fmt.errorf(\"encoding %s: %w\", structname, err)`\n\nsentinel errors (`errinvalid`) are used for stable, comparable conditions.\nstruct error types (`invalidfielderror`, `unexpectedeoferror`) are used when\nfield-level context matters; both implement `error()` and `unwrap()`.\n\ndistinguish \"the bytes ran out unexpectedly\" (`io.errunexpectedeof` /\n`unexpectedeoferror`) from \"the bytes were fine but the value was illegal\"\n(`errinvalid` / `invalidfielderror`).\n\n## testing style\n\n- hex byte literals for binary inputs and outputs:\n  `[]byte{0x00, 0x01, 0xff}`. comment each block with the field it represents.\n- `bytes.newreader` for decoder inputs, `bytes.buffer` for encoder outputs.\n- table-driven tests with a `testcases` slice and `t.run(tc.name, ...)`.\n- `t.parallel()` at **both** the test function and each subtest. the\n  decoder/encoder methods are pure; parallel tests catch hidden global state.\n- assertions via `github.com/stretchr/testify/require` (not `assert`) \u2014 a\n  binary test that keeps running after the first failure produces noise, not\n  signal.\n- a round-trip test for **every** encoder method: `encode \u2192 decode \u2192\n  require.equal` against the original struct. this is the cheapest end-to-end\n  correctness check available.\n\n## what to implement next\n\n1. fill in `spec.md` for the real tlv layout you're targeting.\n2. replace `file`'s placeholder field with the real top-level structure.\n3. replace the example `kind` enum and bit-field constants with the real\n   wire-format values.\n4. implement `readfile` and `writefile` (and any per-substructure `readx` /\n   `writex` helpers) following the patterns in `references/architecture.md`.\n5. run the `implement-binary-file-library` agent to drive the test-first\n   implementation, or fill in tests + implementation by hand.\n",
+          "passed": true,
+          "evidence": "byte order=True, error wrapping=True, testing=True",
+          "id": "claude-md-content"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 16,
+        "failed": 0,
+        "total": 16,
+        "time_seconds": 447.1,
+        "tokens": 70575,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "gzip/doc.go exists",
+          "passed": true,
+          "evidence": "exists: doc.go",
+          "id": "files-doc-go"
+        },
+        {
+          "text": "gzip/types.go exists",
+          "passed": true,
+          "evidence": "exists: types.go",
+          "id": "files-types-go"
+        },
+        {
+          "text": "gzip/types_test.go exists",
+          "passed": true,
+          "evidence": "exists: types_test.go",
+          "id": "files-types-test"
+        },
+        {
+          "text": "gzip/decoder.go exists",
+          "passed": true,
+          "evidence": "exists: decoder.go",
+          "id": "files-decoder-go"
+        },
+        {
+          "text": "gzip/decoder_test.go exists",
+          "passed": true,
+          "evidence": "exists: decoder_test.go",
+          "id": "files-decoder-test"
+        },
+        {
+          "text": "gzip/encoder.go exists",
+          "passed": true,
+          "evidence": "exists: encoder.go",
+          "id": "files-encoder-go"
+        },
+        {
+          "text": "gzip/encoder_test.go exists",
+          "passed": true,
+          "evidence": "exists: encoder_test.go",
+          "id": "files-encoder-test"
+        },
+        {
+          "text": "gzip/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "exists: CLAUDE.md",
+          "id": "files-claude-md"
+        },
+        {
+          "text": "go build ./gzip/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0",
+          "id": "go-build-passes"
+        },
+        {
+          "text": "go test ./gzip/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0",
+          "id": "go-test-passes"
+        },
+        {
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)",
+          "passed": true,
+          "evidence": "61: func Decode(r io.Reader) (*File, error) {",
+          "id": "decode-signature"
+        },
+        {
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)",
+          "passed": true,
+          "evidence": "43: func Encode(w io.Writer, f *File) error {",
+          "id": "encode-signature"
+        },
+        {
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+          "passed": true,
+          "evidence": "decoder: 36: byteOrder binary.ByteOrder | encoder: 19: byteOrder binary.ByteOrder",
+          "id": "byte-order-field"
+        },
+        {
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "types_test.go:4, decoder_test.go:2, encoder_test.go:4",
+          "id": "tests-parallel"
+        },
+        {
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "decoder_test.go:12: \"github.com/stretchr/testify/require\"; encoder_test.go:12: \"github.com/stretchr/testify/require\"; types_test.go:12: \"github.com/stretchr/testify/require\"",
+          "id": "tests-testify-require"
+        },
+        {
+          "text": "# gzip\n\ngo binary file library for the gzip format. follows the **types / decoder / encoder** pipeline pattern.\n\n## pipeline\n\n```\nbytes  \u2500\u2500\u2500 decode \u2500\u25ba  *file (typed ast)  \u2500\u2500\u2500 encode \u2500\u25ba  bytes\n              \u2502              \u2502                  \u2502\n           decoder.go     types.go           encoder.go\n```\n\n- `types.go` \u2014 go translation of the wire format. one struct per structure, typed-integer enums with `string()` methods, mask/shift constants for bit fields, and sentinel/struct error types.\n- `decoder.go` \u2014 pull-based reader. internal `decoder` struct wraps `io.reader` and stores `binary.byteorder`. methods named `readx` (`readfile`, future `readheader`, etc.). public surface is `decode(r io.reader) (*file, error)`.\n- `encoder.go` \u2014 inverse of the decoder. internal `encoder` wraps `io.writer` with the same byte order. methods named `writex`. public surface is `encode(w io.writer, f *file) error`.\n\n## byte order\n\ndefault scaffold uses `binary.bigendian` per the `new-go-binary-file-library` skill's default. the real gzip wire format is **little-endian**; switch both `newdecoder` and `newencoder` to `binary.littleendian` when wiring up real reads/writes. the decoder and encoder must always agree.\n\n## error wrapping convention\n\nevery non-trivial decode/encode error is wrapped with structural context so a hex-dump debugger can locate the offending field:\n\n```go\nfmt.errorf(\"decoding %s: %w\", structname, err)\nfmt.errorf(\"encoding %s: %w\", structname, err)\n```\n\nexamples:\n- `decoding file: unimplemented`\n- `decoding header.length: unexpected eof`\n- `encoding trailer.crc32: short write`\n\nuse `unexpectedeoferror` (or a typed variant) when the bytes ran out, and `errinvalid` / `invalidfielderror` when the bytes were fine but the value was illegal.\n\n## testing style\n\n- hex byte literals for inputs and outputs: `[]byte{0x1f, 0x8b, 0x08, 0x00, ...}` with field-labeling comments above each block.\n- `bytes.newreader` for decode inputs, `bytes.buffer` for encode outputs.\n- table-driven tests: a `testcases` slice plus `t.run(tc.name, ...)`.\n- `t.parallel()` at **both** the test function and each subtest. the action functions are pure; parallelism catches hidden global state.\n- assertions via `github.com/stretchr/testify/require` (not `assert`) \u2014 a binary test that keeps running after the first failure produces noise.\n- **round-trip tests for every encoder method**: `encode \u2192 decode \u2192 require.equal` against the original. round-trip is the cheapest end-to-end correctness check available.\n- a `binary.size()` test per fixed-size struct documents the wire-size invariant.\n\n## next steps for the implementer\n\n1. define the real `file`, header, optional fields, and trailer types in `types.go` from `spec.md`.\n2. switch byte order to `binary.littleendian` in `newdecoder` and `newencoder`.\n3. replace the unimplemented stubs in `decoder.go` and `encoder.go` with real reads/writes, wrapping each field with structural context.\n4. replace the placeholder tests with real spec-example inputs/outputs and turn the round-trip test green.\n",
+          "passed": true,
+          "evidence": "byte order=True, error wrapping=True, testing=True",
+          "id": "claude-md-content"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 16,
+        "failed": 0,
+        "total": 16,
+        "time_seconds": 360.0,
+        "tokens": 62174,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "dns/doc.go exists",
+          "passed": true,
+          "evidence": "exists: doc.go",
+          "id": "files-doc-go"
+        },
+        {
+          "text": "dns/types.go exists",
+          "passed": true,
+          "evidence": "exists: types.go",
+          "id": "files-types-go"
+        },
+        {
+          "text": "dns/types_test.go exists",
+          "passed": true,
+          "evidence": "exists: types_test.go",
+          "id": "files-types-test"
+        },
+        {
+          "text": "dns/decoder.go exists",
+          "passed": true,
+          "evidence": "exists: decoder.go",
+          "id": "files-decoder-go"
+        },
+        {
+          "text": "dns/decoder_test.go exists",
+          "passed": true,
+          "evidence": "exists: decoder_test.go",
+          "id": "files-decoder-test"
+        },
+        {
+          "text": "dns/encoder.go exists",
+          "passed": true,
+          "evidence": "exists: encoder.go",
+          "id": "files-encoder-go"
+        },
+        {
+          "text": "dns/encoder_test.go exists",
+          "passed": true,
+          "evidence": "exists: encoder_test.go",
+          "id": "files-encoder-test"
+        },
+        {
+          "text": "dns/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "exists: CLAUDE.md",
+          "id": "files-claude-md"
+        },
+        {
+          "text": "go build ./dns/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0",
+          "id": "go-build-passes"
+        },
+        {
+          "text": "go test ./dns/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0",
+          "id": "go-test-passes"
+        },
+        {
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)",
+          "passed": true,
+          "evidence": "60: func Decode(r io.Reader) (*File, error) {",
+          "id": "decode-signature"
+        },
+        {
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)",
+          "passed": true,
+          "evidence": "39: func Encode(w io.Writer, f *File) error {",
+          "id": "encode-signature"
+        },
+        {
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+          "passed": true,
+          "evidence": "decoder: 38: byteOrder binary.ByteOrder | encoder: 17: byteOrder binary.ByteOrder",
+          "id": "byte-order-field"
+        },
+        {
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "types_test.go:4, decoder_test.go:2, encoder_test.go:4",
+          "id": "tests-parallel"
+        },
+        {
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "decoder_test.go:11: \"github.com/stretchr/testify/require\"; encoder_test.go:11: \"github.com/stretchr/testify/require\"; types_test.go:11: \"github.com/stretchr/testify/require\"",
+          "id": "tests-testify-require"
+        },
+        {
+          "text": "# dns\n\ngo binary file library for dns wire-format messages.\n\n## pipeline\n\nthis package follows the **types / decoder / encoder** pipeline:\n\n```\nbytes  \u2500\u2500 decode \u2500\u25ba  *file  \u2500\u2500 encode \u2500\u25ba  bytes\n              \u2502         \u2502           \u2502\n          decoder.go  types.go   encoder.go\n```\n\n- `types.go` \u2014 go translation of the dns wire format. one struct per spec\n  structure, fields in wire order, sized integers and `[n]byte` arrays so\n  `binary.size` / `binary.read` work directly. enums use `type x uintn` plus\n  a `const` block and a `string()` method. bit fields keep their underlying\n  integer type and expose mask/shift constants (and accessor methods when\n  helpful).\n- `decoder.go` \u2014 internal `decoder` struct wrapping an `io.reader` and the\n  byte order, with `readx` methods (`readfile`, `readheader`, ...) and the\n  public `decode(r io.reader) (*file, error)` entry point.\n- `encoder.go` \u2014 internal `encoder` struct wrapping an `io.writer` and the\n  byte order, with `writex` methods and the public\n  `encode(w io.writer, f *file) error` entry point.\n\n## byte order\n\ndns messages are framed in **network byte order** (big-endian) per\nrfc 1035 section 2.3.2. both the decoder and encoder default to\n`binary.bigendian`. they must always agree \u2014 a byte-order mismatch is the\nsingle most common cause of round-trip failures in this package.\n\n## error wrapping convention\n\nevery non-trivial decode/encode error is wrapped with structural context:\n\n```go\nreturn nil, fmt.errorf(\"decoding header.length: %w\", err)\nreturn fmt.errorf(\"encoding header.length: %w\", err)\n```\n\nuse `fmt.errorf(\"decoding %s: %w\", structname, err)` and\n`fmt.errorf(\"encoding %s: %w\", structname, err)` when wrapping at the\nstruct boundary. distinguish \"the bytes ran out\" (wrap\n`io.errunexpectedeof`, e.g. via `unexpectedeoferror`) from \"the bytes were\nfine but the value was illegal\" (return `errinvalid` /\n`invalidfielderror`).\n\n## testing\n\n- hex byte literals for binary inputs/outputs: `[]byte{0x00, 0x01, 0xff}`.\n  comment each block with the field name from the spec.\n- `bytes.newreader` for decoder tests, `bytes.buffer` for encoder tests.\n- table-driven tests with `testcases` slices and `t.run(tc.name, ...)`.\n- `t.parallel()` at both the test function level and inside each subtest.\n- assertions via `github.com/stretchr/testify/require` (not `assert`) \u2014 a\n  binary-format test that keeps running after the first mismatch produces\n  noise, not signal.\n- every encoder method gets a round-trip subtest: `encode -> decode ->\n  require.equal(original, decoded)`. round-trip is the cheapest end-to-end\n  correctness check available.\n\n## what to implement next\n\nthe current scaffolding contains placeholder types (`file`, `kind`,\n`invalidfielderror`) and stub `readfile` / `writefile` methods that return\nan \"unimplemented\" error. to turn the scaffold into a real dns library:\n\n1. define the real types in `types.go` from the dns wire-format spec\n   (rfc 1035 plus relevant extensions). start with the 12-byte header,\n   then question / resource record sections.\n2. run the `implement-binary-file-library` agent (or follow the same\n   test-first workflow manually) to flesh out `decoder.go` and\n   `encoder.go`, replacing the stubs and updating the placeholder tests.\n",
+          "passed": true,
+          "evidence": "byte order=True, error wrapping=True, testing=True",
+          "id": "claude-md-content"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4375,
+        "passed": 7,
+        "failed": 9,
+        "total": 16,
+        "time_seconds": 198.8,
+        "tokens": 38409,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "tlv/doc.go exists",
+          "passed": true,
+          "evidence": "exists: doc.go",
+          "id": "files-doc-go"
+        },
+        {
+          "text": "tlv/types.go exists",
+          "passed": false,
+          "evidence": "missing: types.go",
+          "id": "files-types-go"
+        },
+        {
+          "text": "tlv/types_test.go exists",
+          "passed": false,
+          "evidence": "missing: types_test.go",
+          "id": "files-types-test"
+        },
+        {
+          "text": "tlv/decoder.go exists",
+          "passed": true,
+          "evidence": "exists: decoder.go",
+          "id": "files-decoder-go"
+        },
+        {
+          "text": "tlv/decoder_test.go exists",
+          "passed": false,
+          "evidence": "missing: decoder_test.go",
+          "id": "files-decoder-test"
+        },
+        {
+          "text": "tlv/encoder.go exists",
+          "passed": true,
+          "evidence": "exists: encoder.go",
+          "id": "files-encoder-go"
+        },
+        {
+          "text": "tlv/encoder_test.go exists",
+          "passed": false,
+          "evidence": "missing: encoder_test.go",
+          "id": "files-encoder-test"
+        },
+        {
+          "text": "tlv/CLAUDE.md exists",
+          "passed": false,
+          "evidence": "missing: CLAUDE.md",
+          "id": "files-claude-md"
+        },
+        {
+          "text": "go build ./tlv/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0",
+          "id": "go-build-passes"
+        },
+        {
+          "text": "go test ./tlv/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0",
+          "id": "go-test-passes"
+        },
+        {
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)",
+          "passed": false,
+          "evidence": "no match",
+          "id": "decode-signature"
+        },
+        {
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)",
+          "passed": false,
+          "evidence": "no match",
+          "id": "encode-signature"
+        },
+        {
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field (not scattered hardcoded calls)",
+          "passed": false,
+          "evidence": "decoder: no match | encoder: no match",
+          "id": "byte-order-field"
+        },
+        {
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "tlv_test.go:9",
+          "id": "tests-parallel"
+        },
+        {
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "tlv_test.go:9: \"github.com/stretchr/testify/require\"",
+          "id": "tests-testify-require"
+        },
+        {
+          "text": "tlv/CLAUDE.md documents byte order, error-wrapping convention, and testing style",
+          "passed": false,
+          "evidence": "CLAUDE.md missing",
+          "id": "claude-md-content"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6875,
+        "passed": 11,
+        "failed": 5,
+        "total": 16,
+        "time_seconds": 148.4,
+        "tokens": 31102,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "gzip/doc.go exists",
+          "passed": true,
+          "evidence": "exists: doc.go",
+          "id": "files-doc-go"
+        },
+        {
+          "text": "gzip/types.go exists",
+          "passed": true,
+          "evidence": "exists: types.go",
+          "id": "files-types-go"
+        },
+        {
+          "text": "gzip/types_test.go exists",
+          "passed": true,
+          "evidence": "exists: types_test.go",
+          "id": "files-types-test"
+        },
+        {
+          "text": "gzip/decoder.go exists",
+          "passed": true,
+          "evidence": "exists: decoder.go",
+          "id": "files-decoder-go"
+        },
+        {
+          "text": "gzip/decoder_test.go exists",
+          "passed": true,
+          "evidence": "exists: decoder_test.go",
+          "id": "files-decoder-test"
+        },
+        {
+          "text": "gzip/encoder.go exists",
+          "passed": true,
+          "evidence": "exists: encoder.go",
+          "id": "files-encoder-go"
+        },
+        {
+          "text": "gzip/encoder_test.go exists",
+          "passed": true,
+          "evidence": "exists: encoder_test.go",
+          "id": "files-encoder-test"
+        },
+        {
+          "text": "gzip/CLAUDE.md exists",
+          "passed": false,
+          "evidence": "missing: CLAUDE.md",
+          "id": "files-claude-md"
+        },
+        {
+          "text": "go build ./gzip/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0",
+          "id": "go-build-passes"
+        },
+        {
+          "text": "go test ./gzip/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0",
+          "id": "go-test-passes"
+        },
+        {
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)",
+          "passed": false,
+          "evidence": "no match",
+          "id": "decode-signature"
+        },
+        {
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)",
+          "passed": false,
+          "evidence": "no match",
+          "id": "encode-signature"
+        },
+        {
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+          "passed": false,
+          "evidence": "decoder: no match | encoder: no match",
+          "id": "byte-order-field"
+        },
+        {
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "decoder_test.go:3, encoder_test.go:3, types_test.go:3",
+          "id": "tests-parallel"
+        },
+        {
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "decoder_test.go:7: \"github.com/stretchr/testify/require\"; encoder_test.go:7: \"github.com/stretchr/testify/require\"; types_test.go:6: \"github.com/stretchr/testify/require\"",
+          "id": "tests-testify-require"
+        },
+        {
+          "text": "gzip/CLAUDE.md documents byte order, error-wrapping convention, and testing style",
+          "passed": false,
+          "evidence": "CLAUDE.md missing",
+          "id": "claude-md-content"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.3125,
+        "passed": 5,
+        "failed": 11,
+        "total": 16,
+        "time_seconds": 181.8,
+        "tokens": 37104,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "dns/doc.go exists",
+          "passed": true,
+          "evidence": "exists: doc.go",
+          "id": "files-doc-go"
+        },
+        {
+          "text": "dns/types.go exists",
+          "passed": true,
+          "evidence": "exists: types.go",
+          "id": "files-types-go"
+        },
+        {
+          "text": "dns/types_test.go exists",
+          "passed": false,
+          "evidence": "missing: types_test.go",
+          "id": "files-types-test"
+        },
+        {
+          "text": "dns/decoder.go exists",
+          "passed": false,
+          "evidence": "missing: decoder.go",
+          "id": "files-decoder-go"
+        },
+        {
+          "text": "dns/decoder_test.go exists",
+          "passed": false,
+          "evidence": "missing: decoder_test.go",
+          "id": "files-decoder-test"
+        },
+        {
+          "text": "dns/encoder.go exists",
+          "passed": false,
+          "evidence": "missing: encoder.go",
+          "id": "files-encoder-go"
+        },
+        {
+          "text": "dns/encoder_test.go exists",
+          "passed": false,
+          "evidence": "missing: encoder_test.go",
+          "id": "files-encoder-test"
+        },
+        {
+          "text": "dns/CLAUDE.md exists",
+          "passed": false,
+          "evidence": "missing: CLAUDE.md",
+          "id": "files-claude-md"
+        },
+        {
+          "text": "go build ./dns/... exits cleanly",
+          "passed": true,
+          "evidence": "BUILD_RC=0",
+          "id": "go-build-passes"
+        },
+        {
+          "text": "go test ./dns/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "TEST_RC=0",
+          "id": "go-test-passes"
+        },
+        {
+          "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)",
+          "passed": false,
+          "evidence": "missing decoder.go",
+          "id": "decode-signature"
+        },
+        {
+          "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)",
+          "passed": false,
+          "evidence": "missing encoder.go",
+          "id": "encode-signature"
+        },
+        {
+          "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+          "passed": false,
+          "evidence": "decoder: missing decoder.go | encoder: missing encoder.go",
+          "id": "byte-order-field"
+        },
+        {
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": false,
+          "evidence": "tokenizer_test.go:1, parser_test.go:1, printer_test.go:1",
+          "id": "tests-parallel"
+        },
+        {
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "parser_test.go:7: \"github.com/stretchr/testify/require\"; printer_test.go:7: \"github.com/stretchr/testify/require\"; tokenizer_test.go:8: \"github.com/stretchr/testify/require\"",
+          "id": "tests-testify-require"
+        },
+        {
+          "text": "dns/CLAUDE.md documents byte order, error-wrapping convention, and testing style",
+          "passed": false,
+          "evidence": "CLAUDE.md missing",
+          "id": "claude-md-content"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 370.7,
+        "stddev": 71.6517,
+        "min": 305.0,
+        "max": 447.1
+      },
+      "tokens": {
+        "mean": 62420.3333,
+        "stddev": 8034.3327,
+        "min": 54512,
+        "max": 70575
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.4792,
+        "stddev": 0.1909,
+        "min": 0.3125,
+        "max": 0.6875
+      },
+      "time_seconds": {
+        "mean": 176.3333,
+        "stddev": 25.6409,
+        "min": 148.4,
+        "max": 198.8
+      },
+      "tokens": {
+        "mean": 35538.3333,
+        "stddev": 3896.992,
+        "min": 31102,
+        "max": 38409
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.52",
+      "time_seconds": "+194.4",
+      "tokens": "+26882"
+    }
+  },
+  "notes": [
+    "With-skill produces a perfect 16/16 on all three evals; baselines range 5\u201311/16.",
+    "Largest gaps (3\u20130): CLAUDE.md presence and content, exact Decode/Encode signatures, binary.ByteOrder field \u2014 these are the skill's load-bearing instructions.",
+    "Non-discriminating assertions (always-pass for both): files-doc-go, go-build-passes, go-test-passes, tests-testify-require. The build/test pass everywhere because both with-skill and baseline produce buildable Go; discrimination comes from STRUCTURE not COMPILABILITY. Could drop or strengthen these for future iterations.",
+    "DNS baseline used the text pipeline (tokenizer/parser/printer) entirely \u2014 strong evidence the skill is needed for binary work, since 'binary file library' is ambiguous without it.",
+    "Cost: with-skill runs took ~3-7 minutes vs ~2.5-3 minutes baseline (~2x time). Token cost roughly 2x (~50-70k vs ~31-38k). The instructions have weight."
+  ]
+}

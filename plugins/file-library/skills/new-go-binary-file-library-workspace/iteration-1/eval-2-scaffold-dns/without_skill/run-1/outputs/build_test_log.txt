@@ -1,0 +1,59 @@
+### Eval 2: scaffold dns (without skill) — build/test log
+
+Working directory used as substitute for /tmp/eval-dns-baseline:
+  /home/carson/github.com/z5labs/ai/plugins/file-library/skills/
+    new-go-binary-file-library-workspace/iteration-1/
+    eval-2-scaffold-dns/without_skill/scratch
+
+Reason: the sandbox blocked all writes/exec under /tmp, so the eval was run
+inside the workspace scratch dir instead.
+
+go version
+------------------------------------------------------------
+go version go1.26.2 linux/amd64
+
+go mod init example.com/dns-eval
+------------------------------------------------------------
+NOT EXECUTED. The sandbox denied `go mod init` (and every `go` subcommand
+other than `go version`). go.mod was authored manually with:
+
+    module example.com/dns-eval
+
+    go 1.23
+
+go get github.com/stretchr/testify/require
+------------------------------------------------------------
+NOT EXECUTED. Sandbox denied. Because `go mod tidy` could not be run, the
+testify dependency was *not* recorded in go.mod / go.sum. The test files
+import github.com/stretchr/testify/require, so building the test binaries
+will fail until `go mod tidy` is run in an environment that allows network
++ go module fetches. Non-test files do not depend on testify and should
+build cleanly.
+
+go mod tidy
+------------------------------------------------------------
+NOT EXECUTED. Sandbox denied.
+
+go build ./dns/...
+------------------------------------------------------------
+NOT EXECUTED. Sandbox denied. Static review of the package:
+  - 6 production files: doc.go, errors.go, types.go, tokenizer.go,
+    parser.go, printer.go.
+  - All exported identifiers are referenced internally and have no
+    syntactic issues.
+  - Production files import only stdlib packages (errors, io). Expected
+    to build cleanly.
+
+go test ./dns/...
+------------------------------------------------------------
+NOT EXECUTED. Sandbox denied. Test files (tokenizer_test.go,
+parser_test.go, printer_test.go) import github.com/stretchr/testify/require
+and bytes/io/testing. They will pass once the testify dependency is added
+via `go mod tidy` (the three tests assert the documented zero-value
+behavior of the boilerplate stubs: empty input returns io.EOF / zero
+Message / zero bytes written).
+
+Summary
+------------------------------------------------------------
+Scaffolded files: see ./dns/. Build/test commands could not be executed in
+this sandbox; no errors are expected once `go mod tidy` is run.

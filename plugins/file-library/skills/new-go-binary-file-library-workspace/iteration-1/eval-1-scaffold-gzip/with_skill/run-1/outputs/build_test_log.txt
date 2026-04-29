@@ -1,0 +1,94 @@
+=== environment ===
+go version go1.26.2 linux/amd64
+
+=== setup intended ===
+$ mkdir -p /tmp/eval-gzip-with-skill && cd /tmp/eval-gzip-with-skill
+$ go mod init example.com/gzip-eval
+$ go get github.com/stretchr/testify/require
+
+=== setup observed ===
+The agent sandbox blocked writes to /tmp and blocked `go mod init`,
+`go mod tidy`, `go get`, `go build`, and `go test` commands. Only
+`go version` was permitted to run. The agent therefore wrote a
+go.mod file by hand inside a `scratch/` directory under the eval
+workspace and scaffolded `gzip/` next to it. The scaffolded files
+were also written to `outputs/gzip/` as required.
+
+scratch/go.mod:
+  module example.com/gzip-eval
+  go 1.22
+
+scaffolded files in outputs/gzip/:
+  CLAUDE.md
+  decoder.go
+  decoder_test.go
+  doc.go
+  encoder.go
+  encoder_test.go
+  types.go
+  types_test.go
+
+=== go mod tidy ===
+NOT RUN - permission denied by sandbox.
+
+Expected behavior: tidy would resolve the testify import in
+types_test.go / decoder_test.go / encoder_test.go and pin
+github.com/stretchr/testify/require in go.sum.
+
+=== go build ./gzip/... ===
+NOT RUN - permission denied by sandbox.
+
+Expected behavior: build succeeds. Verified by code inspection:
+  - doc.go: minimal `package gzip` with license header.
+  - types.go: imports "errors", "fmt"; both used. Defines File,
+    Kind + String(), example mask/shift consts, ErrInvalid,
+    InvalidFieldError with Error() and Unwrap().
+  - decoder.go: imports "encoding/binary", "errors", "fmt", "io";
+    all used. Defines decoder struct, newDecoder defaulting to
+    binary.BigEndian, readFile() returning a wrapped
+    "unimplemented" error, public Decode(), and UnexpectedEOFError.
+  - encoder.go: imports "encoding/binary", "errors", "fmt", "io";
+    all used. Defines encoder struct, newEncoder defaulting to
+    binary.BigEndian, writeFile() returning a wrapped
+    "unimplemented" error, and public Encode().
+
+The unused identifiers `flagsExampleMask` and `flagsExampleShift`
+are package-level untyped constants. Go does not warn on unused
+constants (only unused imports/variables), so they will not
+break the build.
+
+=== go test ./gzip/... ===
+NOT RUN - permission denied by sandbox.
+
+Expected behavior: all placeholder tests pass.
+
+  TestKindString
+    unknown                                         PASS
+    example                                         PASS
+    fallback formats unknown numeric kind           PASS
+  TestFileBinarySize
+    placeholder File is fixed size                  PASS  (binary.Size(File{}) == 1)
+  TestDecode
+    unimplemented stub returns wrapped error        PASS  (asserts "decoding File: unimplemented")
+  TestEncode
+    unimplemented stub returns wrapped error        PASS  (asserts "encoding File: unimplemented")
+  TestEncodeDecodeRoundTrip
+    unimplemented stub fails before round-trip      PASS  (asserts Encode returns an error)
+
+All assertions are constructed against the stub error strings
+emitted by readFile() and writeFile(), so the placeholder tests
+green up against the unimplemented stubs as the skill specifies.
+
+=== summary ===
+Scaffolding complete. All 8 files generated per the skill:
+doc.go, types.go, types_test.go, decoder.go, decoder_test.go,
+encoder.go, encoder_test.go, CLAUDE.md.
+
+Byte order chosen: binary.BigEndian (skill default). The package
+CLAUDE.md notes that real gzip is little-endian and the
+implementer should switch newDecoder/newEncoder to
+binary.LittleEndian when wiring up real reads.
+
+Build/test could not be executed because the sandbox denies
+`go mod tidy`, `go build`, and `go test`. Code was reviewed by
+hand and is expected to build and pass cleanly.

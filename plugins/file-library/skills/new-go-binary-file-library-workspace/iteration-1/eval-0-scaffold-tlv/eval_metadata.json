@@ -1,0 +1,23 @@
+{
+  "eval_id": 0,
+  "eval_name": "scaffold-tlv",
+  "prompt": "I'm starting a small Go library for parsing simple TLV (type-length-value) records. Scaffold a new package called `tlv` so I can start filling in the format details.",
+  "assertions": [
+    {"id": "files-doc-go", "text": "tlv/doc.go exists"},
+    {"id": "files-types-go", "text": "tlv/types.go exists"},
+    {"id": "files-types-test", "text": "tlv/types_test.go exists"},
+    {"id": "files-decoder-go", "text": "tlv/decoder.go exists"},
+    {"id": "files-decoder-test", "text": "tlv/decoder_test.go exists"},
+    {"id": "files-encoder-go", "text": "tlv/encoder.go exists"},
+    {"id": "files-encoder-test", "text": "tlv/encoder_test.go exists"},
+    {"id": "files-claude-md", "text": "tlv/CLAUDE.md exists"},
+    {"id": "go-build-passes", "text": "go build ./tlv/... exits cleanly"},
+    {"id": "go-test-passes", "text": "go test ./tlv/... exits cleanly with all tests passing"},
+    {"id": "decode-signature", "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)"},
+    {"id": "encode-signature", "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)"},
+    {"id": "byte-order-field", "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field (not scattered hardcoded calls)"},
+    {"id": "tests-parallel", "text": "test files call t.Parallel() at both function and subtest level"},
+    {"id": "tests-testify-require", "text": "test files import github.com/stretchr/testify/require"},
+    {"id": "claude-md-content", "text": "tlv/CLAUDE.md documents byte order, error-wrapping convention, and testing style"}
+  ]
+}

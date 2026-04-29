@@ -1,0 +1,106 @@
+{
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "total": 16,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "tlv/doc.go exists",
+      "passed": true,
+      "evidence": "exists: doc.go",
+      "id": "files-doc-go"
+    },
+    {
+      "text": "tlv/types.go exists",
+      "passed": true,
+      "evidence": "exists: types.go",
+      "id": "files-types-go"
+    },
+    {
+      "text": "tlv/types_test.go exists",
+      "passed": true,
+      "evidence": "exists: types_test.go",
+      "id": "files-types-test"
+    },
+    {
+      "text": "tlv/decoder.go exists",
+      "passed": true,
+      "evidence": "exists: decoder.go",
+      "id": "files-decoder-go"
+    },
+    {
+      "text": "tlv/decoder_test.go exists",
+      "passed": true,
+      "evidence": "exists: decoder_test.go",
+      "id": "files-decoder-test"
+    },
+    {
+      "text": "tlv/encoder.go exists",
+      "passed": true,
+      "evidence": "exists: encoder.go",
+      "id": "files-encoder-go"
+    },
+    {
+      "text": "tlv/encoder_test.go exists",
+      "passed": true,
+      "evidence": "exists: encoder_test.go",
+      "id": "files-encoder-test"
+    },
+    {
+      "text": "tlv/CLAUDE.md exists",
+      "passed": true,
+      "evidence": "exists: CLAUDE.md",
+      "id": "files-claude-md"
+    },
+    {
+      "text": "go build ./tlv/... exits cleanly",
+      "passed": true,
+      "evidence": "BUILD_RC=0",
+      "id": "go-build-passes"
+    },
+    {
+      "text": "go test ./tlv/... exits cleanly with all tests passing",
+      "passed": true,
+      "evidence": "TEST_RC=0",
+      "id": "go-test-passes"
+    },
+    {
+      "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)",
+      "passed": true,
+      "evidence": "67: func Decode(r io.Reader) (*File, error) {",
+      "id": "decode-signature"
+    },
+    {
+      "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)",
+      "passed": true,
+      "evidence": "38: func Encode(w io.Writer, f *File) error {",
+      "id": "encode-signature"
+    },
+    {
+      "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field (not scattered hardcoded calls)",
+      "passed": true,
+      "evidence": "decoder: 42: byteOrder binary.ByteOrder | encoder: 17: byteOrder binary.ByteOrder",
+      "id": "byte-order-field"
+    },
+    {
+      "text": "test files call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "types_test.go:4, decoder_test.go:2, encoder_test.go:4",
+      "id": "tests-parallel"
+    },
+    {
+      "text": "test files import github.com/stretchr/testify/require",
+      "passed": true,
+      "evidence": "decoder_test.go:10: \"github.com/stretchr/testify/require\"; encoder_test.go:10: \"github.com/stretchr/testify/require\"; types_test.go:10: \"github.com/stretchr/testify/require\"",
+      "id": "tests-testify-require"
+    },
+    {
+      "text": "# tlv\n\na go binary file library for the tlv (type-length-value) wire format.\n\nthis package follows the **types / decoder / encoder** pipeline pattern\ndocumented in the repo-level `references/architecture.md`. each component owns\none concern and can be tested in isolation.\n\n## pipeline\n\n```\nbytes  \u2500\u2500\u2500 decode \u2500\u25ba  *file (typed ast)  \u2500\u2500\u2500 encode \u2500\u25ba  bytes\n              \u2502              \u2502                  \u2502\n           decoder.go     types.go           encoder.go\n```\n\n- `types.go` \u2014 go translation of the wire format. structs, enums (with\n  `string()`), bit-field mask/shift constants, and error types live here.\n- `decoder.go` \u2014 pull-based reader. owns the `io.reader` and the byte order;\n  exposes `decode(r) (*file, error)` plus internal `readx` methods.\n- `encoder.go` \u2014 the decoder's inverse. owns the `io.writer` and the byte\n  order; exposes `encode(w, f) error` plus internal `writex` methods.\n\n## byte order\n\nthis package uses `binary.bigendian`. most network and container formats are\nbig-endian, and that's the scaffold's default. if the real tlv spec turns out\nto be little-endian, change the constant in **both** `newdecoder` and\n`newencoder` \u2014 they must agree, otherwise round-trip tests will fail in\nconfusing ways.\n\n## error wrapping convention\n\nevery non-trivial error wraps with structural context so a hex-dump debugger\ncan find the offending field:\n\n- decoder: `fmt.errorf(\"decoding %s: %w\", structname, err)`\n- encoder: `fmt.errorf(\"encoding %s: %w\", structname, err)`\n\nsentinel errors (`errinvalid`) are used for stable, comparable conditions.\nstruct error types (`invalidfielderror`, `unexpectedeoferror`) are used when\nfield-level context matters; both implement `error()` and `unwrap()`.\n\ndistinguish \"the bytes ran out unexpectedly\" (`io.errunexpectedeof` /\n`unexpectedeoferror`) from \"the bytes were fine but the value was illegal\"\n(`errinvalid` / `invalidfielderror`).\n\n## testing style\n\n- hex byte literals for binary inputs and outputs:\n  `[]byte{0x00, 0x01, 0xff}`. comment each block with the field it represents.\n- `bytes.newreader` for decoder inputs, `bytes.buffer` for encoder outputs.\n- table-driven tests with a `testcases` slice and `t.run(tc.name, ...)`.\n- `t.parallel()` at **both** the test function and each subtest. the\n  decoder/encoder methods are pure; parallel tests catch hidden global state.\n- assertions via `github.com/stretchr/testify/require` (not `assert`) \u2014 a\n  binary test that keeps running after the first failure produces noise, not\n  signal.\n- a round-trip test for **every** encoder method: `encode \u2192 decode \u2192\n  require.equal` against the original struct. this is the cheapest end-to-end\n  correctness check available.\n\n## what to implement next\n\n1. fill in `spec.md` for the real tlv layout you're targeting.\n2. replace `file`'s placeholder field with the real top-level structure.\n3. replace the example `kind` enum and bit-field constants with the real\n   wire-format values.\n4. implement `readfile` and `writefile` (and any per-substructure `readx` /\n   `writex` helpers) following the patterns in `references/architecture.md`.\n5. run the `implement-binary-file-library` agent to drive the test-first\n   implementation, or fill in tests + implementation by hand.\n",
+      "passed": true,
+      "evidence": "byte order=True, error wrapping=True, testing=True",
+      "id": "claude-md-content"
+    }
+  ]
+}
