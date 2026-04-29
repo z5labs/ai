@@ -7,7 +7,7 @@ argument-hint: "[connection-string]"
 
 Generate a project-level skill at `./.claude/skills/pg-<dbname>/` that captures the schema of the Postgres database identified by `$ARGUMENTS[0]`. The generated skill is meant for an analyst or developer doing ad-hoc reads, one-off DML, and manual exploration — so its job is to give the model enough schema context to write correct SQL without re-introspecting on every invocation.
 
-The connection string is the first argument. If it is missing, ask the user for it. The connection string identifies host/port/database/user, but **not the password** — the password is read from the `PGPASSWORD` environment variable. If `PGPASSWORD` is unset, prompt the user for it and export it for the duration of the run; do not write it to disk.
+The connection string is the first argument. If it is missing, ask the user for it. The connection string identifies host/port/database/user, but **not the password** — the password is read from the `PGPASSWORD` environment variable for the introspection run. If `PGPASSWORD` is unset, prompt the user for it and export it for the duration of the run; do not write it to disk. The generated `query.sh` does **not** retain the password — at runtime users supply credentials (host/port/user/password) via a `.env` file (see Step 2).
 
 ## Why this skill exists
 
@@ -65,13 +65,37 @@ This skill knows the schema of the `<dbname>` Postgres database and provides a w
 
 ## Running queries
 
-Use `scripts/query.sh` to execute SQL. It expects `PGPASSWORD` in the environment.
+Use `scripts/query.sh` to execute SQL. It loads connection details (host, port, user, password) from a `.env` file at runtime. The dbname is hardcoded — this skill is schema-specific by design, so swapping `.env` files swaps the *environment*, not the database.
 
-    PGPASSWORD=... bash .claude/skills/pg-<dbname>/scripts/query.sh "SELECT ..."
+### One-time setup
+
+Copy the example env file and fill in real credentials for whichever environment you connect to:
+
+    cp .claude/skills/pg-<dbname>/scripts/.env.example .env.dev
+    # edit .env.dev — set PGHOST, PGPORT, PGUSER, PGPASSWORD
+
+Repeat for additional environments (`.env.staging`, `.env.prod`, ...). Add the chosen filename(s) to `.gitignore` so secrets don't get committed:
+
+    /.env
+    /.env.*
+
+### Per-invocation usage
+
+`query.sh` resolves the `.env` file in this order, first match wins:
+
+1. `--env-file PATH` CLI flag
+2. `PG_ENV_FILE` environment variable
+3. `./.env` in the current working directory
+
+If `--env-file` or `PG_ENV_FILE` is set, it must point to an existing file or the script exits with an error. If neither is set and `./.env` does not exist, the generation-time defaults are used.
+
+    bash .claude/skills/pg-<dbname>/scripts/query.sh "SELECT ..."
+
+    bash .claude/skills/pg-<dbname>/scripts/query.sh --env-file .env.prod "SELECT ..."
 
 For multi-statement scripts, pipe via stdin:
 
-    PGPASSWORD=... bash .claude/skills/pg-<dbname>/scripts/query.sh < script.sql
+    PG_ENV_FILE=.env.staging bash .claude/skills/pg-<dbname>/scripts/query.sh < script.sql
 
 ## Schema overview
 
@@ -102,12 +126,98 @@ Before writing a non-trivial query, read the relevant reference file. The schema
 
 ### `scripts/query.sh`
 
-A thin wrapper. Bake the non-secret connection bits in; password comes from env.
+A thin wrapper. The dbname is hardcoded; host/port/user/password come from a `.env` file at runtime, with the generation-time values baked in only as fallbacks.
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-: "${PGPASSWORD:?PGPASSWORD must be exported}"
+
+# Resolution order for the .env file, first match wins:
+#   1. --env-file PATH CLI flag
+#   2. PG_ENV_FILE environment variable
+#   3. ./.env in the current working directory
+# If --env-file or PG_ENV_FILE is set, the path must exist or the script
+# exits with an error. If neither is set and ./.env doesn't exist, the
+# baked-in defaults below are used.
+# See .env.example for the keys this skill reads.
+
+ENV_FILE=""
+SQL_ARGS=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --env-file)
+      if [ $# -lt 2 ] || [ -z "${2:-}" ] || [[ "${2:-}" == -* ]]; then
+        echo "error: --env-file requires a non-empty PATH argument" >&2
+        exit 1
+      fi
+      ENV_FILE="$2"
+      shift 2
+      ;;
+    --env-file=*)
+      ENV_FILE="${1#--env-file=}"
+      if [ -z "$ENV_FILE" ]; then
+        echo "error: --env-file requires a non-empty PATH argument" >&2
+        exit 1
+      fi
+      shift
+      ;;
+    --)
+      shift
+      while [ $# -gt 0 ]; do SQL_ARGS+=("$1"); shift; done
+      ;;
+    *)
+      SQL_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$ENV_FILE" ]; then
+  ENV_FILE="${PG_ENV_FILE:-}"
+fi
+if [ -z "$ENV_FILE" ] && [ -f ./.env ]; then
+  ENV_FILE="./.env"
+fi
+
+# Parse KEY=VALUE lines from $ENV_FILE without sourcing it. Sourcing would
+# execute arbitrary shell, which is unsafe given that ./.env is loaded
+# automatically when present.
+load_env_file() {
+  local file="$1" line key value
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%$'\r'}"
+    if [[ "$line" =~ ^[[:space:]]*(#.*)?$ ]]; then continue; fi
+    if [[ "$line" =~ ^[[:space:]]*(export[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+      key="${BASH_REMATCH[2]}"
+      value="${BASH_REMATCH[3]}"
+      if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
+        value="${BASH_REMATCH[1]}"
+      fi
+      export "$key=$value"
+    else
+      echo "invalid env assignment in $file: $line" >&2
+      exit 1
+    fi
+  done < "$file"
+}
+
+if [ -n "$ENV_FILE" ]; then
+  if [ ! -f "$ENV_FILE" ]; then
+    echo "env file not found: $ENV_FILE" >&2
+    exit 1
+  fi
+  load_env_file "$ENV_FILE"
+fi
+
+# Fall back to generation-time values for any key the .env didn't supply.
+: "${PGHOST:=<host>}"
+: "${PGPORT:=<port>}"
+: "${PGUSER:=<user>}"
+: "${PGPASSWORD:=}"
+# PGDATABASE is hardcoded — this skill is schema-specific by design.
+PGDATABASE="<dbname>"
+export PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE
+
 if [ -n "${PG_CONTAINER_RUNTIME:-}" ]; then
   RUNTIME="$PG_CONTAINER_RUNTIME"
 elif command -v docker >/dev/null 2>&1; then
@@ -119,17 +229,43 @@ else
   exit 1
 fi
 PSQL_IMAGE="${PSQL_IMAGE:-docker.io/alpine/psql:17.7}"
-CONN="<connection-string-without-password>"
-if [ $# -eq 0 ]; then
-  exec "$RUNTIME" run --rm -i -e PGPASSWORD "$PSQL_IMAGE" "$CONN"
+
+read -r -a EXTRA_ARGS <<< "${PG_DOCKER_ARGS:-}"
+
+if [ ${#SQL_ARGS[@]} -eq 0 ]; then
+  exec "$RUNTIME" run --rm -i \
+    -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGDATABASE \
+    "${EXTRA_ARGS[@]}" "$PSQL_IMAGE"
 else
-  exec "$RUNTIME" run --rm -i -e PGPASSWORD "$PSQL_IMAGE" "$CONN" -c "$1"
+  # Join all positional args with spaces so unquoted SQL like
+  # `query.sh SELECT 1` is preserved instead of silently truncated to "SELECT".
+  exec "$RUNTIME" run --rm -i \
+    -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGDATABASE \
+    "${EXTRA_ARGS[@]}" "$PSQL_IMAGE" -c "${SQL_ARGS[*]}"
 fi
 ```
 
+Substitute `<host>`, `<port>`, `<user>`, and `<dbname>` with the values parsed from the user's connection string at generation time. If the user-supplied connection string had a password embedded (`postgresql://user:pw@host/db`), discard it — the password belongs in the user's `.env` at runtime, not in a file generated alongside the skill. `chmod +x` the script after writing.
+
 Keep the `PSQL_IMAGE` default in `query.sh` aligned with the default in `introspect.sh` so the generated skill works out of the box without the env var set.
 
-If the user-supplied connection string had a password embedded (`postgresql://user:pw@host/db`), strip it before substituting into `CONN` — passwords belong in `PGPASSWORD`, not in a file the user might commit. `chmod +x` the script after writing.
+### `scripts/.env.example`
+
+A commented template the user copies to a real `.env` (or per-environment `.env.dev` / `.env.prod`). Pre-fill the comments with the generation-time values so users see what the defaults are without having to inspect `query.sh`:
+
+```
+# Override per environment. Copy this file to .env (or .env.dev / .env.prod),
+# uncomment the keys you want to override, and add the chosen filename(s) to
+# .gitignore — these contain secrets.
+#
+# PGDATABASE is intentionally not listed: the dbname is hardcoded in query.sh
+# and any value set here is overwritten at runtime.
+
+# PGHOST=<host>
+# PGPORT=<port>
+# PGUSER=<user>
+# PGPASSWORD=
+```
 
 ### `references/tables.md`
 
@@ -194,15 +330,17 @@ Only create this file if `enums.tsv` is non-empty.
 After writing files, check:
 - `.claude/skills/pg-<dbname>/SKILL.md` exists and is non-empty
 - `.claude/skills/pg-<dbname>/scripts/query.sh` is executable
+- `.claude/skills/pg-<dbname>/scripts/.env.example` exists
 - At least `references/tables.md` and `references/relationships.md` exist
+- `query.sh` has no unsubstituted `<...>` placeholders (the generator must have filled in `<host>`, `<port>`, `<user>`, and `<dbname>`)
 
-Run a smoke test: `bash .claude/skills/pg-<dbname>/scripts/query.sh "SELECT 1"`. If this fails, the generated skill is broken — surface the error to the user instead of claiming success.
+Run a smoke test: `bash .claude/skills/pg-<dbname>/scripts/query.sh "SELECT 1"`. `PGPASSWORD` is still exported from the introspection step, so the script picks it up from the environment without needing a `.env` file. If this fails, the generated skill is broken — surface the error to the user instead of claiming success.
 
 ## Step 4: Report
 
 Tell the user:
 - The path the skill was written to
 - The number of tables, views, and enums captured
-- That `PGPASSWORD` must be exported in any session that uses the generated skill
+- To copy `scripts/.env.example` to `.env` (or per-environment `.env.dev` / `.env.prod`), fill in real credentials, and add the chosen filename(s) to `.gitignore`
 - If `PSQL_IMAGE` was set during generation (private registry / pinned version), that the same value must be exported in any session that uses the generated skill
 - That re-running this generator will overwrite the skill in place when the schema drifts
