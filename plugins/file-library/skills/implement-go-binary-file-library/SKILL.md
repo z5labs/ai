@@ -24,8 +24,6 @@ grep -n '^## ' <package>/SPEC.md       # section headings + line numbers
 wc -l <package>/SPEC.md                # last-line marker for the final section
 ```
 
-If `SPEC.md` is small (under ~250 lines), the partitioning savings are negligible — read it whole and pass it to all subagents. The slicing form pays off when the spec runs into the thousands of lines and would otherwise displace orchestration context.
-
 Build a `(section, line_start, line_end)` table from that output. Each section ends one line before the next `## ` heading; the final section ends at `wc -l`. Map sections to phases:
 
 | Phase   | Sections to slice                                                                                          |
