@@ -27,12 +27,12 @@ Ask the user for:
 
 ### Phase 1 — normalize the source to a local scratch file
 
-Produce a single line-addressable local file (`_spec.txt` or `_spec.html`) so the rest of the pipeline is source-agnostic. **Prefer a dedicated skill if available; only fall back to raw tools when no skill exists.**
+Produce a single line-addressable local file (`_spec.txt` or `_spec.html`) so the rest of the pipeline is source-agnostic. **If a dedicated extraction skill (PDF, docx) is installed in the runtime environment, prefer it; this skill does not bundle one. Otherwise use the fallback tool — every row below has one.**
 
-| Source type | Prefer (skill) | Fall back to (tool) |
+| Source type | Prefer (if installed) | Fall back to (tool) |
 |---|---|---|
-| PDF (URL or local) | `pdf` skill — extract text, save to `_spec.txt` | `pdftotext spec.pdf _spec.txt`; otherwise `Read` with `pages:` |
-| `.docx` | `docx` skill — extract text, save to `_spec.txt` | — |
+| PDF (URL or local) | a PDF-extraction skill if available (e.g. an `example-skills:pdf`-style skill bundled with some Claude Code installs) — extract text, save to `_spec.txt` | `pdftotext spec.pdf _spec.txt`; otherwise `Read` with `pages:` |
+| `.docx` | a docx-extraction skill if available — extract text, save to `_spec.txt` | `pandoc -f docx -t plain spec.docx > _spec.txt`; if pandoc is unavailable, ask the user to convert to `.txt` or `.pdf` |
 | RFC at `rfc-editor.org/rfc/rfcNNNN` | — | `curl -L https://www.rfc-editor.org/rfc/rfcNNNN.txt > _spec.txt` |
 | Generic HTML doc page | — | `curl -L <url> > _spec.html` (optionally `pandoc -f html -t markdown` if available) |
 | Local `.txt` / `.md` / `.html` | — | use as-is |
@@ -56,19 +56,26 @@ Choose by *scratch file size and grammar surface*, not source type. Counts below
 | Tier | When | How to extract |
 |---|---|---|
 | 1 | ≤ ~15K words and ≤ ~30 productions | Read the whole scratch file inline, write `SPEC.md` directly. No subagents. |
-| 2 | medium spec, ≤ ~100 productions | One subagent per top-level `##` section of `SPEC.md` (Lexical Elements, Structure, Semantics, Examples). Each writes a numbered scratch file (`_spec_part_NN.md`); orchestrator concatenates without reading. Use `references/extraction-subagent.md`. |
+| 2 | medium spec, ≤ ~100 productions | One subagent per top-level `##` section of `SPEC.md` — all six: Overview, Lexical Elements, Structure, Semantics, Examples, Appendix. Each writes a numbered scratch file (`_spec_part_NN.md`, ordinals 01–06); the orchestrator separately writes `_spec_part_00.md` containing the H1 and concatenates without reading. Use `references/extraction-subagent.md`. |
 | 3 | large or sprawling spec (HTML5, SQL, full LaTeX) | Two-pass. First pass: index subagents skim each TOC entry into a one-line summary in `_sections_index.md`. Second pass: extraction subagents in waves, each owning a slice of the TOC, writing their assigned `_spec_part_NN.md` files. Orchestrator concatenates between waves and never reads section bodies. |
 
 ### Phase 4 — extract
 
 **Tier 1.** Read `_spec.{txt,html}` and `references/output-format.md`, write `SPEC.md` directly.
 
-**Tier 2.** Dispatch one subagent per top-level section using `references/extraction-subagent.md`. Each subagent:
+**Tier 2.** First, the orchestrator writes `_spec_part_00.md` containing exactly the H1 line followed by a blank line:
+
+```
+# <Format Name> Specification Reference
+
+```
+
+No subagent ever writes the H1 — that ordinal (00) is reserved for the orchestrator. Then dispatch one subagent per top-level section using `references/extraction-subagent.md`. Each subagent:
 - Reads only its assigned line range from the scratch file
 - Reads `references/output-format.md` to learn the section template
-- Writes its output to `_spec_part_NN.md` in numeric order matching the final SPEC.md section order
+- Writes its output to `_spec_part_NN.md`, where NN is the section's ordinal: `01=Overview, 02=Lexical Elements, 03=Structure, 04=Semantics, 05=Examples, 06=Appendix`
 
-After all subagents complete, the orchestrator concatenates without loading content:
+After all subagents complete, the orchestrator concatenates without loading content (lexicographic sort puts `00` first):
 
 ```bash
 cat _spec_part_*.md > SPEC.md
@@ -76,7 +83,7 @@ cat _spec_part_*.md > SPEC.md
 
 Subagents are responsible for following the established conventions you pass them (terminology, grammar notation). The orchestrator does **not** read the parts to reconcile — that would defeat the context budget. If the subagent prompt is right, the parts are already consistent.
 
-**Tier 3.** Wave-dispatch (parallel within a wave, sequential between waves). The first wave is index-only — each subagent skims its TOC slice and appends one-line summaries to `_sections_index.md`. The orchestrator uses that index to drive subsequent extraction waves and to populate the `## Examples` cross-reference list, never loading the actual section bodies. Between waves, list the `_spec_part_*.md` files to verify each wave's slice landed; re-dispatch only the missing parts.
+**Tier 3.** Same H1 step first: the orchestrator writes `_spec_part_00.md` with the H1 before any extraction wave begins. Then wave-dispatch (parallel within a wave, sequential between waves). The first wave is index-only — each subagent skims its TOC slice and appends one-line summaries to `_sections_index.md`. The orchestrator uses that index to drive subsequent extraction waves and to populate the `## Examples` cross-reference list, never loading the actual section bodies. Between waves, list the `_spec_part_*.md` files to verify each wave's slice landed; re-dispatch only the missing parts.
 
 ### Phase 5 — verify and clean up
 

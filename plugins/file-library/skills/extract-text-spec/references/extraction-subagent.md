@@ -22,7 +22,9 @@ INPUT
 OUTPUT
 - Target file: <absolute path>/_spec_part_NN.md
   (NN is the 1-based ordinal of this section in the final SPEC.md, zero-padded
-  to two digits — e.g. 01 = Overview, 02 = Lexical Elements, etc.)
+  to two digits: 01 = Overview, 02 = Lexical Elements, 03 = Structure,
+  04 = Semantics, 05 = Examples, 06 = Appendix. Ordinal 00 is reserved for
+  the orchestrator-owned H1 file — never write to it.)
 - Schema: follow the matching `##` section template in
   plugins/file-library/skills/extract-text-spec/references/output-format.md.
   Read that file before extracting. Begin your output file with the literal
@@ -48,7 +50,8 @@ INSTRUCTIONS
 5. If the spec is unclear or contradictory anywhere in your range, add a
    `> **Ambiguity:**` callout. Do not invent values or rules.
 6. Do not write a `# <Format Name> Specification Reference` heading — the
-   orchestrator's Overview part owns the H1.
+   orchestrator writes a separate `_spec_part_00.md` for the H1 before
+   dispatching subagents.
 7. Reply with one line: "wrote _spec_part_<NN>.md (<bytes> bytes,
    <feature_count> <features>)" where features are token classes / productions
    / examples appropriate to your section.
