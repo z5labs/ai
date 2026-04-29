@@ -1,0 +1,94 @@
+{
+  "eval_id": 0,
+  "eval_name": "gzip-rfc-1952-tier-1",
+  "run_dir": "iteration-2/eval-0-gzip-rfc-1952-tier-1/with_skill/run-1",
+  "root_used_for_grading": "iteration-2/eval-0-gzip-rfc-1952-tier-1/with_skill/run-1/outputs/gzip-spec",
+  "expectations": [
+    {
+      "text": "SPEC.md exists at the root of the output directory",
+      "passed": true,
+      "evidence": "SPEC.md present at iteration-2/eval-0-gzip-rfc-1952-tier-1/with_skill/run-1/outputs/gzip-spec/SPEC.md"
+    },
+    {
+      "text": "structures/ directory exists and contains at least 2 .md files",
+      "passed": true,
+      "evidence": "structures/ has 9 .md files (need \u22652)"
+    },
+    {
+      "text": "examples/ directory exists and contains at least 3 .md files (minimal/typical/complex or equivalent)",
+      "passed": true,
+      "evidence": "examples/ has 3 .md files (need \u22653)"
+    },
+    {
+      "text": "every .md file produced is non-empty (at least 200 bytes)",
+      "passed": true,
+      "evidence": "all .md files \u2265 200 bytes"
+    },
+    {
+      "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _structures_index.md) in the output directory",
+      "passed": true,
+      "evidence": "no scratch files in output tree"
+    },
+    {
+      "text": "SPEC.md contains a 'Conventions' section that states byte order explicitly",
+      "passed": true,
+      "evidence": "SPEC.md has a Conventions section that mentions byte order"
+    },
+    {
+      "text": "SPEC.md identifies gzip as little-endian (or LSB-first / Intel byte order)",
+      "passed": true,
+      "evidence": "SPEC.md byte-order term: little-endian"
+    },
+    {
+      "text": "SPEC.md contains a 'Structures index' section linking to each structures/<name>.md file",
+      "passed": true,
+      "evidence": "index section: True, structures/*.md links present: True"
+    },
+    {
+      "text": "every structures/<name>.md file contains a markdown field table with Offset / Size / Type / Name / Description columns",
+      "passed": true,
+      "evidence": "all 9 structures have a canonical field table or declared variant"
+    },
+    {
+      "text": "field tables use Go-friendly types (uint8, uint16, uint32, [N]byte, []byte)",
+      "passed": true,
+      "evidence": "all 9 structures use Go-friendly types"
+    },
+    {
+      "text": "the FLG byte's bit fields are documented (FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT) with bit numbers",
+      "passed": true,
+      "evidence": "FLG bit names missing: none"
+    },
+    {
+      "text": "the gzip magic identifier (ID1=0x1f, ID2=0x8b) is captured",
+      "passed": true,
+      "evidence": "ID1=0x1f present: True, ID2=0x8b present: True"
+    },
+    {
+      "text": "a structure file describes the trailer with CRC32 (4 bytes) and ISIZE (4 bytes)",
+      "passed": true,
+      "evidence": "trailer fields found in member-header.md"
+    },
+    {
+      "text": "an encoding table for OS values exists (or OS values are documented inline with at least 5 entries)",
+      "passed": true,
+      "evidence": "OS encoding table at os-values.md"
+    },
+    {
+      "text": "FEXTRA, FNAME, FCOMMENT, FHCRC are documented as conditional/optional, with their presence tied to FLG bits",
+      "passed": true,
+      "evidence": "optional fields documented: True, conditional on FLG: True"
+    },
+    {
+      "text": "the compressed-data block (DEFLATE format) is not extracted as a structure (user explicitly excluded it)",
+      "passed": true,
+      "evidence": "no deflate structure files in structures/ \u2014 scope respected"
+    }
+  ],
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "total": 16,
+    "pass_rate": 1.0
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "eval_id": 1,
+  "eval_name": "dns-rfc-1035-tier-2",
+  "run_dir": "iteration-2/eval-1-dns-rfc-1035-tier-2/without_skill/run-1",
+  "root_used_for_grading": "iteration-2/eval-1-dns-rfc-1035-tier-2/without_skill/run-1/outputs/dns-spec",
+  "expectations": [
+    {
+      "text": "SPEC.md exists at the root of the output directory",
+      "passed": false,
+      "evidence": "SPEC.md missing at iteration-2/eval-1-dns-rfc-1035-tier-2/without_skill/run-1/outputs/dns-spec/SPEC.md"
+    },
+    {
+      "text": "structures/ directory exists and contains at least 3 .md files (header, question, resource-record at minimum)",
+      "passed": false,
+      "evidence": "structures/ has 0 .md files (need \u22652)"
+    },
+    {
+      "text": "encoding-tables/ directory exists and contains at least 4 .md files",
+      "passed": false,
+      "evidence": "encoding-tables/ has 0 .md files (need \u22654)"
+    },
+    {
+      "text": "examples/ directory exists and contains at least 3 .md files",
+      "passed": false,
+      "evidence": "examples/ has 0 .md files (need \u22653)"
+    },
+    {
+      "text": "every .md file produced is non-empty (at least 200 bytes)",
+      "passed": true,
+      "evidence": "all .md files \u2265 200 bytes"
+    },
+    {
+      "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _structures_index.md) in the output directory",
+      "passed": true,
+      "evidence": "no scratch files in output tree"
+    },
+    {
+      "text": "SPEC.md contains a 'Conventions' section that states byte order explicitly",
+      "passed": false,
+      "evidence": "SPEC.md missing a Conventions section that mentions byte order"
+    },
+    {
+      "text": "SPEC.md identifies DNS as network byte order / big-endian",
+      "passed": false,
+      "evidence": "SPEC.md byte-order term: NOT FOUND"
+    },
+    {
+      "text": "SPEC.md contains a 'Structures index' section linking to each structures/<name>.md file",
+      "passed": false,
+      "evidence": "index section: False, structures/*.md links present: False"
+    },
+    {
+      "text": "every structures/<name>.md file contains a markdown field table with Offset / Size / Type / Name / Description columns",
+      "passed": false,
+      "evidence": "no structures/*.md files"
+    },
+    {
+      "text": "field tables use Go-friendly types (uint8, uint16, uint32, [N]byte, []byte)",
+      "passed": false,
+      "evidence": "no structures/*.md files"
+    },
+    {
+      "text": "the DNS header structure documents 12 bytes: ID (2), Flags (2), QDCOUNT (2), ANCOUNT (2), NSCOUNT (2), ARCOUNT (2)",
+      "passed": false,
+      "evidence": "no structure file with 'header' in name"
+    },
+    {
+      "text": "the DNS header's flags bytes have a bit-fields section covering QR, Opcode (4 bits), AA, TC, RD, RA, Z, RCODE \u2014 with correct bit positions",
+      "passed": false,
+      "evidence": "no structure file with 'header' in name"
+    },
+    {
+      "text": "domain name encoding documents both the length-prefixed label format and the compression pointer format (two high bits = 11, 14-bit offset)",
+      "passed": true,
+      "evidence": "label format: True, compression pointer: True"
+    },
+    {
+      "text": "encoding tables exist for opcodes, RCODEs (response codes), TYPE / QTYPE values, and CLASS / QCLASS values",
+      "passed": false,
+      "evidence": "encoding tables: []; missing categories: ['opcode', 'rcode', 'type', 'class']"
+    },
+    {
+      "text": "the resource record structure documents NAME, TYPE, CLASS, TTL, RDLENGTH, RDATA fields",
+      "passed": false,
+      "evidence": "no resource-record structure file found"
+    },
+    {
+      "text": "the master file format (zone file syntax) is NOT extracted as part of the binary spec \u2014 user explicitly excluded it",
+      "passed": true,
+      "evidence": "no zone-file structures \u2014 scope respected"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 13,
+    "total": 17,
+    "pass_rate": 0.2353
+  }
+}

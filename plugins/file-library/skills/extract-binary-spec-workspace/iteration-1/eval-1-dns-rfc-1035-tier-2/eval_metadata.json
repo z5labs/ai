@@ -1,0 +1,24 @@
+{
+  "eval_id": 1,
+  "eval_name": "dns-rfc-1035-tier-2",
+  "prompt": "Extract the DNS message binary format from RFC 1035 (https://www.rfc-editor.org/rfc/rfc1035.txt) into ./dns-spec/ so I can implement a Go DNS message encoder/decoder. I'm focused on section 4 (Messages): the 12-byte header, the question section, and resource records — including the bit-packed flags in the header and label compression in domain names. Skip the master file format (zone files) and the operational/registry stuff in earlier sections.",
+  "assertions": [
+    {"id": "layout-spec-md-exists", "text": "SPEC.md exists at the root of the output directory"},
+    {"id": "layout-structures-dir", "text": "structures/ directory exists and contains at least 3 .md files (header, question, resource-record at minimum)"},
+    {"id": "layout-encoding-tables-dir", "text": "encoding-tables/ directory exists and contains at least 4 .md files"},
+    {"id": "layout-examples-dir", "text": "examples/ directory exists and contains at least 3 .md files"},
+    {"id": "layout-no-empty-files", "text": "every .md file produced is non-empty (at least 200 bytes)"},
+    {"id": "layout-no-scratch-leftovers", "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _structures_index.md) in the output directory"},
+    {"id": "spec-conventions-section", "text": "SPEC.md contains a 'Conventions' section that states byte order explicitly"},
+    {"id": "spec-byte-order-network", "text": "SPEC.md identifies DNS as network byte order / big-endian"},
+    {"id": "spec-structures-index", "text": "SPEC.md contains a 'Structures index' section linking to each structures/<name>.md file"},
+    {"id": "structures-have-field-table", "text": "every structures/<name>.md file contains a markdown field table with Offset / Size / Type / Name / Description columns"},
+    {"id": "structures-go-types", "text": "field tables use Go-friendly types (uint8, uint16, uint32, [N]byte, []byte)"},
+    {"id": "dns-header-12-bytes", "text": "the DNS header structure documents 12 bytes: ID (2), Flags (2), QDCOUNT (2), ANCOUNT (2), NSCOUNT (2), ARCOUNT (2)"},
+    {"id": "dns-header-bit-fields", "text": "the DNS header's flags bytes have a bit-fields section covering QR, Opcode (4 bits), AA, TC, RD, RA, Z, RCODE — with correct bit positions"},
+    {"id": "dns-domain-name-compression", "text": "domain name encoding documents both the length-prefixed label format and the compression pointer format (two high bits = 11, 14-bit offset)"},
+    {"id": "dns-encoding-tables-present", "text": "encoding tables exist for opcodes, RCODEs (response codes), TYPE / QTYPE values, and CLASS / QCLASS values"},
+    {"id": "dns-rr-format", "text": "the resource record structure documents NAME, TYPE, CLASS, TTL, RDLENGTH, RDATA fields"},
+    {"id": "dns-out-of-scope-zone-files-skipped", "text": "the master file format (zone file syntax) is NOT extracted as part of the binary spec — user explicitly excluded it"}
+  ]
+}

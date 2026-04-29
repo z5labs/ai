@@ -1,0 +1,7 @@
+{
+  "total_tokens": 107363,
+  "duration_ms": 638781,
+  "total_duration_seconds": 638.8,
+  "tool_uses": 61,
+  "notes": "Network verified — 3077 lines fetched from rfc-editor.org. 22 structures + 6 encoding-tables + 3 examples + SPEC.md. domain-name uses Encoding+pseudocode variant; RDATA payloads use [4]byte and DomainName references per the new variants guidance."
+}

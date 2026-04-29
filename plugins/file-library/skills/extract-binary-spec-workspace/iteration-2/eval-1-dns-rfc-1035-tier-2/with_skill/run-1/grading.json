@@ -1,0 +1,99 @@
+{
+  "eval_id": 1,
+  "eval_name": "dns-rfc-1035-tier-2",
+  "run_dir": "iteration-2/eval-1-dns-rfc-1035-tier-2/with_skill/run-1",
+  "root_used_for_grading": "iteration-2/eval-1-dns-rfc-1035-tier-2/with_skill/run-1/outputs/dns-spec",
+  "expectations": [
+    {
+      "text": "SPEC.md exists at the root of the output directory",
+      "passed": true,
+      "evidence": "SPEC.md present at iteration-2/eval-1-dns-rfc-1035-tier-2/with_skill/run-1/outputs/dns-spec/SPEC.md"
+    },
+    {
+      "text": "structures/ directory exists and contains at least 3 .md files (header, question, resource-record at minimum)",
+      "passed": true,
+      "evidence": "structures/ has 22 .md files (need \u22652)"
+    },
+    {
+      "text": "encoding-tables/ directory exists and contains at least 4 .md files",
+      "passed": true,
+      "evidence": "encoding-tables/ has 6 .md files (need \u22654)"
+    },
+    {
+      "text": "examples/ directory exists and contains at least 3 .md files",
+      "passed": true,
+      "evidence": "examples/ has 3 .md files (need \u22653)"
+    },
+    {
+      "text": "every .md file produced is non-empty (at least 200 bytes)",
+      "passed": true,
+      "evidence": "all .md files \u2265 200 bytes"
+    },
+    {
+      "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _structures_index.md) in the output directory",
+      "passed": true,
+      "evidence": "no scratch files in output tree"
+    },
+    {
+      "text": "SPEC.md contains a 'Conventions' section that states byte order explicitly",
+      "passed": true,
+      "evidence": "SPEC.md has a Conventions section that mentions byte order"
+    },
+    {
+      "text": "SPEC.md identifies DNS as network byte order / big-endian",
+      "passed": true,
+      "evidence": "SPEC.md byte-order term: big-endian"
+    },
+    {
+      "text": "SPEC.md contains a 'Structures index' section linking to each structures/<name>.md file",
+      "passed": true,
+      "evidence": "index section: True, structures/*.md links present: True"
+    },
+    {
+      "text": "every structures/<name>.md file contains a markdown field table with Offset / Size / Type / Name / Description columns",
+      "passed": true,
+      "evidence": "all 22 structures have a canonical field table or declared variant"
+    },
+    {
+      "text": "field tables use Go-friendly types (uint8, uint16, uint32, [N]byte, []byte)",
+      "passed": true,
+      "evidence": "all 22 structures use Go-friendly types"
+    },
+    {
+      "text": "the DNS header structure documents 12 bytes: ID (2), Flags (2), QDCOUNT (2), ANCOUNT (2), NSCOUNT (2), ARCOUNT (2)",
+      "passed": true,
+      "evidence": "header.md missing fields: none"
+    },
+    {
+      "text": "the DNS header's flags bytes have a bit-fields section covering QR, Opcode (4 bits), AA, TC, RD, RA, Z, RCODE \u2014 with correct bit positions",
+      "passed": true,
+      "evidence": "header.md missing flag bits: none"
+    },
+    {
+      "text": "domain name encoding documents both the length-prefixed label format and the compression pointer format (two high bits = 11, 14-bit offset)",
+      "passed": true,
+      "evidence": "label format: True, compression pointer: True"
+    },
+    {
+      "text": "encoding tables exist for opcodes, RCODEs (response codes), TYPE / QTYPE values, and CLASS / QCLASS values",
+      "passed": true,
+      "evidence": "encoding tables: ['classes', 'opcodes', 'qclasses', 'qtypes', 'rcodes', 'types']; missing categories: none"
+    },
+    {
+      "text": "the resource record structure documents NAME, TYPE, CLASS, TTL, RDLENGTH, RDATA fields",
+      "passed": true,
+      "evidence": "resource-record fields missing: none"
+    },
+    {
+      "text": "the master file format (zone file syntax) is NOT extracted as part of the binary spec \u2014 user explicitly excluded it",
+      "passed": true,
+      "evidence": "no zone-file structures \u2014 scope respected"
+    }
+  ],
+  "summary": {
+    "passed": 17,
+    "failed": 0,
+    "total": 17,
+    "pass_rate": 1.0
+  }
+}
