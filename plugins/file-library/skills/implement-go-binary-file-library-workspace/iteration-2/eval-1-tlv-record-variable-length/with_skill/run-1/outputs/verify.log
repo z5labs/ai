@@ -1,0 +1,103 @@
+$ go test -race -v ./...
+=== RUN   TestDecodeStringRecord
+=== PAUSE TestDecodeStringRecord
+=== RUN   TestDecodeEmptyRecord
+=== PAUSE TestDecodeEmptyRecord
+=== RUN   TestDecodeIntRecord
+=== PAUSE TestDecodeIntRecord
+=== RUN   TestDecodeNoRecords
+=== PAUSE TestDecodeNoRecords
+=== RUN   TestDecodeMultipleRecords
+=== PAUSE TestDecodeMultipleRecords
+=== RUN   TestDecodeTruncatedLength
+=== PAUSE TestDecodeTruncatedLength
+=== RUN   TestDecodeTruncatedValue
+=== PAUSE TestDecodeTruncatedValue
+=== RUN   TestEncodeStringRecord
+=== PAUSE TestEncodeStringRecord
+=== RUN   TestEncodeEmptyRecord
+=== PAUSE TestEncodeEmptyRecord
+=== RUN   TestEncodeIntRecord
+=== PAUSE TestEncodeIntRecord
+=== RUN   TestEncodeNoRecords
+=== PAUSE TestEncodeNoRecords
+=== RUN   TestRoundTripPerRecordType
+=== PAUSE TestRoundTripPerRecordType
+=== RUN   TestErrorChain
+=== PAUSE TestErrorChain
+=== RUN   TestRecordTypeString
+=== PAUSE TestRecordTypeString
+=== RUN   TestRecordTypeStringUnknown
+=== PAUSE TestRecordTypeStringUnknown
+=== RUN   TestFileHasRecordsSlice
+=== PAUSE TestFileHasRecordsSlice
+=== CONT  TestDecodeStringRecord
+=== CONT  TestEncodeEmptyRecord
+=== CONT  TestDecodeTruncatedValue
+=== CONT  TestErrorChain
+=== CONT  TestRecordTypeString
+--- PASS: TestDecodeStringRecord (0.00s)
+=== CONT  TestEncodeStringRecord
+=== RUN   TestRecordTypeString/string
+=== CONT  TestEncodeNoRecords
+--- PASS: TestEncodeStringRecord (0.00s)
+=== PAUSE TestRecordTypeString/string
+=== CONT  TestEncodeIntRecord
+=== CONT  TestDecodeMultipleRecords
+=== CONT  TestDecodeTruncatedLength
+=== CONT  TestDecodeIntRecord
+=== CONT  TestDecodeNoRecords
+=== CONT  TestDecodeEmptyRecord
+=== CONT  TestFileHasRecordsSlice
+=== CONT  TestRecordTypeStringUnknown
+=== CONT  TestRoundTripPerRecordType
+--- PASS: TestEncodeEmptyRecord (0.00s)
+=== RUN   TestRecordTypeString/int
+--- PASS: TestDecodeTruncatedValue (0.00s)
+=== RUN   TestRoundTripPerRecordType/string
+=== PAUSE TestRecordTypeString/int
+--- PASS: TestErrorChain (0.00s)
+--- PASS: TestEncodeNoRecords (0.00s)
+=== PAUSE TestRoundTripPerRecordType/string
+=== RUN   TestRecordTypeString/blob
+--- PASS: TestEncodeIntRecord (0.00s)
+=== PAUSE TestRecordTypeString/blob
+--- PASS: TestDecodeMultipleRecords (0.00s)
+--- PASS: TestDecodeTruncatedLength (0.00s)
+--- PASS: TestDecodeIntRecord (0.00s)
+=== RUN   TestRecordTypeString/nested
+=== PAUSE TestRecordTypeString/nested
+=== RUN   TestRoundTripPerRecordType/int
+--- PASS: TestDecodeNoRecords (0.00s)
+=== CONT  TestRecordTypeString/string
+=== CONT  TestRecordTypeString/nested
+=== PAUSE TestRoundTripPerRecordType/int
+=== RUN   TestRoundTripPerRecordType/blob
+=== CONT  TestRecordTypeString/blob
+=== PAUSE TestRoundTripPerRecordType/blob
+=== CONT  TestRecordTypeString/int
+--- PASS: TestDecodeEmptyRecord (0.00s)
+--- PASS: TestRecordTypeStringUnknown (0.00s)
+--- PASS: TestFileHasRecordsSlice (0.00s)
+=== RUN   TestRoundTripPerRecordType/nested
+=== PAUSE TestRoundTripPerRecordType/nested
+--- PASS: TestRecordTypeString (0.00s)
+    --- PASS: TestRecordTypeString/nested (0.00s)
+    --- PASS: TestRecordTypeString/string (0.00s)
+    --- PASS: TestRecordTypeString/blob (0.00s)
+    --- PASS: TestRecordTypeString/int (0.00s)
+=== RUN   TestRoundTripPerRecordType/empty
+=== PAUSE TestRoundTripPerRecordType/empty
+=== CONT  TestRoundTripPerRecordType/string
+=== CONT  TestRoundTripPerRecordType/empty
+=== CONT  TestRoundTripPerRecordType/nested
+=== CONT  TestRoundTripPerRecordType/blob
+=== CONT  TestRoundTripPerRecordType/int
+--- PASS: TestRoundTripPerRecordType (0.00s)
+    --- PASS: TestRoundTripPerRecordType/empty (0.00s)
+    --- PASS: TestRoundTripPerRecordType/nested (0.00s)
+    --- PASS: TestRoundTripPerRecordType/string (0.00s)
+    --- PASS: TestRoundTripPerRecordType/blob (0.00s)
+    --- PASS: TestRoundTripPerRecordType/int (0.00s)
+PASS
+ok  	tlv	1.014s

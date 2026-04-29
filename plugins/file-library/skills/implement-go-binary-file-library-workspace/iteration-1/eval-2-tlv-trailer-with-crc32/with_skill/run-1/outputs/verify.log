@@ -1,0 +1,59 @@
+$ go test -race -v ./...
+=== RUN   TestDecodeTrailerHappyPath
+=== PAUSE TestDecodeTrailerHappyPath
+=== RUN   TestDecodeTrailerEmptyPayload
+=== PAUSE TestDecodeTrailerEmptyPayload
+=== RUN   TestDecodeTrailerChecksumMismatch
+=== PAUSE TestDecodeTrailerChecksumMismatch
+=== RUN   TestDecodeTrailerTruncated
+=== PAUSE TestDecodeTrailerTruncated
+=== RUN   TestEncodeTrailerHappyPath
+=== PAUSE TestEncodeTrailerHappyPath
+=== RUN   TestEncodeTrailerEmptyPayload
+=== PAUSE TestEncodeTrailerEmptyPayload
+=== RUN   TestEncodeDecodeRoundTrip
+=== PAUSE TestEncodeDecodeRoundTrip
+=== RUN   TestErrorChain
+=== PAUSE TestErrorChain
+=== RUN   TestTrailerSize
+=== PAUSE TestTrailerSize
+=== RUN   TestErrChecksumMismatchChain
+=== PAUSE TestErrChecksumMismatchChain
+=== CONT  TestDecodeTrailerHappyPath
+=== CONT  TestEncodeTrailerEmptyPayload
+=== CONT  TestErrChecksumMismatchChain
+=== CONT  TestEncodeTrailerHappyPath
+=== CONT  TestErrorChain
+--- PASS: TestDecodeTrailerHappyPath (0.00s)
+--- PASS: TestErrorChain (0.00s)
+=== CONT  TestDecodeTrailerChecksumMismatch
+=== CONT  TestDecodeTrailerEmptyPayload
+=== CONT  TestEncodeDecodeRoundTrip
+=== CONT  TestDecodeTrailerTruncated
+=== CONT  TestTrailerSize
+--- PASS: TestEncodeTrailerEmptyPayload (0.00s)
+--- PASS: TestErrChecksumMismatchChain (0.00s)
+=== RUN   TestEncodeDecodeRoundTrip/empty
+--- PASS: TestEncodeTrailerHappyPath (0.00s)
+--- PASS: TestDecodeTrailerChecksumMismatch (0.00s)
+--- PASS: TestDecodeTrailerTruncated (0.00s)
+=== PAUSE TestEncodeDecodeRoundTrip/empty
+--- PASS: TestDecodeTrailerEmptyPayload (0.00s)
+=== RUN   TestEncodeDecodeRoundTrip/minimal_header
+--- PASS: TestTrailerSize (0.00s)
+=== PAUSE TestEncodeDecodeRoundTrip/minimal_header
+=== RUN   TestEncodeDecodeRoundTrip/single_byte
+=== PAUSE TestEncodeDecodeRoundTrip/single_byte
+=== RUN   TestEncodeDecodeRoundTrip/longer_payload
+=== PAUSE TestEncodeDecodeRoundTrip/longer_payload
+=== CONT  TestEncodeDecodeRoundTrip/minimal_header
+=== CONT  TestEncodeDecodeRoundTrip/single_byte
+=== CONT  TestEncodeDecodeRoundTrip/empty
+=== CONT  TestEncodeDecodeRoundTrip/longer_payload
+--- PASS: TestEncodeDecodeRoundTrip (0.00s)
+    --- PASS: TestEncodeDecodeRoundTrip/minimal_header (0.00s)
+    --- PASS: TestEncodeDecodeRoundTrip/empty (0.00s)
+    --- PASS: TestEncodeDecodeRoundTrip/single_byte (0.00s)
+    --- PASS: TestEncodeDecodeRoundTrip/longer_payload (0.00s)
+PASS
+ok  	tlv	1.013s

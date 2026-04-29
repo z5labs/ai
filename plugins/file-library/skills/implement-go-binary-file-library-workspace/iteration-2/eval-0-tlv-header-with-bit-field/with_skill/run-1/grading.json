@@ -1,0 +1,87 @@
+{
+  "eval_id": 0,
+  "eval_name": "tlv-header-with-bit-field",
+  "config": "with_skill",
+  "summary": {
+    "passed": 15,
+    "total": 15,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "types.go defines a Header struct with Magic, Version, Flags, and Reserved fields",
+      "passed": true,
+      "evidence": "Header struct present with Magic/Version/Flags/Reserved"
+    },
+    {
+      "text": "types.go defines bit-field mask constants for COMPRESSED, ENCRYPTED, and SIGNED on the Flags byte",
+      "passed": true,
+      "evidence": "found bit-field constants: ['Compressed', 'Encrypted', 'Signed']"
+    },
+    {
+      "text": "the File struct in types.go references Header",
+      "passed": true,
+      "evidence": "File struct references Header"
+    },
+    {
+      "text": "decoder.go defines a readHeader method on the decoder type",
+      "passed": true,
+      "evidence": "readHeader on decoder"
+    },
+    {
+      "text": "encoder.go defines a writeHeader method on the encoder type",
+      "passed": true,
+      "evidence": "writeHeader on encoder"
+    },
+    {
+      "text": "every new error site in decoder.go and encoder.go uses d.wrapErr / e.wrapErr (no direct construction of FieldError or OffsetError outside the helpers)",
+      "passed": true,
+      "evidence": "all errors via wrapErr"
+    },
+    {
+      "text": "decoder_test.go has a happy-path test that decodes a hex byte literal containing the TLV1 magic and asserts Header field values",
+      "passed": true,
+      "evidence": "decoder_test has TLV1 magic in byte/hex literal"
+    },
+    {
+      "text": "decoder_test.go has a failure-path test asserting errors.Is on a leaf sentinel AND errors.As on FieldError with a header-related Field path",
+      "passed": true,
+      "evidence": "errorIs=True errorAs=True FieldError=True"
+    },
+    {
+      "text": "encoder_test.go has a happy-path test that encodes a Header and asserts the output bytes match a hex literal",
+      "passed": true,
+      "evidence": "encoder_test asserts hex-literal output"
+    },
+    {
+      "text": "encoder_test.go has a round-trip test that runs Encode \u2192 Decode and asserts require.Equal on the original",
+      "passed": true,
+      "evidence": "round-trip test present"
+    },
+    {
+      "text": "all new tests call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "t.Parallel at both levels in decoder/encoder tests"
+    },
+    {
+      "text": "tests use github.com/stretchr/testify/require",
+      "passed": true,
+      "evidence": "tests use testify/require"
+    },
+    {
+      "text": "go test -race ./... exits cleanly",
+      "passed": true,
+      "evidence": "go test -race ./... passes"
+    },
+    {
+      "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory",
+      "passed": true,
+      "evidence": "no _*.md scratch files"
+    },
+    {
+      "text": "no copy of SPEC.md content was written to a scratch file in the package (e.g. _spec_structures.md should not exist)",
+      "passed": true,
+      "evidence": "no _spec*.md scratch copies"
+    }
+  ]
+}

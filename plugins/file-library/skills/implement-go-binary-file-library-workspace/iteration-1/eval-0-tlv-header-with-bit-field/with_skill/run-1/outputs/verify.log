@@ -1,0 +1,54 @@
+$ go test -race -v ./...
+=== RUN   TestDecodeHeader
+=== PAUSE TestDecodeHeader
+=== RUN   TestDecodeHeader_TruncatedMagic
+=== PAUSE TestDecodeHeader_TruncatedMagic
+=== RUN   TestDecodeHeader_BadMagic
+=== PAUSE TestDecodeHeader_BadMagic
+=== RUN   TestDecodeHeader_BadVersion
+=== PAUSE TestDecodeHeader_BadVersion
+=== RUN   TestDecodeHeader_ReservedBitsInFlags
+=== PAUSE TestDecodeHeader_ReservedBitsInFlags
+=== RUN   TestDecodeHeader_ReservedNonZero
+=== PAUSE TestDecodeHeader_ReservedNonZero
+=== RUN   TestEncodeHeader
+=== PAUSE TestEncodeHeader
+=== RUN   TestHeaderRoundTrip
+=== PAUSE TestHeaderRoundTrip
+=== RUN   TestEncodeHeader_ReservedBitsRejected
+=== PAUSE TestEncodeHeader_ReservedBitsRejected
+=== RUN   TestErrorChain
+=== PAUSE TestErrorChain
+=== RUN   TestHeaderSize
+=== PAUSE TestHeaderSize
+=== RUN   TestHeaderFlagsBitField
+=== PAUSE TestHeaderFlagsBitField
+=== RUN   TestMagicConstant
+=== PAUSE TestMagicConstant
+--- PASS: TestDecodeHeader_TruncatedMagic (0.00s)
+--- PASS: TestDecodeHeader_ReservedNonZero (0.00s)
+--- PASS: TestHeaderSize (0.00s)
+--- PASS: TestDecodeHeader_BadVersion (0.00s)
+--- PASS: TestDecodeHeader_BadMagic (0.00s)
+--- PASS: TestErrorChain (0.00s)
+--- PASS: TestDecodeHeader_ReservedBitsInFlags (0.00s)
+--- PASS: TestEncodeHeader_ReservedBitsRejected (0.00s)
+--- PASS: TestMagicConstant (0.00s)
+--- PASS: TestDecodeHeader (0.00s)
+    --- PASS: TestDecodeHeader/all_known_flags (0.00s)
+    --- PASS: TestDecodeHeader/minimal_no_flags (0.00s)
+    --- PASS: TestDecodeHeader/compressed_flag (0.00s)
+--- PASS: TestHeaderRoundTrip (0.00s)
+    --- PASS: TestHeaderRoundTrip/no_flags (0.00s)
+    --- PASS: TestHeaderRoundTrip/compressed_only (0.00s)
+    --- PASS: TestHeaderRoundTrip/all_known_flags (0.00s)
+--- PASS: TestHeaderFlagsBitField (0.00s)
+    --- PASS: TestHeaderFlagsBitField/compressed (0.00s)
+    --- PASS: TestHeaderFlagsBitField/signed (0.00s)
+    --- PASS: TestHeaderFlagsBitField/encrypted (0.00s)
+--- PASS: TestEncodeHeader (0.00s)
+    --- PASS: TestEncodeHeader/minimal_no_flags (0.00s)
+    --- PASS: TestEncodeHeader/all_known_flags (0.00s)
+    --- PASS: TestEncodeHeader/compressed_flag (0.00s)
+PASS
+ok  	tlv	1.015s

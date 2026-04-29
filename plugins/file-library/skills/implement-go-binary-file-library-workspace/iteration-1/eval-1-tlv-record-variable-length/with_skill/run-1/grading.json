@@ -1,0 +1,82 @@
+{
+  "eval_id": 1,
+  "eval_name": "tlv-record-variable-length",
+  "config": "with_skill",
+  "summary": {
+    "passed": 14,
+    "total": 14,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "types.go defines a Record struct with Type, Length, and Value fields",
+      "passed": true,
+      "evidence": "Record struct with Type/Length/Value"
+    },
+    {
+      "text": "types.go defines a RecordType enum with constants for STRING (0x01), INT (0x02), BLOB (0x03), and NESTED (0x04)",
+      "passed": true,
+      "evidence": "RecordType enum + all 4 constants"
+    },
+    {
+      "text": "types.go defines a String() method on the RecordType type",
+      "passed": true,
+      "evidence": "String() on RecordType"
+    },
+    {
+      "text": "the File struct in types.go has a Records slice field",
+      "passed": true,
+      "evidence": "File.Records []Record"
+    },
+    {
+      "text": "decoder.go defines a readRecord method that reads the length prefix and then the value bytes",
+      "passed": true,
+      "evidence": "readRecord(...) on decoder"
+    },
+    {
+      "text": "encoder.go defines a writeRecord method",
+      "passed": true,
+      "evidence": "writeRecord(...) on encoder"
+    },
+    {
+      "text": "decoder.go uses io.ReadFull (not r.Read) to read the variable-length Value",
+      "passed": true,
+      "evidence": "decoder uses io.ReadFull"
+    },
+    {
+      "text": "decoder_test.go has a test for a STRING record with a non-empty value",
+      "passed": true,
+      "evidence": "STRING record decode test present"
+    },
+    {
+      "text": "decoder_test.go has a test for an empty record (Length = 0)",
+      "passed": true,
+      "evidence": "empty-record decode test present"
+    },
+    {
+      "text": "encoder_test.go has a round-trip test for at least one record type",
+      "passed": true,
+      "evidence": "round-trip test present"
+    },
+    {
+      "text": "every new error site uses d.wrapErr / e.wrapErr",
+      "passed": true,
+      "evidence": "all errors via wrapErr"
+    },
+    {
+      "text": "all new tests call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "t.Parallel at both levels"
+    },
+    {
+      "text": "go test -race ./... exits cleanly",
+      "passed": true,
+      "evidence": "go test -race ./... passes"
+    },
+    {
+      "text": "no scratch copy of SPEC.md content (e.g. _spec_structures.md) was written to the package",
+      "passed": true,
+      "evidence": "no _spec*.md leftovers"
+    }
+  ]
+}

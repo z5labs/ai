@@ -1,0 +1,22 @@
+{
+  "eval_id": 0,
+  "eval_name": "tlv-header-with-bit-field",
+  "prompt": "I have a scaffolded Go package at ./tlv/ with types.go/decoder.go/encoder.go stubs and a SPEC.md describing the TLV1 format. Implement the Header structure end-to-end: the Magic/Version/Flags/Reserved fields described in SPEC.md's Field Definitions section, including the Flags bit field (COMPRESSED / ENCRYPTED / SIGNED). Update File to hold a Header. I want decode tests with hex literals, encode tests, a round-trip test, and a failure-path test that asserts the FieldError → OffsetError → leaf chain. Don't read the whole SPEC.md — slice it.",
+  "assertions": [
+    {"id": "header-struct-defined", "text": "types.go defines a Header struct with Magic, Version, Flags, and Reserved fields"},
+    {"id": "flags-bit-field-constants", "text": "types.go defines bit-field mask constants for COMPRESSED, ENCRYPTED, and SIGNED on the Flags byte"},
+    {"id": "file-includes-header", "text": "the File struct in types.go references Header"},
+    {"id": "read-header-method", "text": "decoder.go defines a readHeader method on the decoder type"},
+    {"id": "write-header-method", "text": "encoder.go defines a writeHeader method on the encoder type"},
+    {"id": "errors-funnel-through-wrapErr", "text": "every new error site in decoder.go and encoder.go uses d.wrapErr / e.wrapErr (no direct construction of FieldError or OffsetError outside the helpers)"},
+    {"id": "decode-test-hex-literal", "text": "decoder_test.go has a happy-path test that decodes a hex byte literal containing the TLV1 magic and asserts Header field values"},
+    {"id": "decode-failure-test-chain", "text": "decoder_test.go has a failure-path test asserting errors.Is on a leaf sentinel AND errors.As on FieldError with a header-related Field path"},
+    {"id": "encode-test-hex-literal", "text": "encoder_test.go has a happy-path test that encodes a Header and asserts the output bytes match a hex literal"},
+    {"id": "round-trip-test", "text": "encoder_test.go has a round-trip test that runs Encode → Decode and asserts require.Equal on the original"},
+    {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
+    {"id": "tests-testify-require", "text": "tests use github.com/stretchr/testify/require"},
+    {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
+    {"id": "no-scratch-files-left", "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory"},
+    {"id": "no-full-spec-copy", "text": "no copy of SPEC.md content was written to a scratch file in the package (e.g. _spec_structures.md should not exist)"}
+  ]
+}
