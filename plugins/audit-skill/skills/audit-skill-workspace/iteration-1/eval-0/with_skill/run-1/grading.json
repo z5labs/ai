@@ -1,0 +1,98 @@
+{
+  "eval_id": 0,
+  "kind": "with_skill",
+  "report_path": "/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/with_skill/outputs/audit-bad-skill-2026-04-29.md",
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "total": 16,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "total_tokens": 36048,
+    "duration_ms": 110008,
+    "total_duration_seconds": 110.0
+  },
+  "expectations": [
+    {
+      "text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)",
+      "passed": true,
+      "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/with_skill/outputs/audit-bad-skill-2026-04-29.md"
+    },
+    {
+      "text": "the report file is non-empty (at least 800 bytes)",
+      "passed": true,
+      "evidence": "4890 bytes"
+    },
+    {
+      "text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)",
+      "passed": true,
+      "evidence": "unchanged=True"
+    },
+    {
+      "text": "the report has an Idempotency section (heading or labeled findings list)",
+      "passed": true,
+      "evidence": "found Idempotency heading/label"
+    },
+    {
+      "text": "the report has a Reproducibility section",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "the report has a Context management section",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "the report has a Strict definitions section",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "at least one finding cites a specific vague phrase from the bad skill",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "a finding flags the long inline output template as content that should move to references/",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "a finding notes the description doesn't mention the workflow's side effects (tag push, PR creation)",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "at least 80% of findings cite a `file:line` reference",
+      "passed": true,
+      "evidence": "24/24 bullets cite file:line"
+    },
+    {
+      "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "findings are grouped by objective (the four objective names appear as headings or list-section labels)",
+      "passed": true,
+      "evidence": ""
+    }
+  ]
+}

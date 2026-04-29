@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "audit-skill", "runs": [{"id": "eval-0-with_skill", "prompt": "I wrote a draft skill at ./skills/bad-skill/ for generating release notes and I'm not sure how solid it is. There's no PR open right now, so just write me a report file I can read through. Audit it and tell me where the file is when you're done.", "eval_id": 0, "outputs": [{"name": "audit-bad-skill-2026-04-29.md", "type": "text", "content": "# Audit: bad-skill\n\n- Target: `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/with_skill/work/skills/bad-skill/`\n- Date: 2026-04-29\n- Findings: 22  (idempotency: 5, reproducibility: 9, context-management: 1, strict-definitions: 7)\n\n## Findings\n\n### Idempotency\n\n- `SKILL.md:1` \u2014 `SKILL.md` does not declare whether re-running this skill is safe. State explicitly whether a second invocation overwrites, appends, or refuses, so the model doesn't have to infer it from the workflow.\n- `SKILL.md:14` \u2014 output path `RELEASE_NOTES.md` is written without specifying overwrite/append behavior on re-run.\n- `SKILL.md:15` \u2014 `git tag` (implied by \"Push a tag\") mutates state without a precondition; tagging the same commit twice fails and there is no \"if tag exists\" branch.\n- `SKILL.md:15` \u2014 `gh pr create` runs without a precondition (`gh pr list --head $branch`) or a documented \"duplicates acceptable\" stance; a second run will create a duplicate PR or error.\n- `SKILL.md:81` \u2014 `CHANGELOG.md` update is described without specifying append-vs-overwrite behavior or what happens if the file is missing.\n\n### Reproducibility\n\n- `SKILL.md:12` \u2014 depends on `date` (current date) without listing it as a declared input; same prompt on a different day yields a different release tag.\n- `SKILL.md:12` \u2014 \"figure out an appropriate release tag\" gives no objective criterion; reproducibility requires a stated test (semver bump rule, derive-from-commits regex, or explicit user input).\n- `SKILL.md:13` \u2014 depends on `git log` / repo state without listing it as a declared input; results vary by checkout.\n- `SKILL.md:13` \u2014 \"summarize the changes as needed\" gives no objective criterion for what to include or omit.\n- `SKILL.md:20` \u2014 \"fill in every section appropriately\" gives no rubric for what \"appropriate\" content per section means.\n- `SKILL.md:26` \u2014 \"engaging and reasonable in length\" gives no length bound or tone rubric; runs will diverge in voice and size.\n- `SKILL.md:35` \u2014 \"use judgment based on the complexity of the change\" leaves the per-feature length entirely to the model.\n- `SKILL.md:74` \u2014 auto-generates Contributors from `git log` without listing git state as a declared input.\n- `SKILL.md:79` \u2014 \"works reasonably well for most cases. Use your judgment if something looks off\" gives the model latitude with no rubric for what \"off\" looks like or what to do about it.\n- `SKILL.md:80` \u2014 \"appropriately detailed \u2014 neither too sparse nor too verbose\" gives no length or content threshold.\n- `SKILL.md:87` \u2014 Example 1 output \"a Features section with 'No user-facing features in this release.'\" contradicts the template at line 28, which describes Features as \"bulleted list of new features\" with no provision for an empty-list sentinel.\n\n### Context management\n\n- `SKILL.md:22` \u2014 the inline release-notes template is 54 lines (lines 22\u201375) and the placeholder bodies at lines 28\u201342, 44\u201355, and 57\u201371 are themselves ~12-line prose specs of *how to write each section*. Consider moving the template to `references/release-notes-template.md` so the per-section guidance only loads when the skill actually fires.\n\n### Strict definitions\n\n- `SKILL.md:3` \u2014 description has no \"when to use\" examples (concrete user phrasings or contexts) \u2014 likely to under-trigger.\n- `SKILL.md:3` \u2014 description has no \"when to skip\" / negative case (e.g. \"skip when the user wants a CHANGELOG entry, not release notes\") \u2014 likely to over-trigger on near-misses.\n- `SKILL.md:1` \u2014 no Inputs / Arguments section. The skill consumes current date, git log range, and target branch; none are declared with name, source, required-ness, or validation.\n- `SKILL.md:14` \u2014 output `RELEASE_NOTES.md` has no documented behavior on pre-existing file (overwrite / append / error).\n- `SKILL.md:81` \u2014 output `CHANGELOG.md` has no documented path location, format, or pre-existing-file behavior.\n- `SKILL.md:15` \u2014 step 4 bundles two distinct stateful actions (\"Push a tag\" and \"create a release PR\") into one bullet and states no precondition (clean tree? CI green? tag computed in step 1 must be passed in?).\n- `SKILL.md:16` \u2014 \"Handle any errors that come up\" is a vague verb with no concrete follow-up; specify which errors, how to recover, when to abort.\n\n## Passing checks\n\n- SKILL.md is 93 lines \u2014 well under the 500-line target.\n- Output path is named (`RELEASE_NOTES.md`) rather than left implicit.\n- The template uses `{{placeholder}}` syntax consistently, which is easy for the model to parse.\n\n## Next step\n\nHand this report back to `skill-creator` to revise: `/skill-creator /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/with_skill/work/audit-bad-skill-2026-04-29.md`. The skill-creator workflow will treat each finding as feedback for an iteration.\n"}], "grading": {"eval_id": 0, "kind": "with_skill", "report_path": "/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/with_skill/outputs/audit-bad-skill-2026-04-29.md", "expectations": [{"text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/with_skill/outputs/audit-bad-skill-2026-04-29.md"}, {"text": "the report file is non-empty (at least 800 bytes)", "passed": true, "evidence": "4890 bytes"}, {"text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)", "passed": true, "evidence": "unchanged=True"}, {"text": "the report has an Idempotency section (heading or labeled findings list)", "passed": true, "evidence": "found Idempotency heading/label"}, {"text": "the report has a Reproducibility section", "passed": true, "evidence": ""}, {"text": "the report has a Context management section", "passed": true, "evidence": ""}, {"text": "the report has a Strict definitions section", "passed": true, "evidence": ""}, {"text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)", "passed": true, "evidence": ""}, {"text": "at least one finding cites a specific vague phrase from the bad skill", "passed": true, "evidence": ""}, {"text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)", "passed": true, "evidence": ""}, {"text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration", "passed": true, "evidence": ""}, {"text": "a finding flags the long inline output template as content that should move to references/", "passed": true, "evidence": ""}, {"text": "at least 80% of findings cite a `file:line` reference", "passed": true, "evidence": "24/30 bullets cite file:line"}, {"text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)", "passed": true, "evidence": ""}, {"text": "findings are grouped by objective (the four objective names appear as headings or list-section labels)", "passed": true, "evidence": ""}]}}, {"id": "eval-0-without_skill", "prompt": "I wrote a draft skill at ./skills/bad-skill/ for generating release notes and I'm not sure how solid it is. There's no PR open right now, so just write me a report file I can read through. Audit it and tell me where the file is when you're done.", "eval_id": 0, "outputs": [{"name": "AUDIT_REPORT.md", "type": "text", "content": "# Audit Report: `bad-skill` (release-notes generator)\n\n**Target:** `./skills/bad-skill/SKILL.md`\n**Date:** 2026-04-29\n**Verdict:** Not ready for use. Multiple high-severity correctness, safety, and design issues. Recommend rewriting before merging.\n\n---\n\n## Summary\n\nThe skill ostensibly generates release notes from git history. It has the right *outline* (frontmatter, workflow, output format, examples), but the substance has serious problems:\n\n1. It mixes \"draft a markdown file\" with destructive, network-effecting actions (tag push, PR creation) without authorization, dry-run, or rollback guardrails.\n2. The frontmatter `description` is too thin to drive reliable model invocation.\n3. The output template embeds prose *instructions* inside `{{...}}` placeholders that the model is supposed to follow while filling in \u2014 a confused pattern that conflates schema with prompt.\n4. The workflow has gaps (no \"last tag\" lookup, no monorepo handling, no empty-history handling) and contains dead/contradictory guidance.\n5. Examples are too vague to be useful for grounding.\n6. Stale-version commentary leaks legacy detail into the live skill.\n\nEach issue is detailed below with severity and a concrete fix.\n\n---\n\n## Issue 1 \u2014 Skill performs destructive actions silently. **(Severity: critical)**\n\n> Workflow step 4: \"Push a tag and create a release PR with `gh pr create`.\"\n\nThe skill's *stated* purpose is generating a release-notes document. Pushing a tag (`git push --tags` or `git tag ... && git push`) and opening a PR are side-effects on the remote. A user who invokes \"generate release notes\" almost certainly does not expect:\n\n- a new annotated/lightweight tag created and pushed to `origin`,\n- a PR opened on GitHub,\n- both actions taken without confirmation.\n\nThis is the single biggest problem. Tags are effectively immutable in shared repos (deleting a pushed tag breaks downstream caches, mirrors, package registries). PRs notify reviewers and trigger CI.\n\n**Fix:**\n- Drop tag-push and PR-creation from the default workflow entirely, or\n- Gate them behind explicit user confirmation per invocation, with a dry-run preview of the tag name and PR title/body, and\n- Default to producing only the local `RELEASE_NOTES.md` file.\n\n## Issue 2 \u2014 Tag selection is hand-wavy. **(Severity: high)**\n\n> Step 1: \"Look at the current date with `date` and figure out an appropriate release tag.\"\n\n\"Figure out an appropriate release tag\" delegates a *versioning policy decision* to the model with no rules. The repo's actual versioning scheme (semver? CalVer? per-package monorepo tags?) is unknowable from `date` alone. Calling `date` is also irrelevant unless CalVer is in use.\n\n**Fix:** Replace with a concrete recipe \u2014 e.g. \"Read the latest tag with `git describe --tags --abbrev=0`, infer scheme from existing tags, and propose the next version. Ask the user to confirm before proceeding.\"\n\n## Issue 3 \u2014 \"git log since the last tag\" is underspecified. **(Severity: high)**\n\n> Step 2: \"Read the git log since the last tag and summarize the changes as needed.\"\n\nThere is no command given, no handling for:\n- repos with zero existing tags (first release),\n- monorepos with multiple tag prefixes (`pkg-a/v1.2.0` vs `pkg-b/v0.4.1`),\n- merges vs squashed commits,\n- conventional-commit parsing if used,\n- excluding commits already shipped on a release branch.\n\n\"Summarize as needed\" is a non-instruction.\n\n**Fix:** Provide the actual command (`git log <last-tag>..HEAD --no-merges --pretty=...`) and rules for grouping commits into Features / Fixes / Breaking.\n\n## Issue 4 \u2014 Template placeholders contain prompt text, not schema. **(Severity: high)**\n\nThe `{{...}}` blocks in the output template are paragraphs of writing guidance (\"Aim for around three to five sentences per feature... Cross-reference related issues... If a feature has a known caveat, mention it but don't dwell...\"). This is a mash-up of:\n\n- a Mustache-like fillable template, and\n- inline editorial direction.\n\nTwo problems:\n\n1. The model may literally copy the placeholder prose into the output if it reads the template at face value.\n2. Guidance buried inside placeholders is much harder to revise or test than guidance in a dedicated section.\n\n**Fix:** Move all editorial guidance to a top-level \"Style guide\" section. Keep placeholders short and structural \u2014 `{{highlights}}`, `{{features[]}}`, `{{breaking_changes[]}}`.\n\n## Issue 5 \u2014 Frontmatter `description` is too generic. **(Severity: high)**\n\n```\ndescription: Generate release notes from git history.\n```\n\nSkills are selected by description. This one omits the trigger surface (when should the model invoke it?), the deliverable (a `RELEASE_NOTES.md`?), and the pre-conditions (e.g. \"use when the user asks for release notes, a changelog entry, or a draft for a tag\").\n\n**Fix:** Expand to include trigger phrases and the concrete output. Example: \"Use when the user asks to draft release notes, a changelog entry, or a summary of changes since the last tag. Produces a `RELEASE_NOTES.md` file in the repo root.\"\n\n## Issue 6 \u2014 Conflicting / contradictory instructions. **(Severity: medium)**\n\n- The skill is named \"bad-skill\" but its `name:` field is `bad-skill` and the heading is `# bad-skill`. If this is meant for production it needs a real name; if it's a placeholder, that should be flagged at the top.\n- Step 5: \"Handle any errors that come up.\" \u2014 no-op instruction. Either enumerate the failure modes (no tags, dirty working tree, no `gh` auth, network failure on push) and what to do, or remove the line.\n- Notes section: \"If the repository has a CHANGELOG.md, also update it.\" This contradicts the stated Output (\"Write the release notes to `RELEASE_NOTES.md`\") \u2014 there's no template for CHANGELOG.md, no rule for where to insert the new entry, and no mention of CHANGELOG anywhere else in the skill.\n- Notes section: \"This skill works reasonably well for most cases. Use your judgment if something looks off.\" This is editorial reassurance directed at the reader, not actionable instruction for the model.\n\n**Fix:** Remove the reassurance line, drop or fully spec the CHANGELOG branch, and replace the error-handling line with concrete failure-mode handling.\n\n## Issue 7 \u2014 Stale legacy reference leaked into live doc. **(Severity: medium)**\n\n> \"Older versions of this skill wrote to `notes.md` instead of `RELEASE_NOTES.md`. The new path is correct.\"\n\nThis belongs in a CHANGELOG for the skill itself, not in the skill body. It clutters the prompt and gives the model a chance to second-guess the output path.\n\n**Fix:** Delete the line. Keep skill-version history in commit messages or a separate file.\n\n## Issue 8 \u2014 Examples are too thin to ground behavior. **(Severity: medium)**\n\nExample 1 says output is \"a release notes file with all sections filled\" with a Features section reading \"No user-facing features in this release.\" Example 2 says \"a release notes file with detailed Highlights, Features, and Breaking Changes sections.\"\n\nThese descriptions don't show the expected *shape* of the output \u2014 they paraphrase it. Useful examples would be a short, complete sample release-notes document (one for the bug-fix-only case, one for a major release) so the model has a concrete target.\n\n**Fix:** Replace with two short, fully-rendered example outputs.\n\n## Issue 9 \u2014 \"Mandatory\" template undermines its own utility. **(Severity: low)**\n\n> \"The format below is mandatory \u2014 fill in every section appropriately\"\n\nFor a bug-fix-only release, \"fill in every section\" forces stub content into Features, Breaking changes, and Contributors. The skill correctly hints at the workaround in Example 1 (\"No user-facing features in this release.\"), but a \"mandatory\" template combined with \"fill in every section\" plus per-section instructions to omit empty content creates conflicting pressure.\n\n**Fix:** Make sections optional with explicit rules: \"Omit Breaking changes entirely if there are none. Use 'No user-facing features in this release.' for an empty Features section.\"\n\n## Issue 10 \u2014 No guidance on where the file goes or what to do if one exists. **(Severity: low)**\n\nThe skill says \"Write the release notes to `RELEASE_NOTES.md`.\" It does not say:\n- repo root vs a `releases/` directory vs a per-version filename (`RELEASE_NOTES_v1.2.3.md`),\n- what to do if the file already exists (overwrite? append? abort?),\n- whether to commit the file.\n\n**Fix:** Specify the path, the collision behavior, and whether the skill commits.\n\n## Issue 11 \u2014 No guidance on author/contributor extraction. **(Severity: low)**\n\nThe Contributors section says \"auto-generate from git log; thank external contributors first, then maintainers.\" There's no definition of \"external\" vs \"maintainer\" \u2014 the skill doesn't know who's on the team. `git shortlog -sn` gives names; the external/maintainer split needs either a CODEOWNERS lookup, a maintainers list, or a rule to drop the distinction.\n\n**Fix:** Either drop the external/maintainer split or specify the source of truth (e.g. \"Treat anyone listed in `MAINTAINERS.md` as a maintainer; everyone else is external\").\n\n---\n\n## Recommended priority order for fixes\n\n1. **Issue 1 (critical):** Remove or gate destructive actions. Until this is fixed the skill should not be used.\n2. **Issues 2, 3, 4, 5 (high):** Make tag selection concrete, give a real `git log` recipe, separate template from style guide, strengthen the description.\n3. **Issues 6, 7, 8 (medium):** Remove contradictions, drop legacy reference, write real example outputs.\n4. **Issues 9, 10, 11 (low):** Tighten collision/path/contributor rules.\n\n## What's good\n\n- The skill follows the standard Claude Code skill layout (frontmatter + workflow + output spec + examples).\n- The release-notes outline (Highlights / Features / Fixes / Breaking changes / Contributors) is conventional and reasonable.\n- Including examples at all is the right instinct, even if the current ones are too thin.\n\n---\n\n## File audited\n\n`/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/without_skill/work/skills/bad-skill/SKILL.md`\n"}], "grading": {"eval_id": 0, "kind": "without_skill", "report_path": "/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/without_skill/outputs/AUDIT_REPORT.md", "expectations": [{"text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/without_skill/outputs/AUDIT_REPORT.md"}, {"text": "the report file is non-empty (at least 800 bytes)", "passed": true, "evidence": "10127 bytes"}, {"text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)", "passed": true, "evidence": "unchanged=True"}, {"text": "the report has an Idempotency section (heading or labeled findings list)", "passed": false, "evidence": "no Idempotency section"}, {"text": "the report has a Reproducibility section", "passed": false, "evidence": ""}, {"text": "the report has a Context management section", "passed": false, "evidence": ""}, {"text": "the report has a Strict definitions section", "passed": false, "evidence": ""}, {"text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)", "passed": false, "evidence": ""}, {"text": "at least one finding cites a specific vague phrase from the bad skill", "passed": true, "evidence": ""}, {"text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)", "passed": false, "evidence": ""}, {"text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration", "passed": true, "evidence": ""}, {"text": "a finding flags the long inline output template as content that should move to references/", "passed": false, "evidence": ""}, {"text": "at least 80% of findings cite a `file:line` reference", "passed": false, "evidence": "0/41 bullets cite file:line"}, {"text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)", "passed": false, "evidence": ""}, {"text": "findings are grouped by objective (the four objective names appear as headings or list-section labels)", "passed": false, "evidence": ""}]}}, {"id": "eval-1-with_skill", "prompt": "Run an audit on the skill at ./skills/word-count/ \u2014 it's a small one but I want to make sure I haven't missed anything obvious. No PR open, write the report to a file.", "eval_id": 1, "outputs": [{"name": "audit-word-count-2026-04-29.md", "type": "text", "content": "# Audit: word-count\n\n- Target: `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-1/with_skill/work/skills/word-count/`\n- Date: 2026-04-29\n- Findings: 0  (idempotency: 0, reproducibility: 0, context-management: 0, strict-definitions: 0)\n\n## Findings\n\n### Idempotency\n\nNo findings.\n\n### Reproducibility\n\nNo findings.\n\n### Context management\n\nNo findings.\n\n### Strict definitions\n\nNo findings.\n\n## Passing checks\n\n- Idempotency declaration is present and specific (`SKILL.md:11`) \u2014 states the skill is idempotent and that re-runs overwrite the report with current numbers.\n- Description names what / when / when-to-skip (`SKILL.md:3`) \u2014 verb + artifact (\"count words, lines, and bytes ... write a small report\"), trigger (\"asks for word/line/byte counts on a specific file\"), and a negative case (\"skip when the user wants ... sentiment, readability, frequency\").\n- Inputs section fully grounds the single input (`SKILL.md:15`) \u2014 name (`path`), source (positional CLI arg), required-ness, and a concrete validation rule (`[ -f \"$path\" ]` plus `file --mime-type` text/ check).\n- Output is fully declared (`SKILL.md:19`) \u2014 path pattern (`<path>.count.md`), format (three named lines), and pre-existing-file behavior (overwrite, documented as the refresh path).\n- `argument-hint` is present in frontmatter (`SKILL.md:4`) so the calling syntax is visible without reading the body.\n\n## Next step\n\nHand this report back to `skill-creator` to revise: `/skill-creator <path-to-this-file>`. The skill-creator workflow will treat each finding as feedback for an iteration.\n\nIn this case there are no findings \u2014 the skill is well-formed against all four objectives. No revision needed unless the author wants to extend functionality.\n"}], "grading": {"eval_id": 1, "kind": "with_skill", "report_path": "/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-1/with_skill/outputs/audit-word-count-2026-04-29.md", "expectations": [{"text": "a markdown report file is written and the path is named in the assistant's final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-1/with_skill/outputs/audit-word-count-2026-04-29.md"}, {"text": "./skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}, {"text": "total finding count across all four objectives is \u2264 4", "passed": true, "evidence": "0 findings"}, {"text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right", "passed": true, "evidence": ""}, {"text": "the report does NOT raise a finding for missing idempotency declaration", "passed": true, "evidence": ""}, {"text": "the report does NOT raise a finding for missing 'when to skip'", "passed": true, "evidence": ""}, {"text": "the report does not use severity tiers", "passed": true, "evidence": ""}]}}, {"id": "eval-1-without_skill", "prompt": "Run an audit on the skill at ./skills/word-count/ \u2014 it's a small one but I want to make sure I haven't missed anything obvious. No PR open, write the report to a file.", "eval_id": 1, "outputs": [{"name": "AUDIT.md", "type": "text", "content": "# Audit Report \u2014 `word-count` skill\n\n**Target:** `./skills/word-count/SKILL.md`\n**Auditor:** Claude (baseline, no audit checklist)\n**Date:** 2026-04-29\n**Verdict:** Mostly solid for a small skill. **One real bug** in the wc parsing instructions, and **one description/inputs mismatch** that will confuse triggering. A handful of smaller robustness gaps worth fixing before the skill sees real use.\n\n---\n\n## Findings\n\nFindings are tagged by severity:\n\n- **bug** \u2014 likely to produce wrong output\n- **inconsistency** \u2014 internal contradiction in the skill itself\n- **robustness** \u2014 edge case that will cause user-visible failure\n- **nit** \u2014 minor / stylistic\n\n### 1. (bug) `wc -wlc` output order is wrong in the workflow description\n\n> \"Run `wc -wlc \"$path\"` and capture the three numbers from the first whitespace-delimited fields.\"\n\n`wc`'s output column order is **fixed**: `newlines words bytes` (POSIX), regardless of the order the flags are passed. The skill flags `-wlc` (word, line, byte) read left-to-right as if the columns will appear in that order. They will not. A naive implementer reading this skill will produce a report where `words:` and `lines:` are swapped.\n\n**Fix:** Either\n\n- spell out the column order explicitly: \"wc emits `lines words bytes` in that fixed order \u2014 assign accordingly,\" or\n- run three separate calls (`wc -w`, `wc -l`, `wc -c`) so position is unambiguous, or\n- show the exact extraction snippet (e.g. `read lines words bytes _ < <(wc -wlc \"$path\")`).\n\nThis is the most consequential issue in the skill.\n\n### 2. (inconsistency) Description says \"set of files,\" everything else says one file\n\nThe description's trigger clause:\n\n> \"Use when the user asks for word/line/byte counts on a specific file **or set of files**.\"\n\nBut:\n\n- `argument-hint: \"<path-to-file>\"` \u2014 singular.\n- `Inputs` says `path` is a single positional arg, with `[ -f \"$path\" ]` validation \u2014 singular.\n- `Workflow` walks through one file end-to-end.\n- `Output` writes one sibling `.count.md` \u2014 implies one input.\n\n**Effect:** the skill will be triggered on multi-file requests it cannot fulfill, and it has no documented fallback for that case. Either remove \"or set of files\" from the description, or extend the inputs/workflow to loop over multiple paths and write one report per file. Removing the phrase is the smaller change and is consistent with the rest of the skill.\n\n### 3. (robustness) Empty files are rejected by the text-file check\n\n`file --mime-type` reports empty files as `inode/x-empty`, which does not start with `text/`. The validation step in the workflow will therefore exit with an error on a perfectly legitimate empty text file \u2014 even though `wc` would happily report `0 0 0`.\n\n**Fix:** either special-case zero-byte files (counts are trivially zero) before the mime-type test, or accept `inode/x-empty` alongside `text/*`. Worth at least documenting if the rejection is intentional.\n\n### 4. (robustness) Destination writability is never checked\n\nWorkflow assumes `<path>.count.md` is writable. If `path` lives in a read-only directory (e.g. a mounted snapshot, a system path the user is reading from), the validation passes but the write step fails partway through. The skill should either pre-check writability of the parent dir, or document that the failure mode is \"best-effort write, surface the OS error to the user.\"\n\n### 5. (robustness) No handling of `path` ending in `.count.md`\n\nRunning the skill on `notes.count.md` produces `notes.count.md.count.md` \u2014 possibly intentional, but a user re-running by mistake will start accumulating nested reports. Cheap defense: if `path` ends in `.count.md`, refuse with a one-line error (\"path looks like a count report; pass the original file instead\").\n\n### 6. (nit) Output is named `.md` but is not Markdown\n\nThe three-line body (`words: N`, `lines: N`, `bytes: N`) is plain key-value text. Renaming to `.count.txt`, or formatting as a real Markdown snippet (a table or a fenced block), would match the extension. Low priority; current shape is fine if the `.md` extension is just to signal \"human-readable text companion.\"\n\n### 7. (nit) \"Idempotent\" claim is correct but slightly under-specified\n\nThe skill calls itself idempotent because it overwrites. Strictly, idempotence here is \"same input file + unchanged contents \u2192 same output.\" If the input changes between runs the output changes too \u2014 that is the *point*, but the wording could be tightened to \"re-runnable / overwrites\" to avoid suggesting the output is invariant.\n\n### 8. (nit) `file --mime-type` portability\n\n`file --mime-type` is GNU-style. BSD `file` (macOS default before recent versions) accepts `-I` instead. If the skill is ever invoked on a stock macOS shell, the validation step silently fails. Either pin to `file -b --mime-type` (works on both modern GNU and recent BSD), or document the dependency.\n\n---\n\n## What the skill gets right\n\n- **Description has both a trigger clause and a skip clause**, with concrete examples of out-of-scope tasks (sentiment, readability, frequency). This is the right shape for skill descriptions and is the single biggest factor in correct triggering.\n- **Inputs are validated before any side effect**, and the failure mode is documented (\"exit with a one-line error to the user and do not write anything\").\n- **Output location is deterministic** (sibling file with a fixed suffix), which is what makes the idempotency claim work.\n- **Scope is tightly drawn.** The skill resists the temptation to grow into a general text-analysis tool, and the \"When to skip\" section names the categories it punts on.\n- **Argument shape (`argument-hint`) is present and matches the single-input workflow** (modulo finding #2).\n\n---\n\n## Recommended priority\n\n1. Fix finding #1 (wc column order) \u2014 this is the only finding that breaks correctness.\n2. Fix finding #2 (description vs. inputs) \u2014 affects when the skill fires.\n3. Address #3\u2013#5 if the skill is going to be run unattended.\n4. #6\u2013#8 are polish.\n\nNothing in the skill warrants a rewrite. With #1 and #2 resolved, the skill is ready to ship as-is.\n"}], "grading": {"eval_id": 1, "kind": "without_skill", "report_path": "/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-1/without_skill/outputs/AUDIT.md", "expectations": [{"text": "a markdown report file is written and the path is named in the assistant's final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-1/without_skill/outputs/AUDIT.md"}, {"text": "./skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}, {"text": "total finding count across all four objectives is \u2264 4", "passed": true, "evidence": "0 findings"}, {"text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right", "passed": false, "evidence": ""}, {"text": "the report does NOT raise a finding for missing idempotency declaration", "passed": true, "evidence": ""}, {"text": "the report does NOT raise a finding for missing 'when to skip'", "passed": true, "evidence": ""}, {"text": "the report does not use severity tiers", "passed": true, "evidence": ""}]}}, {"id": "eval-2-with_skill", "prompt": "Audit the word-count skill \u2014 it's installed under ./.claude/skills/ in this project. I'm not in a PR, write the report to a file.", "eval_id": 2, "outputs": [{"name": "audit-word-count-2026-04-29.md", "type": "text", "content": "# Audit: word-count\n\n- Target: `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/with_skill/work/.claude/skills/word-count/`\n- Date: 2026-04-29\n- Findings: 1  (idempotency: 0, reproducibility: 0, context-management: 0, strict-definitions: 1)\n\n## Findings\n\n### Idempotency\n\nNo findings.\n\n### Reproducibility\n\nNo findings.\n\n### Context management\n\nNo findings.\n\n### Strict definitions\n\n- `SKILL.md:3` \u2014 description's \"when to use\" says \"a specific file or set of files\", but the Inputs section (`SKILL.md:15`) declares a single positional `path` and the workflow processes exactly one file. The \"or set of files\" phrasing will over-trigger the skill on multi-file requests it cannot satisfy. Either drop \"or set of files\" from the description, or extend the contract to accept multiple paths.\n\n## Passing checks\n\n- Idempotency declaration is present and specific (`SKILL.md:11`: \"This skill is **idempotent**: re-running on the same input file overwrites the report with current numbers\").\n- Output overwrite intent is documented at the write site (`SKILL.md:19`, `SKILL.md:25`).\n- Description names what (count words/lines/bytes + write report), when (user asks for word/line/byte counts), and when-to-skip (sentiment/readability/frequency analysis) \u2014 all three triggering elements present.\n- Input `path` is fully specified: source (positional CLI arg), required-ness, and validation rules (`[ -f \"$path\" ]` and `file --mime-type` text/* check) at `SKILL.md:15`.\n- Output is fully specified: path pattern (`<path>.count.md`), format (three lines `words: N` / `lines: N` / `bytes: N`), and overwrite behavior at `SKILL.md:18-19`.\n- `argument-hint` is present in frontmatter (`SKILL.md:4`).\n- Explicit \"When to skip\" section enumerating near-miss tasks (`SKILL.md:27-29`).\n- No vague directives, no implicit environment dependencies, no non-deterministic verbs.\n- SKILL.md is 29 lines \u2014 well under the 500-line context budget; no inline content needs to move to references/.\n\n## Next step\n\nHand this report back to `skill-creator` to revise: `/skill-creator <path-to-this-file>`. The skill-creator workflow will treat each finding as feedback for an iteration.\n"}], "grading": {"eval_id": 2, "kind": "with_skill", "report_path": "/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/with_skill/outputs/audit-word-count-2026-04-29.md", "expectations": [{"text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/", "passed": true, "evidence": ""}, {"text": "a report file is written and its path is named in the final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/with_skill/outputs/audit-word-count-2026-04-29.md"}, {"text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}]}}, {"id": "eval-2-without_skill", "prompt": "Audit the word-count skill \u2014 it's installed under ./.claude/skills/ in this project. I'm not in a PR, write the report to a file.", "eval_id": 2, "outputs": [{"name": "audit-report.md", "type": "text", "content": "# Audit Report: word-count skill\n\n**Target:** `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/without_skill/work/.claude/skills/word-count/SKILL.md`\n\n**Date:** 2026-04-29\n\n**Auditor:** baseline judgment (no checklist)\n\n## Overview\n\nThe `word-count` skill is a small, well-scoped utility that counts words, lines, and bytes in a text file and writes a sibling `.count.md` report. The skill is documented clearly, declares idempotency, and provides positive and negative triggering signals in its `description`. Below is a list of issues found, ranked by severity.\n\n## Findings\n\n### Bug \u2014 `file --mime-type` parse will misbehave without `-b`\n\n**Severity:** High\n\nThe validation step says:\n\n> test with `file --mime-type`; reject if it doesn't start with `text/`\n\nBy default, `file --mime-type \"$path\"` prints `<path>: <mime>` \u2014 the output begins with the filename, not the mime type. A literal \"starts with `text/`\" check will reject every non-empty path. The fix is to use the brief flag:\n\n```bash\nfile --mime-type -b \"$path\"\n```\n\n\u2026which prints just the mime string. Alternatively, parse after the trailing `: `. As written, the skill's validation logic is broken for the common case.\n\n### Bug risk \u2014 `wc -wlc` output order is fixed, not flag-driven\n\n**Severity:** Medium\n\nThe workflow says:\n\n> Run `wc -wlc \"$path\"` and capture the three numbers from the first whitespace-delimited fields.\n\n`wc` always emits its columns in the fixed order **lines, words, bytes** regardless of the flag order on the command line. A reader who follows the flag order `-wlc` may incorrectly map field 1 \u2192 words, field 2 \u2192 lines, field 3 \u2192 bytes, yielding swapped `words` and `lines` values. The skill should either:\n\n- Reorder the flags to `wc -lwc` so the flag order matches the output order, or\n- Explicitly state the output order (\"`wc` prints lines, then words, then bytes \u2014 assign accordingly\"), or\n- Use three separate invocations (`wc -w`, `wc -l`, `wc -c`) to remove ambiguity.\n\n### Inconsistency \u2014 argument hint vs. description scope\n\n**Severity:** Low\n\n- `argument-hint: \"<path-to-file>\"` is singular.\n- `description` says \"a specific file **or set of files**\".\n- The workflow only handles one file (`$path`).\n\nEither tighten the description to a single file, or extend the workflow to iterate over multiple paths. Today, a user invoking with several paths would silently get a one-file behavior.\n\n### Missing \u2014 `allowed-tools` declaration\n\n**Severity:** Low\n\nNo `allowed-tools` field in the frontmatter. The skill only needs `Bash` (and arguably `Write` for the report, though the workflow uses redirection). Restricting the tool surface reduces blast radius and clarifies intent. Recommended:\n\n```yaml\nallowed-tools: Bash, Write\n```\n\n### Missing \u2014 error format and write-failure handling\n\n**Severity:** Low\n\nStep 1 says \"exit with a one-line error \u2026 and do not write anything.\" That is fine for input validation, but step 3 silently assumes the sibling write succeeds. If the input lives in a read-only directory (e.g. `/usr/share/...`), the skill will fail at write time without prescribed handling. Suggest documenting the failure mode (e.g., \"if the sibling write fails, report the error path and abort\").\n\n### Minor \u2014 output filename convention\n\n**Severity:** Informational\n\n`<path>.count.md` produces names like `notes.txt.count.md` (double extension). It is unambiguous and idempotent, but readers may expect `notes.count.md` (extension replaced). The current behavior is documented and acceptable; flagging only because it is mildly unusual.\n\n### Minor \u2014 no example output\n\n**Severity:** Informational\n\nThe skill specifies the format (`words: N`, `lines: N`, `bytes: N`) but provides no concrete example. A 3-line example block would remove ambiguity (e.g., is there a trailing newline? lowercase keys? exact spacing?) and prevent drift across runs.\n\n## Strengths\n\n- Clear positive and negative triggering language in the `description`.\n- Explicit idempotency contract (re-runs overwrite).\n- Honest \"When to skip\" section that defers Unicode/grapheme/character work and frequency/sentiment analysis to other tools \u2014 avoids scope creep.\n- Input validation called out as a first step before any side effect.\n- Quoting of `\"$path\"` in the documented commands is correct.\n- Compact: one screenful, easy to follow.\n\n## Recommended fixes (priority order)\n\n1. Add `-b` to the `file --mime-type` invocation (or change the parse), so validation actually works.\n2. Make the `wc` output-order assumption explicit (preferred: change flags to `-lwc` to mirror output order, then list the fields as lines/words/bytes).\n3. Reconcile `argument-hint` with the \"set of files\" wording in the description.\n4. Add `allowed-tools: Bash, Write` to the frontmatter.\n5. Document the sibling-write failure mode and add a short example of the report contents.\n\n## Verdict\n\nThe skill's scope, structure, and tone are good. Two real bugs (`file --mime-type` parsing and `wc` field-order ambiguity) would cause the skill to fail or produce wrong numbers in normal use; both are easy fixes. After those, the remaining items are polish.\n"}], "grading": {"eval_id": 2, "kind": "without_skill", "report_path": "/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/without_skill/outputs/audit-report.md", "expectations": [{"text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/", "passed": true, "evidence": ""}, {"text": "a report file is written and its path is named in the final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/without_skill/outputs/audit-report.md"}, {"text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}]}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "audit-skill", "skill_path": "<path/to/skill>", "executor_model": "<model-name>", "analyzer_model": "<model-name>", "timestamp": "2026-04-29T18:50:07Z", "evals_run": [0, 1, 2], "runs_per_configuration": 3}, "runs": [{"eval_id": 0, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 15, "failed": 0, "total": 15, "time_seconds": 110.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/with_skill/outputs/audit-bad-skill-2026-04-29.md"}, {"text": "the report file is non-empty (at least 800 bytes)", "passed": true, "evidence": "4890 bytes"}, {"text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)", "passed": true, "evidence": "unchanged=True"}, {"text": "the report has an Idempotency section (heading or labeled findings list)", "passed": true, "evidence": "found Idempotency heading/label"}, {"text": "the report has a Reproducibility section", "passed": true, "evidence": ""}, {"text": "the report has a Context management section", "passed": true, "evidence": ""}, {"text": "the report has a Strict definitions section", "passed": true, "evidence": ""}, {"text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)", "passed": true, "evidence": ""}, {"text": "at least one finding cites a specific vague phrase from the bad skill", "passed": true, "evidence": ""}, {"text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)", "passed": true, "evidence": ""}, {"text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration", "passed": true, "evidence": ""}, {"text": "a finding flags the long inline output template as content that should move to references/", "passed": true, "evidence": ""}, {"text": "at least 80% of findings cite a `file:line` reference", "passed": true, "evidence": "24/30 bullets cite file:line"}, {"text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)", "passed": true, "evidence": ""}, {"text": "findings are grouped by objective (the four objective names appear as headings or list-section labels)", "passed": true, "evidence": ""}], "notes": []}, {"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 7, "failed": 0, "total": 7, "time_seconds": 84.3, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "a markdown report file is written and the path is named in the assistant's final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-1/with_skill/outputs/audit-word-count-2026-04-29.md"}, {"text": "./skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}, {"text": "total finding count across all four objectives is \u2264 4", "passed": true, "evidence": "0 findings"}, {"text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right", "passed": true, "evidence": ""}, {"text": "the report does NOT raise a finding for missing idempotency declaration", "passed": true, "evidence": ""}, {"text": "the report does NOT raise a finding for missing 'when to skip'", "passed": true, "evidence": ""}, {"text": "the report does not use severity tiers", "passed": true, "evidence": ""}], "notes": []}, {"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 3, "failed": 0, "total": 3, "time_seconds": 109.5, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/", "passed": true, "evidence": ""}, {"text": "a report file is written and its path is named in the final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/with_skill/outputs/audit-word-count-2026-04-29.md"}, {"text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}], "notes": []}, {"eval_id": 0, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.3333, "passed": 5, "failed": 10, "total": 15, "time_seconds": 96.0, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/without_skill/outputs/AUDIT_REPORT.md"}, {"text": "the report file is non-empty (at least 800 bytes)", "passed": true, "evidence": "10127 bytes"}, {"text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)", "passed": true, "evidence": "unchanged=True"}, {"text": "the report has an Idempotency section (heading or labeled findings list)", "passed": false, "evidence": "no Idempotency section"}, {"text": "the report has a Reproducibility section", "passed": false, "evidence": ""}, {"text": "the report has a Context management section", "passed": false, "evidence": ""}, {"text": "the report has a Strict definitions section", "passed": false, "evidence": ""}, {"text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)", "passed": false, "evidence": ""}, {"text": "at least one finding cites a specific vague phrase from the bad skill", "passed": true, "evidence": ""}, {"text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)", "passed": false, "evidence": ""}, {"text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration", "passed": true, "evidence": ""}, {"text": "a finding flags the long inline output template as content that should move to references/", "passed": false, "evidence": ""}, {"text": "at least 80% of findings cite a `file:line` reference", "passed": false, "evidence": "0/41 bullets cite file:line"}, {"text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)", "passed": false, "evidence": ""}, {"text": "findings are grouped by objective (the four objective names appear as headings or list-section labels)", "passed": false, "evidence": ""}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.8571, "passed": 6, "failed": 1, "total": 7, "time_seconds": 93.2, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "a markdown report file is written and the path is named in the assistant's final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-1/without_skill/outputs/AUDIT.md"}, {"text": "./skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}, {"text": "total finding count across all four objectives is \u2264 4", "passed": true, "evidence": "0 findings"}, {"text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right", "passed": false, "evidence": ""}, {"text": "the report does NOT raise a finding for missing idempotency declaration", "passed": true, "evidence": ""}, {"text": "the report does NOT raise a finding for missing 'when to skip'", "passed": true, "evidence": ""}, {"text": "the report does not use severity tiers", "passed": true, "evidence": ""}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 3, "failed": 0, "total": 3, "time_seconds": 78.2, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/", "passed": true, "evidence": ""}, {"text": "a report file is written and its path is named in the final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/without_skill/outputs/audit-report.md"}, {"text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 101.2667, "stddev": 14.6957, "min": 84.3, "max": 110.0}, "tokens": {"mean": 0.0, "stddev": 0.0, "min": 0, "max": 0}}, "without_skill": {"pass_rate": {"mean": 0.7301, "stddev": 0.351, "min": 0.3333, "max": 1.0}, "time_seconds": {"mean": 89.1333, "stddev": 9.5715, "min": 78.2, "max": 96.0}, "tokens": {"mean": 0.0, "stddev": 0.0, "min": 0, "max": 0}}, "delta": {"pass_rate": "+0.27", "time_seconds": "+12.1", "tokens": "+0"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

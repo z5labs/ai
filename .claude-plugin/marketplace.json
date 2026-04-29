@@ -15,6 +15,12 @@
       "source": "./plugins/file-library",
       "description": "Tools for building Go file library packages: scaffolding, spec extraction, and feature implementation",
       "version": "0.1.0"
+    },
+    {
+      "name": "audit-skill",
+      "source": "./plugins/audit-skill",
+      "description": "Statically audit a Claude Code skill against four quality objectives: idempotency, reproducibility, context management, and strict definitions",
+      "version": "0.1.0"
     }
   ]
 }

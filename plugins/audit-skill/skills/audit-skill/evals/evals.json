@@ -1,0 +1,62 @@
+{
+  "skill_name": "audit-skill",
+  "evals": [
+    {
+      "id": 0,
+      "name": "bad-skill-finds-violations",
+      "prompt": "I wrote a draft skill at ./skills/bad-skill/ for generating release notes and I'm not sure how solid it is. There's no PR open right now, so just write me a report file I can read through. Audit it and tell me where the file is when you're done.",
+      "expected_output": "A markdown report file written to a path the user can read. Findings appear under at least three of the four objectives (idempotency, reproducibility, context-management, strict-definitions). Specific violations called out: missing 'when to skip' in description; vague language ('as needed', 'appropriately', 'use your judgment'); use of `date` without declaring as input; `gh pr create` without precondition; long inline output template that should be in references/; missing inputs declaration. The skill is NOT modified.",
+      "files": ["fixtures/bad-skill/SKILL.md"],
+      "files_destination": "./skills/bad-skill/SKILL.md",
+      "assertions": [
+        {"id": "report-file-written", "text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)"},
+        {"id": "report-not-empty", "text": "the report file is non-empty (at least 800 bytes)"},
+        {"id": "target-not-modified", "text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)"},
+        {"id": "objective-idempotency-section", "text": "the report has an Idempotency section (heading or labeled findings list)"},
+        {"id": "objective-reproducibility-section", "text": "the report has a Reproducibility section"},
+        {"id": "objective-context-mgmt-section", "text": "the report has a Context management section"},
+        {"id": "objective-strict-defs-section", "text": "the report has a Strict definitions section"},
+        {"id": "finds-when-to-skip-missing", "text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)"},
+        {"id": "finds-vague-language", "text": "at least one finding cites a specific vague phrase from the bad skill ('as needed', 'appropriately', 'reasonably', or 'use your judgment')"},
+        {"id": "finds-date-implicit-input", "text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)"},
+        {"id": "finds-gh-pr-create-precondition", "text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration"},
+        {"id": "finds-inline-template", "text": "a finding flags the long inline output template as content that should move to references/ (under context-management)"},
+        {"id": "finds-description-side-effects", "text": "a finding notes that the description ('Generate release notes from git history.') does not mention the workflow's side effects — pushing a tag and creating a PR — under strict-definitions"},
+        {"id": "findings-cite-file-line", "text": "at least 80% of findings cite a `file:line` reference"},
+        {"id": "no-severity-tiers", "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)"},
+        {"id": "findings-flat-by-objective", "text": "findings are grouped by objective (the four objective names appear as headings or list-section labels), not by severity"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "good-skill-stays-quiet",
+      "prompt": "Run an audit on the skill at ./skills/word-count/ — it's a small one but I want to make sure I haven't missed anything obvious. No PR open, write the report to a file.",
+      "expected_output": "A markdown report file. The report should have few findings — the good skill declares idempotency, has a description with what/when/skip, lists inputs and outputs, and is short. Some minor findings may be reasonable (e.g. could nitpick the validation regex), but the report should NOT inflate findings — it should mostly show passing checks. The audit-skill should NOT manufacture findings just to have something to say.",
+      "files": ["fixtures/good-skill/SKILL.md"],
+      "files_destination": "./skills/word-count/SKILL.md",
+      "assertions": [
+        {"id": "report-file-written", "text": "a markdown report file is written and the path is named in the assistant's final message"},
+        {"id": "target-not-modified", "text": "./skills/word-count/SKILL.md is byte-identical to the input fixture"},
+        {"id": "low-finding-count", "text": "total finding count across all four objectives is ≤ 4 (the skill is genuinely clean — over-flagging it would mean the audit is noisy)"},
+        {"id": "finds-set-of-files-mismatch", "text": "a finding catches the description ↔ workflow scope mismatch: description says 'or set of files' but argument-hint and workflow are single-file (under strict-definitions)"},
+        {"id": "passing-checks-section", "text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right"},
+        {"id": "idempotency-not-flagged-as-missing", "text": "the report does NOT raise a finding for missing idempotency declaration (because the skill declares it on line 11: 'This skill is idempotent')"},
+        {"id": "when-to-skip-not-flagged", "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants more sophisticated text analysis...')"},
+        {"id": "no-severity-tiers", "text": "the report does not use severity tiers"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "name-resolution-from-claude-skills",
+      "prompt": "Audit the word-count skill — it's installed under ./.claude/skills/ in this project. I'm not in a PR, write the report to a file.",
+      "expected_output": "Skill resolved by name from ./.claude/skills/word-count/. Audit completes and produces a report file. The assistant's final message confirms which path was resolved (so the user knows it found the right one).",
+      "files": ["fixtures/good-skill/SKILL.md"],
+      "files_destination": "./.claude/skills/word-count/SKILL.md",
+      "assertions": [
+        {"id": "skill-resolved-by-name", "text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/ (proving the name-based resolver worked)"},
+        {"id": "report-file-written", "text": "a report file is written and its path is named in the final message"},
+        {"id": "target-not-modified", "text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture"}
+      ]
+    }
+  ]
+}

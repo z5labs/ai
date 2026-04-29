@@ -1,0 +1,35 @@
+{
+  "eval_id": 1,
+  "eval_name": "good-skill-stays-quiet",
+  "prompt": "Run an audit on the skill at ./skills/word-count/ \u2014 it's a small one but I want to make sure I haven't missed anything obvious. No PR open, write the report to a file.",
+  "assertions": [
+    {
+      "id": "report-file-written",
+      "text": "a markdown report file is written and the path is named in the assistant's final message"
+    },
+    {
+      "id": "target-not-modified",
+      "text": "./skills/word-count/SKILL.md is byte-identical to the input fixture"
+    },
+    {
+      "id": "low-finding-count",
+      "text": "total finding count across all four objectives is \u2264 4 (the skill is genuinely clean \u2014 over-flagging it would mean the audit is noisy)"
+    },
+    {
+      "id": "passing-checks-section",
+      "text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right"
+    },
+    {
+      "id": "idempotency-not-flagged-as-missing",
+      "text": "the report does NOT raise a finding for missing idempotency declaration (because the skill declares it on line 8: 'This skill is idempotent')"
+    },
+    {
+      "id": "when-to-skip-not-flagged",
+      "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants more sophisticated text analysis...')"
+    },
+    {
+      "id": "no-severity-tiers",
+      "text": "the report does not use severity tiers"
+    }
+  ]
+}
