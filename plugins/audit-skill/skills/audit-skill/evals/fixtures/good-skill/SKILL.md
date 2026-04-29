@@ -21,7 +21,7 @@ This skill is **idempotent**: re-running on the same input file overwrites the r
 ## Workflow
 
 1. **Validate input.** If `path` doesn't exist or isn't a text file, exit with a one-line error to the user and do not write anything.
-2. **Compute counts.** Run `wc -wlc "$path"` and capture the three numbers from the first whitespace-delimited fields.
+2. **Compute counts.** Run `wc -lwc "$path"`. `wc` emits fields in a fixed order — lines, words, bytes — regardless of the flag order, so the output is `<lines> <words> <bytes> <path>`. Map field 1 → `lines`, field 2 → `words`, field 3 → `bytes`. Do NOT infer the mapping from the flag order.
 3. **Write the report.** Overwrite `<path>.count.md` with the three lines above. Tell the user the report path.
 
 ## When to skip
