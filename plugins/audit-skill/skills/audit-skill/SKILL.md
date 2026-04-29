@@ -9,6 +9,13 @@ Read-only static analysis of a target skill. Audits its `SKILL.md`, bundled `scr
 
 This skill is itself bound by the same four objectives. If you find yourself wanting to add a vague directive ("audit thoroughly", "use good judgment"), turn it into a concrete check in the appropriate `checks/<objective>.md`.
 
+## Idempotency
+
+This skill is idempotent in both modes; re-running on the same target is a documented refresh path.
+
+- **File mode** — overwrites `audit-<skill-name>-<YYYY-MM-DD>.md` on re-run. Two runs on different days produce two dated reports (intentional — the date is part of the path).
+- **PR mode** — deduplicates against prior audits via a marker line (`<!-- audit-skill: <head-sha> -->`) on the summary review. If a marker matches the current head SHA, skip posting and tell the user the existing review URL; if a marker is for an older SHA, dismiss it before posting fresh. See `references/pr-mode.md` for the exact procedure.
+
 ## Inputs
 
 - **Target skill** — a name (e.g. `extract-text-spec`) or absolute path. If a name, resolve in this order, first match wins:
@@ -26,13 +33,13 @@ This skill is itself bound by the same four objectives. If you find yourself wan
 
 2. **Run each objective in sequence.** For each of the four below, read the matching `checks/<objective>.md` only when starting that objective (progressive disclosure — don't load all four upfront). Each check file lists concrete patterns to look for and how to phrase the finding. Append findings to an in-memory list as you go.
 
-   - **Idempotency** — `checks/idempotency.md`. Skip with a note in the report if `SKILL.md` declares the skill non-idempotent up front (e.g. "this skill is intentionally non-idempotent because…"). Otherwise the absence of that declaration is itself a finding.
+   - **Idempotency** — `checks/idempotency.md`. Skip with a note in the report if `SKILL.md` declares an idempotency stance — either "this skill is idempotent" or "intentionally non-idempotent because…". Both stances are fine; only the absence of any declaration is a finding.
    - **Reproducibility** — `checks/reproducibility.md`. Always run.
    - **Context management** — `checks/context-management.md`. Always run.
    - **Strict definitions** — `checks/strict-definitions.md`. Always run. Absorbs trigger-quality (description, when-to-use, when-to-skip).
 
 3. **Emit output.** Read `report-template.md` for the exact format.
-   - **PR mode**: For each finding whose `file:line` falls on a line modified in the PR diff, post an inline review comment. Findings on unchanged lines, plus an audit summary, go in a single top-level review comment. Use `gh pr review --comment -F -` for the summary and `gh api repos/{owner}/{repo}/pulls/{n}/comments` for inline comments. Determine modified lines via `gh pr diff --patch` — parse `@@` hunks. If no findings, post a single summary comment saying "audit clean — N checks passed".
+   - **PR mode**: read `references/pr-mode.md` for the exact `gh` invocations (head SHA capture, modified-line index, inline-comment field shape, summary review, dedup against prior audits). At a high level: deduplicate against prior runs, post one inline comment per finding anchored to a modified line, post a single summary review for everything else.
    - **File mode**: Write to `./audit-<skill-name>-<YYYY-MM-DD>.md` using the report template. Tell the user the path so they can pass it to `skill-creator` for revision (`/skill-creator <path>` or just attach the file in conversation).
 
 4. **Report back.** Always tell the user: target audited, output mode used, finding count by objective, and where the output went.

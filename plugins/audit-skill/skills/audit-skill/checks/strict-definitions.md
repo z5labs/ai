@@ -41,7 +41,7 @@ This is distinct from the "examples drift" check under reproducibility — that 
 Scan `SKILL.md` for an Inputs / Arguments / Parameters section, or for an `argument-hint` field in frontmatter. For each input the skill consumes (CLI arg, env var, prompt, file path, stdin), check:
 
 - Name.
-- Source (which of those four).
+- Source (which of those five).
 - Required vs optional, with a default if optional.
 - Validation rule (regex, allowed values, "must exist", etc.).
 
@@ -70,8 +70,10 @@ Raise: `SKILL.md:<line> — step <X> doesn't state its preconditions / depends o
 Specifically the model-facing imperative verbs. Grep for:
 
 ```
-grep -nE '\b(handle|process|deal with|address|take care of|manage|consider) [a-z]' SKILL.md
+grep -nE '(handle|process|deal with|address|take care of|manage|consider) [a-z]' SKILL.md
 ```
+
+The trailing `[a-z]` is what scopes this to imperative verbs followed by an object — no `\b` needed. Expect substring matches (e.g. "manager" matches "manage"); ignore them during triage.
 
 Each hit is a candidate finding — the verb gives the model latitude without saying what to actually do. Keep findings only when there's no concrete follow-up sentence ("handle errors" with nothing else = finding; "handle errors by stopping and reporting the failed file" = fine).
 

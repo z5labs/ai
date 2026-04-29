@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "audit-skill", "runs": [{"id": "eval-0-with_skill", "prompt": "I wrote a draft skill at ./skills/bad-skill/ for generating release notes and I'm not sure how solid it is. There's no PR open right now, so just write me a report file I can read through. Audit it and tell me where the file is when you're done.", "eval_id": 0, "outputs": [{"name": "audit-bad-skill-2026-04-29.md", "type": "text", "content": "# Audit: bad-skill\n\n- Target: `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-0/with_skill/work/skills/bad-skill/`\n- Date: 2026-04-29\n- Findings: 19  (idempotency: 4, reproducibility: 7, context-management: 1, strict-definitions: 7)\n\n## Findings\n\n### Idempotency\n\n- `SKILL.md:1` \u2014 `SKILL.md` does not declare whether re-running this skill is safe. State explicitly whether a second invocation overwrites, appends, or refuses, so the model doesn't have to infer it from the workflow.\n- `SKILL.md:14` \u2014 `RELEASE_NOTES.md` is written without specifying overwrite/append behavior on a pre-existing file. The note about an older `notes.md` path does not address re-runs at the new path.\n- `SKILL.md:15` \u2014 `git tag` (push a tag) is a stateful operation with no precondition (no check that the tag does not already exist) and no documented intent for re-runs.\n- `SKILL.md:15` \u2014 `gh pr create` is a stateful external call with no precondition (`gh pr list --head $branch`) and no doc that duplicates are acceptable; re-running creates a duplicate PR.\n\n### Reproducibility\n\n- `SKILL.md:12` \u2014 \"figure out an appropriate release tag\" gives no objective criterion (semver bump rule, format, source of truth); two runs may pick different tags.\n- `SKILL.md:12` \u2014 depends on `date` (current date) without listing it as a declared input.\n- `SKILL.md:13` \u2014 depends on `git log` / git state without listing it as a declared input under Inputs / Preconditions.\n- `SKILL.md:13` \u2014 \"summarize the changes as needed\" gives no objective criterion for what to include or omit.\n- `SKILL.md:16` \u2014 \"Handle any errors that come up\" has no rule for which errors are recoverable, which abort, or how to report them.\n- `SKILL.md:79` \u2014 \"Use your judgment if something looks off\" gives no test for \"looks off\"; behavior is unpredictable across runs.\n- `SKILL.md:80` \u2014 \"appropriately detailed \u2014 neither too sparse nor too verbose\" gives no threshold (line count, section count, word count) for what counts as either extreme.\n\n### Context management\n\n- `SKILL.md:22` \u2014 the inline release-notes template is ~54 lines (lines 22\u201375) and the `{{Features}}` and `{{Breaking changes}}` placeholders contain ~15 lines of instructional prose each that read as reference material rather than a literal template the model copies verbatim. Consider moving the long placeholder guidance to `references/release-notes-format.md` and keeping only the section skeleton inline.\n\n### Strict definitions\n\n- `SKILL.md:3` \u2014 description has no \"when to use\" examples (concrete user phrasings or contexts that should trigger); likely to under-trigger.\n- `SKILL.md:3` \u2014 description has no \"when to skip\" / negative case (e.g. \"skip if the user just wants a changelog summary, not a release\"); likely to over-trigger on near-misses.\n- `SKILL.md:3` \u2014 description claims only \"Generate release notes from git history\" but the workflow at lines 14\u201315 also writes `RELEASE_NOTES.md`, pushes a git tag, and opens a PR; either narrow the workflow or surface those side-effects in the description so triggering decisions account for them.\n- `SKILL.md:12` \u2014 input \"release tag\" is referenced (\"figure out an appropriate release tag\") but its source (CLI arg? prior tag + bump rule?), required-ness, and validation (semver regex?) are not stated. No Inputs section exists.\n- `SKILL.md:16` \u2014 step 5 \"Handle any errors that come up\" is a vague imperative with no concrete follow-up; matches the `(handle|process|deal with|...)` pattern.\n- `SKILL.md:81` \u2014 second output `CHANGELOG.md` (\"also update\") has no documented path location, format, insertion point, or behavior on missing/existing file.\n- `SKILL.md:14` \u2014 workflow steps are presented as a flat list but step 4 (\"Push a tag and create a release PR\") has implicit preconditions on step 3 (RELEASE_NOTES.md must exist; presumably committed) that are not stated; tag-then-PR ordering relative to the commit is also unspecified.\n\n## Passing checks\n\n- SKILL.md is well under the 500-line context budget (92 lines).\n- Output path for the primary artifact (`RELEASE_NOTES.md`) is named explicitly at line 20.\n- The note at line 82 about the renamed output path (`notes.md` \u2192 `RELEASE_NOTES.md`) is the kind of historical pin worth keeping in a revision.\n\n## Next step\n\nHand this report back to `skill-creator` to revise: `/skill-creator <path-to-this-file>`. The skill-creator workflow will treat each finding as feedback for an iteration.\n"}], "grading": null}, {"id": "eval-0-without_skill", "prompt": "I wrote a draft skill at ./skills/bad-skill/ for generating release notes and I'm not sure how solid it is. There's no PR open right now, so just write me a report file I can read through. Audit it and tell me where the file is when you're done.", "eval_id": 0, "outputs": [{"name": "audit-report.md", "type": "text", "content": "# Audit Report: `bad-skill` (Release Notes Generator)\n\n**Target:** `./skills/bad-skill/SKILL.md`\n**Audited:** 2026-04-29\n**Verdict:** Needs significant revision before use. The skill mixes a benign \"summarize git log\" task with destructive side effects (pushing tags, creating PRs, modifying CHANGELOG.md), the description is too thin to trigger reliably, and the embedded template contains contradictory and over-prescriptive guidance that will produce inconsistent output.\n\n---\n\n## Summary of findings\n\n| # | Severity | Area | Finding |\n|---|----------|------|---------|\n| 1 | High | Description / triggering | Description is a single sentence with no trigger guidance. |\n| 2 | High | Scope | Skill performs destructive operations (`git push` of a tag, `gh pr create`) that go far beyond \"generate release notes\". |\n| 3 | High | Workflow | Step 5 (\"Handle any errors\") is non-actionable. |\n| 4 | High | Template | The mandatory template embeds ~15 directives inside a single `{{features}}` placeholder, mixing schema with prose guidance. |\n| 5 | High | Internal contradictions | Length guidance contradicts itself (\"engaging and reasonable in length\" vs. \"keep it short\" vs. \"three to five sentences\"). |\n| 6 | Medium | Determinism | \"Use your judgment if something looks off\" is a smell \u2014 skills should be deterministic where they can be. |\n| 7 | Medium | Hidden side effects | CHANGELOG.md update is buried in Notes, not Workflow. |\n| 8 | Medium | Inputs / preconditions | No documented preconditions (clean tree, branch, remote, prior tag). |\n| 9 | Medium | Versioning | Step 1 leans on `date` to pick a tag. Tags are conventionally semver, not date-based; no policy is given. |\n| 10 | Medium | Output path | `RELEASE_NOTES.md` is a relative path; behavior depends on cwd. |\n| 11 | Low | Legacy noise | Note about old `notes.md` location adds confusion without value. |\n| 12 | Low | Examples | Examples describe section shape only; they don't show actual filled content. |\n| 13 | Low | Naming | The skill name `bad-skill` is presumably a placeholder; the `name:` field in frontmatter must match the directory and should describe the function. |\n\n---\n\n## Detailed findings\n\n### 1. Description is too thin to trigger reliably (High)\n\n```yaml\ndescription: Generate release notes from git history.\n```\n\nA description of this size won't tell Claude *when* to invoke the skill versus when to skip. Compare with the example skills in this repo (`word-count`, `simplify`, etc.), which name triggers, file types, and skip conditions. Concretely the description should answer: *what user phrases should fire this?* (e.g., \"draft release notes\", \"prep a release\", \"summarize what's new since vX\") and *when should it skip?* (e.g., \"not for changelog-only edits\", \"not when the user just wants a git log summary\").\n\n### 2. Scope creep \u2014 destructive side effects (High)\n\nThe skill is named \"generate release notes\" but Workflow steps 4 actually:\n\n- runs `git tag` and pushes it (implied by \"push a tag\"),\n- runs `gh pr create` to open a PR.\n\nThese are irreversible from inside the skill's perspective (a pushed tag is not a local-only artifact; a PR notifies reviewers). A skill that *generates* a document should not silently *publish* anything. Recommend:\n\n- Split into two skills, or\n- Make publishing an explicit, opt-in step gated on user confirmation, with the document-generation step working purely on the local working tree.\n\n### 3. Step 5 is not a workflow step (High)\n\n> 5. Handle any errors that come up.\n\nThis is a non-instruction. It does not specify what failure modes are expected (e.g., no prior tag, dirty working tree, `gh` not authenticated, push rejected) or what to do for each. Either remove it or replace with a concrete error-handling table.\n\n### 4. Template overloads `{{...}}` placeholders with directives (High)\n\nThe Features placeholder is a single `{{...}}` block containing roughly 15 distinct directives:\n\n- write a paragraph per feature, explain *what / why / how to invoke*\n- use as much detail as relevant\n- nest subfeatures\n- call out replacements / deprecations\n- friendly-but-precise tone\n- avoid jargon but don't dumb things down\n- aim for 3\u20135 sentences but use judgment\n- cross-reference issues / PRs with `#1234`\n- tag external contributors with `@username`\n- flag experimental / flag-gated features prominently\n- summarize migration paths and link to full guides\n- examples can help but keep short\n- mention caveats but don't dwell\n\nThis conflates the *schema* of the section (what fields exist) with *style guidance* (how to write them). When Claude renders the template, it cannot tell where the schema ends and the directive ends \u2014 the result is template syntax leaking into output, or directives being silently ignored. Recommend separating into:\n\n- a clean schema/example: literal text showing what the rendered Features section looks like;\n- a separate `## Style guide` section in the SKILL.md with the directives as a numbered list.\n\nThe Fixes and Breaking Changes placeholders have the same problem.\n\n### 5. Internal contradictions on length (High)\n\nWithin the same template:\n\n- Highlights: \"keep it engaging and reasonable in length\"\n- Features: \"Aim for around three to five sentences per feature, but use judgment\"\n- Features (later): \"keep them short \u2014 long code samples belong in the docs\"\n- Fixes: \"one to two sentences describing the bug\"\n- Fixes (later): \"Keep fix descriptions terse \u2014 users skim this section\"\n\nSome of this is reconcilable but not as written. Pick concrete, non-overlapping length budgets per section and remove the hedges (\"reasonable\", \"use your judgment\", \"as much detail as relevant\").\n\n### 6. \"Use your judgment if something looks off\" (Medium)\n\n> This skill works reasonably well for most cases. Use your judgment if something looks off.\n\nThis is a smell. A skill is supposed to be the codified judgment. If there are known edge cases (\"if there's no prior tag\", \"if the diff includes only docs changes\"), they should be enumerated with explicit handling.\n\n### 7. Hidden side effect: CHANGELOG.md (Medium)\n\n> If the repository has a CHANGELOG.md, also update it.\n\nThis is a second file edit, not mentioned in the Workflow or the Output section. Either:\n\n- promote it to a Workflow step with concrete instructions on *how* to update it (prepend? insert under \"Unreleased\"? format?), or\n- remove it.\n\nCurrently a user reading the Workflow won't know CHANGELOG.md will also be touched.\n\n### 8. No documented preconditions (Medium)\n\nThe skill assumes \u2014 but does not state \u2014 that:\n\n- the working tree is clean,\n- a prior tag exists (\"git log since the last tag\"),\n- a remote named `origin` is configured and authenticated,\n- `gh` is authenticated,\n- the user wants to release the *current* branch.\n\nIf any are false the skill will fail mid-run, possibly after writing a partial RELEASE_NOTES.md. Add a Prerequisites section that the skill checks first.\n\n### 9. Versioning policy missing (Medium)\n\n> Look at the current date with `date` and figure out an appropriate release tag.\n\nThis conflates two unrelated things. `date` produces a date string; release tags in most repos follow semver (`vX.Y.Z`) derived from the prior tag plus the change set. The skill should:\n\n- read the latest tag (`git describe --tags --abbrev=0`),\n- inspect commit messages / labels to choose major/minor/patch,\n- only fall back to date-based tagging if the project uses CalVer, and the skill should detect that.\n\n### 10. Relative output path (Medium)\n\n> Write the release notes to `RELEASE_NOTES.md`.\n\nThis is relative to the cwd at invocation time. If Claude is in a subdirectory the file lands in the wrong place. Specify \"the repository root\" and resolve via `git rev-parse --show-toplevel`.\n\n### 11. Legacy migration note adds noise (Low)\n\n> Older versions of this skill wrote to `notes.md` instead of `RELEASE_NOTES.md`. The new path is correct.\n\nSkill files are not a changelog. Drop this line \u2014 it gives Claude two paths to consider and no useful disambiguator.\n\n### 12. Examples are placeholders (Low)\n\nBoth examples describe what the *sections* look like, not what an actual rendered release-notes file looks like. They give Claude no concrete pattern to imitate. Replace with one or two short, real-looking rendered examples (~30\u201360 lines each).\n\n### 13. Skill name (Low)\n\n`name: bad-skill` is presumably a placeholder, but worth flagging:\n\n- the `name:` field must match the directory name,\n- it should describe the function (e.g., `release-notes`).\n\n---\n\n## Recommended next steps\n\nIn priority order:\n\n1. Split publishing (tag/push/PR) out of this skill or gate it behind explicit user confirmation.\n2. Rewrite the description to include trigger phrases and skip conditions.\n3. Restructure the template: clean schema + literal example, with style guidance moved to a separate `## Style guide` section.\n4. Remove length contradictions; pick one budget per section.\n5. Add a Prerequisites section with explicit precondition checks.\n6. Replace step 5 (\"handle errors\") with a concrete error-handling table or remove it.\n7. Either fully document the CHANGELOG.md update or drop it.\n8. Resolve the output path against `git rev-parse --show-toplevel`.\n9. Define the versioning policy (semver vs. CalVer; how to pick the bump).\n10. Rename the skill (`name:` and directory) to its real name.\n11. Remove the legacy `notes.md` note.\n12. Replace the abstract examples with one or two concrete rendered ones.\n"}], "grading": null}, {"id": "eval-1-with_skill", "prompt": "Run an audit on the skill at ./skills/word-count/ \u2014 it's a small one but I want to make sure I haven't missed anything obvious. No PR open, write the report to a file.", "eval_id": 1, "outputs": [{"name": "audit-word-count-2026-04-29.md", "type": "text", "content": "# Audit: word-count\n\n- Target: `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-1/with_skill/work/skills/word-count/`\n- Date: 2026-04-29\n- Findings: 2  (idempotency: 0, reproducibility: 0, context-management: 0, strict-definitions: 2)\n\n## Findings\n\n### Idempotency\n\nNo findings.\n\n### Reproducibility\n\nNo findings.\n\n### Context management\n\nNo findings.\n\n### Strict definitions\n\n- `SKILL.md:3` \u2014 description claims \"a specific file or set of files\" but `argument-hint` at line 4 and the Inputs section at line 15 only accept a single `path`; either narrow the description to one file or extend the workflow to iterate over a set.\n- `SKILL.md:24` \u2014 step 2 says to run `wc -wlc \"$path\"` and \"capture the three numbers from the first whitespace-delimited fields\", but `wc` always emits fields in the order `lines words bytes` regardless of flag order, while the documented output at line 19 labels them `words: N`, `lines: N`, `bytes: N`. A model that maps fields by reading the flag order `-wlc` will mislabel lines as words and words as lines. State the field-to-label mapping explicitly (e.g. \"field 1 = lines, field 2 = words, field 3 = bytes\") or use `wc -w`, `wc -l`, `wc -c` separately.\n\n## Passing checks\n\n- Idempotency declaration is present and specific (`SKILL.md:11`) \u2014 names the refresh path (overwrite) and notes that a different input file produces a separate report.\n- Description names what (count words/lines/bytes and write a report), when to use (asks for word/line/byte counts), and when to skip (sentiment, readability, frequency).\n- Inputs section (`SKILL.md:15`) declares name, source (positional CLI arg), required-ness, and validation (`[ -f \"$path\" ]` plus `file --mime-type` text-prefix test).\n- Output contract (`SKILL.md:19`) names path pattern (`<path>.count.md`), format (three labeled lines), and overwrite behavior.\n- A \"When to skip\" section (`SKILL.md:27`) reinforces the negative-case triggering signal beyond the frontmatter description.\n\n## Next step\n\nHand this report back to `skill-creator` to revise: `/skill-creator /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-1/with_skill/work/audit-word-count-2026-04-29.md`. The skill-creator workflow will treat each finding as feedback for an iteration.\n"}], "grading": null}, {"id": "eval-1-without_skill", "prompt": "Run an audit on the skill at ./skills/word-count/ \u2014 it's a small one but I want to make sure I haven't missed anything obvious. No PR open, write the report to a file.", "eval_id": 1, "outputs": [{"name": "audit-report.md", "type": "text", "content": "# Audit report: `word-count` skill\n\n**Target:** `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-1/without_skill/work/skills/word-count/SKILL.md`\n**Date:** 2026-04-29\n**Scope:** Single-file skill review \u2014 frontmatter, instructions, correctness, edge cases, idempotency, safety. Target was not modified.\n\n---\n\n## Summary\n\nThe skill is small and largely well-shaped: clear single responsibility, idempotent contract, sensible \"when to skip\" guidance, and an `argument-hint` that matches the inputs section. There is **one correctness bug** that would cause the produced report to mislabel two of the three numbers, and a handful of robustness gaps around input validation, quoting/path handling, and the contract between flag order and output order. None of the issues are stylistic \u2014 they all change observable behavior.\n\nSeverity legend: **High** = wrong output or data-loss risk; **Medium** = predictable failure on reasonable inputs; **Low** = polish / clarity.\n\n---\n\n## Findings\n\n### H1. `wc -wlc` field order does not match the order the skill claims (High \u2014 produces wrong report)\n\n`SKILL.md` line 24:\n> Run `wc -wlc \"$path\"` and capture the three numbers from the first whitespace-delimited fields.\n\nAnd line 19 documents the report as `words: N`, `lines: N`, `bytes: N` in that order.\n\n**Problem:** GNU `wc` ignores the flag order and always prints counts in a fixed canonical order: **newlines, words, bytes (then chars, max-line-length)**. Verified locally:\n\n```\n$ printf \"hello world\\nsecond line\\n\" > /tmp/x ; wc -wlc /tmp/x\n 2  4 24 /tmp/x        # lines=2, words=4, bytes=24\n```\n\nSo \"first whitespace-delimited field\" is the **line** count, not the word count. A naive implementer following the workflow verbatim will write `words: 2`, `lines: 4`, `bytes: 24` \u2014 silently swapping words and lines. This is the kind of bug that survives review because the numbers all look plausible.\n\n**Fix options (pick one and make the workflow unambiguous):**\n- Call `wc` three times with single flags: `wc -w \"$path\"`, `wc -l \"$path\"`, `wc -c \"$path\"`. Cheapest in clarity, three forks instead of one.\n- Keep one `wc -wlc` call but document the actual order: \"fields are lines, words, bytes \u2014 assign accordingly.\"\n- Use named extraction, e.g. `read lines words bytes _ < <(wc \"$path\")`, with the variable names matching `wc`'s real output.\n\n### H2. Output path collision with the input file is not handled (High \u2014 possible data loss on re-run)\n\nThe skill writes `<path>.count.md`. If the input is itself `notes.count.md` (a previous run's output, or any file with that name), the new output is `notes.count.md.count.md` \u2014 fine. But:\n\n- If the user passes `notes.md` and a file `notes.md.count.md` already exists from an earlier hand-edit (with notes the user wanted to keep), step 3 silently overwrites it. The skill calls overwrite \"the documented refresh path,\" which is reasonable for *its own* prior outputs but does not distinguish them from a user-authored file at the same path.\n- There is no marker (header line, magic comment) that lets a future run recognize \"this is a word-count report I previously wrote, safe to overwrite\" vs. \"this is a user file, refuse.\"\n\n**Fix:** Either (a) write a recognizable header line (e.g. `<!-- generated by word-count skill -->`) and refuse to overwrite a destination that lacks it, or (b) explicitly call out in the doc that *any* file at `<path>.count.md` will be clobbered, so the user can choose the input path knowingly.\n\n### M1. `text/` mime prefix rejects real text formats (Medium \u2014 false negatives on common inputs)\n\nLine 15:\n> validate ... must be a text file (test with `file --mime-type`; reject if it doesn't start with `text/`).\n\nVerified mime types from `file --mime-type`:\n\n| File             | mime type            | accepted by `text/` rule? |\n| ---------------- | -------------------- | ------------------------- |\n| empty `.txt`     | `inode/x-empty`      | no                        |\n| `.json`          | `application/json`   | no                        |\n| `.svg`           | `image/svg+xml`      | no                        |\n| `.csv` (simple)  | `text/plain`         | yes                       |\n\nSo an **empty file** \u2014 which has perfectly well-defined word/line/byte counts (0/0/0) \u2014 is rejected, and so are JSON and SVG, which the user almost certainly considers text. The skill description (\"text file\") is broader than the validation rule.\n\n**Fix:** Either widen the predicate (accept `text/*`, `application/json`, `application/xml`, `inode/x-empty`, and friends) or narrow the description (\"plain-text file as detected by `file --mime-type text/...`\") so the contract matches the check.\n\n### M2. Path quoting / argument handling is underspecified (Medium)\n\nThe workflow shows `wc -wlc \"$path\"` (good \u2014 quoted), but:\n\n- It does not say to use `--` to terminate options. A path beginning with `-` (e.g. `-rf.txt`) will be interpreted as a flag by `wc`, `file`, and `[ -f ]`. Use `wc -wlc -- \"$path\"` and `file --mime-type -- \"$path\"`.\n- It does not say what to do when `path` is a symlink. `[ -f \"$path\" ]` follows symlinks; `wc` follows symlinks; `file --mime-type` follows symlinks by default. That's probably the desired behavior, but the skill should state it (or use `[ -f \"$path\" ] && [ ! -L \"$path\" ]` if it should refuse symlinks).\n- It does not mention permission errors (file exists, mime ok, but unreadable). Currently `wc` would fail and the report would not be written, but the user-facing error path is undefined.\n\n### M3. \"Sibling\" output assumes the input directory is writable (Medium)\n\nLine 9 / line 19 specify that the report goes to `<path>.count.md` next to the input. If `path` is in a read-only directory (e.g. `/usr/share/...`, a mounted snapshot, a Docker image rootfs), the write fails after validation succeeds. The skill should either:\n\n- explicitly require the parent directory be writable in step 1, **or**\n- support an output-directory override.\n\n### L1. `argument-hint` says one path; description says \"a specific file or set of files\" (Low \u2014 minor mismatch)\n\nFrontmatter `argument-hint: \"<path-to-file>\"` (singular) and Inputs (\"a regular file\", singular) are consistent. But the **description** field says:\n\n> Use when the user asks for word/line/byte counts on a specific file **or set of files**.\n\nThe skill has no loop, no glob handling, and no aggregation. Either remove \"or set of files\" from the description, or extend the workflow to accept multiple paths and write one report per file. Currently this is a triggering-vs-capability mismatch that will pull the skill in for requests it can't fulfill in one invocation.\n\n### L2. \"Three-number report\" vs. report format is slightly underspecified (Low)\n\nLine 19 says the report \"contains three lines: `words: N`, `lines: N`, `bytes: N`.\" Trailing newline? Header? Timestamp? File path of the source? None of these are required, but pinning them down (or saying \"exactly these three lines, no header, trailing newline\") makes the idempotency guarantee testable. Right now two implementers writing this skill would produce byte-different reports and both could claim conformance.\n\n### L3. No mention of running on Windows / non-GNU `wc` (Low)\n\n`wc` field order is consistent across BSD and GNU, but `file --mime-type` differs (BSD `file` on macOS prints slightly different strings, e.g. `regular file` for unrecognized). If the skill is expected to run cross-platform, note it; if Linux/GNU only, say so.\n\n---\n\n## Things the skill does well\n\n- Single, clear responsibility; \"When to skip\" lists realistic adjacent requests and points away from this skill instead of trying to grow.\n- Idempotency is named and explained, not just implied.\n- `argument-hint` matches the actual input.\n- The validation step is in the workflow before any write, so a bad input won't produce a partial report.\n- The description's positive trigger (\"word/line/byte counts on a specific file\") is concrete enough to discriminate against the negative triggers in the same sentence.\n\n---\n\n## Recommended minimum patch\n\nIf only one change ships, fix **H1**: change step 2 to call `wc` three times (or document the real `lines, words, bytes` field order from `wc -wlc`). Everything else is robustness and contract-tightening.\n\nA reasonable medium-effort patch would also:\n\n1. Replace the `text/` prefix check with an allowlist that includes `inode/x-empty` and `application/json` (M1).\n2. Add `--` before `\"$path\"` in every command shown (M2).\n3. Drop \"or set of files\" from the description **or** make the workflow loop (L1).\n"}], "grading": null}, {"id": "eval-2-with_skill", "prompt": "Audit the word-count skill \u2014 it's installed under ./.claude/skills/ in this project. I'm not in a PR, write the report to a file.", "eval_id": 2, "outputs": [{"name": "audit-word-count-2026-04-29.md", "type": "text", "content": "# Audit: word-count\n\n- Target: `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-2/with_skill/work/.claude/skills/word-count/`\n- Date: 2026-04-29\n- Findings: 1  (idempotency: 0, reproducibility: 0, context-management: 0, strict-definitions: 1)\n\n## Findings\n\n### Idempotency\n\nNo findings.\n\n### Reproducibility\n\nNo findings.\n\n### Context management\n\nNo findings.\n\n### Strict definitions\n\n- `SKILL.md:3` \u2014 description claims \"on a specific file or set of files\" (plural) but `argument-hint` at `SKILL.md:4`, the `path` input at `SKILL.md:15`, and the workflow at `SKILL.md:21-25` only handle a single file; either narrow the description to \"a file\" or extend the workflow to loop over multiple paths.\n\n## Passing checks\n\n- Idempotency declaration is present and specific (`SKILL.md:11`, `SKILL.md:19`) \u2014 re-run overwrites the report, and that intent is stated twice.\n- Description names what / when / when-to-skip (`SKILL.md:3`) \u2014 all three triggering elements are present.\n- Inputs are fully grounded (`SKILL.md:15`) \u2014 name, source (positional CLI arg), required-ness, and two validation rules (`[ -f \"$path\" ]` plus `file --mime-type` text-prefix check).\n- Output path, format, and pre-existing-file behavior are all declared (`SKILL.md:19`).\n- `argument-hint` is present in frontmatter (`SKILL.md:4`).\n\n## Next step\n\nHand this report back to `skill-creator` to revise: `/skill-creator <path-to-this-file>`. The skill-creator workflow will treat each finding as feedback for an iteration.\n"}], "grading": null}, {"id": "eval-2-without_skill", "prompt": "Audit the word-count skill \u2014 it's installed under ./.claude/skills/ in this project. I'm not in a PR, write the report to a file.", "eval_id": 2, "outputs": [{"name": "word-count-audit.md", "type": "text", "content": "# Audit Report: word-count Skill\n\n**Target:** `./.claude/skills/word-count/`\n**Files audited:** `SKILL.md` (29 lines, sole file)\n**Date:** 2026-04-29\n\n## Summary\n\nThe `word-count` skill is small, focused, and well-scoped. The metadata, workflow, and intent are coherent. There are several correctness concerns and a few minor documentation issues worth flagging. Nothing is catastrophically broken; the skill would likely succeed on the happy path, but edge cases could produce incorrect output silently.\n\n---\n\n## Strengths\n\n1. **Tight scope.** The skill does one thing (three numbers, one report file). The description explicitly lists what to *skip* (sentiment, readability, frequency), which is a strong trigger-disambiguation pattern.\n2. **Clear inputs/outputs contract.** A required positional `path`, validation rules, deterministic output location (`<path>.count.md`), and idempotency are all documented.\n3. **Validation guidance is explicit.** Both existence (`[ -f \"$path\" ]`) and content-type (`file --mime-type`) checks are called out, with a fail-closed posture (do not write on error).\n4. **Frontmatter is well-formed.** `name`, `description`, and `argument-hint` are all present and match Claude Code skill conventions.\n5. **\"When to skip\" section.** Good practice \u2014 explicitly steers Claude away from misuse, complementing the description.\n\n---\n\n## Issues\n\n### High severity\n\n**H1. `wc -wlc` field-extraction instructions are ambiguous and likely wrong.**\nLine 24 says: *\"Run `wc -wlc \"$path\"` and capture the three numbers from the first whitespace-delimited fields.\"*\n- `wc` always emits counts in a fixed order: **lines, words, bytes** \u2014 regardless of the flag order on the command line. So `wc -wlc file` outputs `<lines> <words> <bytes> <file>`, not `<words> <lines> <bytes>`.\n- The instruction \"capture the three numbers from the first whitespace-delimited fields\" without specifying which number goes to which label invites swapping `words` and `lines` in the report. A naive implementation that mirrors the flag order (`-w -l -c` \u2192 words, lines, bytes) would write incorrect labels.\n- **Fix:** Either use three single-flag invocations (`wc -w`, `wc -l`, `wc -c`) for unambiguous extraction, or document the actual `wc` output ordering (`lines words bytes`) explicitly.\n\n**H2. Byte vs. character ambiguity in flags.**\nThe skill calls for `wc -c` (bytes), which is consistent with the documented \"bytes\" output and the \"When to skip\" note about character vs. byte counts. Good. But the workflow at step 2 says `wc -wlc` and the output spec says `bytes: N` \u2014 these are aligned only if `-c` is byte count. On GNU `wc`, `-c` is bytes and `-m` is characters; on some BSD locales `-c` can behave differently with multibyte input. Worth a one-line note pinning the expectation to GNU `wc -c` = bytes.\n\n### Medium severity\n\n**M1. MIME-type validation is too narrow.**\nLine 15: *\"reject if it doesn't start with `text/`\"*. This rejects legitimate text-bearing MIME types like `application/json`, `application/xml`, `application/x-shellscript`, and `application/javascript`, which `file --mime-type` commonly returns. A user who asks \"word-count this JSON file\" gets a refusal that the description does not warn about.\n- **Fix:** Either broaden the allowlist (`text/*` plus a curated set of `application/*` text formats), or document that only `text/*` MIME files are supported.\n\n**M2. No guidance for files without trailing newlines.**\n`wc -l` counts newline characters, not lines. A file with content but no trailing `\\n` will report one fewer line than a user expects. Worth a sentence acknowledging this, or switch to a definition that matches user intuition.\n\n**M3. Output format is markdown-extension but not markdown-formatted.**\nThe output file is `<path>.count.md` but its body is three `key: N` lines \u2014 that's YAML-ish, not markdown. It will render fine, but the `.md` extension implies structure. Either rename to `.count.txt`, or wrap in a code fence / use a real markdown table.\n\n### Low severity\n\n**L1. `argument-hint` shows one file but description mentions \"a specific file or set of files\".**\nLine 3 says \"a specific file **or set of files**\", but the schema (line 15) says \"a regular file\" (singular) and `argument-hint` is `<path-to-file>` (singular). The skill does not support multiple files. Tighten the description to remove \"or set of files\" to avoid mis-triggering on multi-file requests.\n\n**L2. Em-dash in description.**\nLine 3 uses an em-dash (\"\u2014 those need a different skill\"). This is fine, but if the skill registry / matcher tokenizes on punctuation, an ASCII `--` is safer for portability. Cosmetic.\n\n**L3. No example invocation.**\nA short example (`/word-count README.md` \u2192 writes `README.md.count.md`) would help the model and the user. Optional but high-value for a 29-line skill.\n\n**L4. Idempotency claim is partial.**\nLine 11 says re-running with a different input \"produces a separate report\", which is true, but if the *same* output path is implied by two different inputs (impossible here since output is derived from input), there's no collision. The claim is correct but slightly over-stated; a single sentence would suffice.\n\n**L5. No handling for paths with spaces or special characters in the documented commands.**\nThe skill quotes `\"$path\"` in the validation step but the workflow text describing `wc -wlc \"$path\"` is fine. However, the output path `<path>.count.md` is not shown quoted in any example; an implementer might forget. Minor.\n\n---\n\n## Recommended changes (priority order)\n\n1. **Fix H1**: Rewrite step 2 to make field-to-label mapping unambiguous. Suggested:\n   > Run `wc -l`, `wc -w`, and `wc -c` separately on `\"$path\"`, capturing each first integer.\n2. **Fix M1**: Decide on MIME policy and document it. If `text/*`-only is intentional, say so in the description so users with JSON/XML aren't surprised.\n3. **Tighten L1**: Remove \"or set of files\" from the description.\n4. **Address M3**: Pick `.txt` or commit to real markdown formatting.\n5. **Add an example** (L3).\n\n---\n\n## Verdict\n\n**Ship-blocking?** No.\n**Action recommended?** Yes \u2014 H1 is a real correctness bug in the documented procedure that will produce mislabeled reports if followed literally. Fix it before users rely on the output.\n\nThe skill is 80% there. The structural choices (scope, validation posture, idempotency, when-to-skip) are good. The remaining work is precision in the workflow steps and the MIME contract.\n"}], "grading": null}], "previous_feedback": {}, "previous_outputs": {"eval-0-with_skill": [{"name": "audit-bad-skill-2026-04-29.md", "type": "text", "content": "# Audit: bad-skill\n\n- Target: `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-2/eval-0/with_skill/work/skills/bad-skill/`\n- Date: 2026-04-29\n- Findings: 22  (idempotency: 4, reproducibility: 9, context-management: 1, strict-definitions: 8)\n\n## Findings\n\n### Idempotency\n\n- `SKILL.md:1` \u2014 `SKILL.md` does not declare whether re-running this skill is safe. State explicitly whether a second invocation overwrites, appends, or refuses (a release-notes generator that pushes tags has very different re-run semantics than one that only writes a file).\n- `SKILL.md:14` \u2014 `git tag` / `gh pr create` are stateful external calls with no precondition (no `git tag -l` check, no `gh pr list --head`); a second run will fail or create a duplicate PR.\n- `SKILL.md:14` \u2014 output path `RELEASE_NOTES.md` is written without specifying overwrite/append behavior.\n- `SKILL.md:81` \u2014 \"If the repository has a CHANGELOG.md, also update it\" mutates a file without specifying append vs. overwrite vs. insert-at-top.\n\n### Reproducibility\n\n- `SKILL.md:12` \u2014 depends on `date` (current date) without listing it as a declared input; the same git log run on a different day produces a different \"release tag\".\n- `SKILL.md:13` \u2014 depends on `git log` / current branch state without declaring it as an input or precondition (e.g. \"must be on the release branch with the prior tag reachable\").\n- `SKILL.md:12` \u2014 \"summarize the changes as needed\" gives no objective criterion; reproducibility requires a stated test (length cap, sections required, etc.).\n- `SKILL.md:12` \u2014 \"figure out an appropriate release tag\" leaves the versioning rule (semver? calver? bump rule?) to the model.\n- `SKILL.md:20` \u2014 \"fill in every section appropriately\" \u2014 no rubric for what \"appropriately\" means per section.\n- `SKILL.md:26` \u2014 \"keep it engaging and reasonable in length\" \u2014 no length bound; two runs will diverge.\n- `SKILL.md:32` \u2014 \"Use as much detail as relevant\" / \"Aim for around three to five sentences per feature, but use judgment based on the complexity of the change\" \u2014 soft bound plus judgment escape hatch; pick one.\n- `SKILL.md:79` \u2014 \"Use your judgment if something looks off\" \u2014 directive with no criterion for what \"off\" means or what to do about it.\n- `SKILL.md:80` \u2014 \"appropriately detailed \u2014 neither too sparse nor too verbose\" \u2014 no threshold; this is the canonical reproducibility leak.\n\n### Context management\n\n- `SKILL.md:22` \u2014 the inline release-notes template is ~54 lines and the placeholders (lines 32-42, 45-55, 58-71) carry multi-paragraph instructional prose, not literal copy-this content; consider moving to `assets/release-notes-template.md` and having SKILL.md reference it.\n\n### Strict definitions\n\n- `SKILL.md:3` \u2014 description has no \"when to use\" examples (no concrete user phrasings that should trigger); likely to under-trigger.\n- `SKILL.md:3` \u2014 description has no \"when to skip\" / negative case (e.g. \"skip if the user wants a CHANGELOG entry only, or if they want to draft a release without tagging\"); likely to over-trigger on adjacent tasks.\n- `SKILL.md:3` \u2014 description claims only \"Generate release notes from git history\" but workflow at line 14 also pushes a tag, creates a PR, and at line 81 updates CHANGELOG.md; either narrow the workflow or surface the side-effect class in the description so triggering decisions account for it.\n- `SKILL.md:23` \u2014 input `{{version}}` is referenced in the template but the skill has no Inputs section declaring its source (CLI arg? prompt? derived from step 1?), required-ness, or validation (semver regex, etc.).\n- `SKILL.md:14` \u2014 output `RELEASE_NOTES.md` has no documented behavior for a pre-existing file; same gap noted under idempotency, restated here because it is part of the output contract.\n- `SKILL.md:14` \u2014 step 4 (\"Push a tag and create a release PR\") doesn't state its preconditions: that step 3 wrote the file, that no tag with this name already exists, that the working tree is clean.\n- `SKILL.md:12` \u2014 step 1 (\"figure out an appropriate release tag\") doesn't state its precondition (a prior tag must be reachable from HEAD) or its output contract (the chosen tag must be passed to which later step?).\n- `SKILL.md:16` \u2014 \"Handle any errors that come up\" \u2014 vague verb with no follow-up; say what \"handle\" means (stop and report? retry? roll back the tag?).\n\n## Passing checks\n\n- SKILL.md is well under the 500-line target (92 lines).\n- Output path is named (`RELEASE_NOTES.md`) \u2014 the path itself is concrete even if its overwrite semantics aren't.\n- Description names a verb and an artifact (the \"what\" element of trigger quality).\n\n## Next step\n\nHand this report back to `skill-creator` to revise: `/skill-creator /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-2/eval-0/with_skill/work/audit-bad-skill-2026-04-29.md`. The skill-creator workflow will treat each finding as feedback for an iteration.\n"}], "eval-0-without_skill": [{"name": "AUDIT_REPORT.md", "type": "text", "content": "# Audit Report: `bad-skill`\n\n**Target:** `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-2/eval-0/without_skill/work/skills/bad-skill/SKILL.md`\n**Auditor:** Claude (no checklist; ad hoc judgment-based review)\n**Verdict:** **Not ready to ship.** Multiple high-severity issues across triggering, safety, and template usability. Recommend a substantial rewrite before this skill is used on a real repo.\n\n---\n\n## Summary of Severity\n\n| Severity | Count |\n|----------|-------|\n| Critical (must fix)   | 4 |\n| High (should fix)     | 4 |\n| Medium                | 5 |\n| Low / nit             | 4 |\n\n---\n\n## Critical Issues\n\n### C1. Workflow performs destructive/irreversible side effects without consent\nThe `Workflow` section instructs the skill to:\n- Step 4: \"Push a tag and create a release PR with `gh pr create`.\"\n\nA skill named \"Generate release notes from git history\" should **not** be cutting tags, pushing, or opening PRs as a default behavior. Tag pushes are effectively irreversible on shared remotes (force-deletion is destructive and breaks downstream consumers). PR creation has lower blast radius but is still surprising. Users invoking a \"generate notes\" skill expect a file, not a release.\n\n**Fix:** Remove tagging/pushing/PR creation from the default workflow. If the skill should support a \"publish\" mode, gate it behind an explicit user instruction and require confirmation; never make it the default path.\n\n### C2. Skill `description` is too thin to trigger correctly\n```\ndescription: Generate release notes from git history.\n```\nA skill description is the primary signal Claude uses to decide when to invoke the skill. This one is a single fragment with no triggering examples, no SKIP conditions, and no third-person framing. It will both over-trigger (any time a user mentions git history or notes) and under-trigger (when a user says \"draft a changelog entry\" or \"summarize what shipped this week\").\n\n**Fix:** Rewrite as a richer description following the conventions used elsewhere in this codebase (see e.g. the `claude-api` skill description pattern: explicit TRIGGER and SKIP clauses, concrete examples, third-person voice).\n\n### C3. Step 1 picks the version tag heuristically \u2014 silently wrong is the default\n> \"Look at the current date with `date` and figure out an appropriate release tag.\"\n\nRelease tags are not a date-driven decision in any project that uses semver. They are derived from the previous tag plus the nature of the changes (patch/minor/major). Using `date` will produce nonsense like `v2026.04.29` for a project on `v1.4.x`, and worse, the skill will then push that tag (see C1). This is the load-bearing first step of the workflow and it is wrong by construction.\n\n**Fix:** Read the latest tag (`git describe --tags --abbrev=0`), inspect the change set, and either propose a version with rationale or ask the user. Never invent a tag from the calendar.\n\n### C4. \"Handle any errors that come up\" is not an instruction\n> Step 5: \"Handle any errors that come up.\"\n\nThis is a placeholder, not behavior. It tells Claude nothing about which errors are recoverable vs. fatal, what state the repo should be left in on failure, or how to report problems back. Combined with C1, an error mid-workflow could leave the repo with a pushed tag but no PR, or a PR with no notes file, etc.\n\n**Fix:** Either remove the step or enumerate the failure modes that matter (no prior tag exists; remote rejects push; `gh` not authed; uncommitted changes in working tree) and specify the recovery for each.\n\n---\n\n## High-Severity Issues\n\n### H1. The mandatory template is a maintenance and quality trap\nThe `Output` template under \"Features\" is a single placeholder block containing roughly **20 inline directives** (~250 words of guidance crammed into one `{{...}}`):\n\n> \"...Aim for around three to five sentences per feature ... Cross-reference related issues and PRs ... Tag the contributor with @username ... If the feature is experimental or behind a flag, note that prominently. If there's a migration path, summarize it here and link to the full migration guide. Examples can be helpful but keep them short...\"\n\nTwo problems:\n1. **Authoring guidance is mixed into the output template.** A template should describe the shape of the output. Authoring rules belong above it, in prose, where they can be edited without breaking the template's structure.\n2. **The directives contradict the section's own framing.** The section is introduced as a \"bulleted list of new features\", but the directives demand multi-paragraph treatment per feature, contributor tagging, migration links, code examples, caveats, etc. That's a long-form section, not a bulleted list.\n\n**Fix:** Split into (a) a clean structural template with short placeholders and (b) a separate \"Authoring guidance\" section with the rules.\n\n### H2. The same template-as-prose problem exists in `Fixes` and `Breaking changes`\nBoth follow the same anti-pattern as `Features` \u2014 long instructional blobs inside `{{...}}`. The `Breaking changes` block in particular embeds rules about CVE handling, embargo timelines, deprecation warnings, opt-out flags with sunset dates, and \"Why this matters\" paragraphs. These are policy-level instructions, not template content.\n\n**Fix:** Same as H1 \u2014 separate structure from guidance.\n\n### H3. Mandatory format vs. variable inputs creates a contradiction\n> \"The format below is mandatory \u2014 fill in every section appropriately\"\n\nThen Example 1 shows the output for \"bug fixes only, no new features\" producing a Features section that says \"No user-facing features in this release.\" So the rule is actually: every section is present, but sections without content get a stock filler line. That's reasonable, but it isn't what the skill says, and the discrepancy will lead to either omitted sections or empty sections depending on which instruction Claude latches onto.\n\n**Fix:** Replace \"mandatory \u2014 fill in every section appropriately\" with explicit conditional rules (\"If there are no breaking changes, omit the section\" OR \"Always include the section; if empty, write `None.`\"). Pick one and be consistent.\n\n### H4. CHANGELOG.md update is a footnote, not a workflow step\n> Notes: \"If the repository has a CHANGELOG.md, also update it.\"\n\nA CHANGELOG update is a real edit to a real file, sometimes with a strict format (Keep a Changelog, conventional commits, etc.). Burying it in a Notes bullet means it will be skipped or done inconsistently. Also, updating both `RELEASE_NOTES.md` and `CHANGELOG.md` raises questions about which is canonical and how they should be kept in sync \u2014 none of which the skill addresses.\n\n**Fix:** Decide whether CHANGELOG is in scope. If yes, make it a workflow step with explicit format guidance. If no, drop the bullet.\n\n---\n\n## Medium-Severity Issues\n\n### M1. \"Since the last tag\" assumes a tag exists\nStep 2 says read the git log \"since the last tag.\" If the repo has never been tagged, `git log <tag>..HEAD` will fail. The skill should detect this and fall back (e.g., entire history, or first commit). This intersects with C3 \u2014 the tag selection logic is unspecified throughout.\n\n### M2. No specification of which branch to operate on\n> \"produce release notes from the current branch\"\n\nReleases are usually cut from `main`/`master` or a release branch, not whatever the user happens to be on. The skill should at minimum warn if the current branch isn't a typical release branch, or ask which range to summarize.\n\n### M3. Scope of \"Contributors\" auto-generation is underspecified\n> \"auto-generate from git log; thank external contributors first, then maintainers\"\n\nHow does the skill know who is \"external\" vs. \"maintainer\"? GitHub orgs? CODEOWNERS? A maintainers file? Email domain? Unspecified. Without a clear rule, this will either be skipped or guessed.\n\n### M4. Stale-skill warning is concerning\n> \"Older versions of this skill wrote to `notes.md` instead of `RELEASE_NOTES.md`. The new path is correct.\"\n\nIf this is documentation for human maintainers, it's fine but belongs in a CHANGELOG for the skill itself, not in the runtime instructions. If it's a hint to Claude to \"ignore older invocations,\" it's likely to confuse rather than help. Either way it leaks implementation history into runtime context.\n\n### M5. No mention of file overwrite / append behavior\nIf `RELEASE_NOTES.md` already exists (e.g., from a prior release), the skill silently overwrites it. For a release-notes file that is typically appended to (or rotated per-version), this is wrong behavior. Specify: append a new section at the top, or write a per-version file (`RELEASE_NOTES_v1.4.0.md`), or confirm with the user.\n\n---\n\n## Low-Severity / Nits\n\n### L1. Skill name is `bad-skill`\nPresumably a placeholder, but worth flagging \u2014 the `name` frontmatter and the H1 heading both say `bad-skill`. Real users will see this name surfaced in skill listings.\n\n### L2. \"Use your judgment if something looks off\" is non-actionable\nThe Notes section opens with \"This skill works reasonably well for most cases. Use your judgment if something looks off.\" This is filler. Claude does not need to be told to use judgment, and \"reasonably well for most cases\" is a self-undermining claim that gives no useful signal.\n\n### L3. Examples are sparse\nThe two examples describe inputs and outputs in a single sentence each, with no actual rendered output. For a skill whose value is mostly in the formatting of the output, showing a real (small) rendered example would be far more useful than the abstract description.\n\n### L4. Tone instructions inside the template pull two ways\nThe Features template asks for \"friendly but precise\", \"engaging\", non-jargon prose, while also requiring contributor tagging, issue cross-refs, CVE links (in Fixes), and migration tables. The voice/structure tradeoffs aren't reconciled.\n\n---\n\n## Recommendations (priority order)\n\n1. **Strip the workflow back to \"generate a notes file.\"** Remove tagging, pushing, and PR creation from the default path. (C1)\n2. **Rewrite `description`** with explicit triggers and skip conditions, modeled on the existing skills in this repo. (C2)\n3. **Replace the date-based tag heuristic** with a real version-bump logic step (or ask the user). (C3)\n4. **Separate template structure from authoring guidance.** Move all the prose-style rules out of `{{...}}` blocks into a dedicated section. (H1, H2)\n5. **Decide CHANGELOG scope** and either spec it or remove it. (H4)\n6. **Pick one rule for empty sections** (\"always present with `None.`\" vs. \"omit entirely\") and apply it everywhere. (H3)\n7. **Specify branch and prior-tag handling**, including the no-prior-tag case. (M1, M2)\n8. **Specify the Contributors heuristic** or drop the \"external first\" rule. (M3)\n9. Polish: rename the skill, tighten Notes, add at least one rendered example. (L1-L4)\n\nAfter (1)-(6) the skill would be roughly fit for purpose. Items (7)-(9) are quality-of-life.\n\n---\n\n## Did anything work well?\n\nA few things, briefly, so the rewrite doesn't lose them:\n- The overall section list (Highlights / Features / Fixes / Breaking changes / Contributors) is a reasonable shape for release notes.\n- Splitting the file into Workflow / Output / Notes / Examples is the right top-level structure for a SKILL.md, even if the content within those sections is off.\n- The instinct to call out backports, CVEs, embargoes, and migration paths is correct \u2014 those are real concerns. They just belong in authoring guidance, not in the template body.\n"}], "eval-1-with_skill": [{"name": "audit-word-count-2026-04-29.md", "type": "text", "content": "# Audit: word-count\n\n- Target: `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-2/eval-1/with_skill/work/skills/word-count/`\n- Date: 2026-04-29\n- Findings: 2  (idempotency: 0, reproducibility: 0, context-management: 0, strict-definitions: 2)\n\n## Findings\n\n### Idempotency\n\nNo findings.\n\n### Reproducibility\n\nNo findings.\n\n### Context management\n\nNo findings.\n\n### Strict definitions\n\n- `SKILL.md:3` \u2014 description says \"a specific file or set of files\" (plural) but `argument-hint` (line 4), `path` input (line 15), and the workflow are single-file only. Either narrow the description to \"a single text file\" or extend the workflow to loop over inputs.\n- `SKILL.md:24` \u2014 step 2 says \"capture the three numbers from the first whitespace-delimited fields\" of `wc -wlc`, but does not state the column-to-label mapping. `wc` always emits columns in the order `lines words bytes` regardless of flag order, while the output template (line 19) lists `words / lines / bytes`. State the mapping explicitly so the model does not transcribe columns in flag order.\n\n## Passing checks\n\n- Idempotency declaration is present and specific (`SKILL.md:11`, reinforced at `SKILL.md:19`): re-running overwrites the report.\n- Description names what (count words/lines/bytes, write report), when to use (word/line/byte counts on a file), and when to skip (sentiment, readability, frequency).\n- Inputs section grounds `path` with source (positional CLI arg), required-ness, and validation rules (`[ -f \"$path\" ]`, `file --mime-type` starts with `text/`).\n- Outputs section grounds the artifact with path (`<path>.count.md`), format (three labelled lines), and overwrite behavior.\n- `argument-hint` is present (`SKILL.md:4`), so the calling syntax is visible without reading the body.\n- A dedicated \"When to skip\" section (line 27) reinforces the negative case from the description.\n\n## Next step\n\nHand this report back to `skill-creator` to revise: `/skill-creator /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-2/eval-1/with_skill/work/audit-word-count-2026-04-29.md`. The skill-creator workflow will treat each finding as feedback for an iteration.\n"}], "eval-1-without_skill": [{"name": "AUDIT.md", "type": "text", "content": "# Audit Report: word-count skill\n\n**Target:** `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-2/eval-1/without_skill/work/skills/word-count/SKILL.md`\n**Date:** 2026-04-29\n**Scope:** Single-file skill (SKILL.md only, 1760 bytes). No supporting scripts, references, or assets.\n\n## Summary\n\nThe skill is small, well-scoped, and largely well-written. The frontmatter is correct, the workflow is clear, and \"when to skip\" is appropriately narrow. There are a handful of correctness/robustness issues worth fixing, plus a few smaller polish items. None are blocking, but the `wc -wlc` parsing instruction is the most impactful fix.\n\nOverall grade: solid skill with minor issues. Recommended fixes are itemized below in priority order.\n\n---\n\n## Findings\n\n### High priority\n\n#### H1. `wc -wlc` field-order mismatch with workflow text\nThe workflow says: \"Run `wc -wlc \"$path\"` and capture the three numbers from the first whitespace-delimited fields.\"\n\n`wc` always emits its counts in a fixed order regardless of flag order: **lines, words, bytes** (then filename). So `wc -wlc file.txt` prints `<lines> <words> <bytes> file.txt`, not `<words> <lines> <bytes>` as the flag order might suggest.\n\nThe Output section requires writing them in `words, lines, bytes` order. A naive reader following \"first whitespace-delimited fields\" in the order the flags are written will get the words and lines values swapped.\n\n**Fix:** Either\n- Spell out the field order explicitly: \"`wc` prints fields in the fixed order lines, words, bytes \u2014 re-order them when writing the report,\" or\n- Compute each count with a separate invocation: `wc -w`, `wc -l`, `wc -c`. More commands but no foot-gun.\n\n#### H2. \"byte count\" vs `wc -c` on multibyte text \u2014 name vs reality\nThe skill correctly distinguishes \"byte count\" from \"character count\" in the *When to skip* section, which is good. But the report label `bytes: N` paired with `wc -c` is accurate only for ASCII; for UTF-8 with multibyte characters, `wc -c` returns bytes (correct per the skill's contract) while a user who skims `bytes: N` may still expect \"characters.\"\n\n**Fix:** No code change needed if the contract is \"bytes.\" Consider one explicit sentence in the Output section: \"`bytes` is byte length as reported by `wc -c`; for character counts use a Unicode-aware tool.\" This already lives in *When to skip* but is worth surfacing next to the output spec so downstream readers don't misinterpret the report.\n\n#### H3. Validation: `file --mime-type` is portable but the `text/` prefix check rejects useful cases\n`file --mime-type` returns things like:\n- `text/plain`, `text/x-shellscript`, `text/markdown` \u2014 accepted (good)\n- `application/json`, `application/xml`, `application/x-yaml` \u2014 **rejected**, even though these are text the user probably wants to count\n- `inode/x-empty` for empty files \u2014 rejected, but `wc` handles empty files fine and the user may want to confirm a file is empty\n\n**Fix:** Either broaden the accept list (`text/*` plus a small allowlist of `application/json`, `application/xml`, `application/yaml`, `application/x-yaml`, and explicitly accept `inode/x-empty`), or change the validation to \"must not be detected as a known binary type\" (blocklist style). At minimum, document the JSON/XML/YAML rejection so users aren't surprised.\n\n### Medium priority\n\n#### M1. Output path collision / re-run semantics on a non-skill file\nThe output is `<path>.count.md`. If the user runs the skill on `notes.count.md` (perhaps a previous report), the new output is `notes.count.md.count.md` \u2014 surprising but not broken. If the user runs the skill on a file that already happens to be named `something.count.md`, there's no detection that it's likely a generated artifact.\n\n**Fix:** Optional. Either ignore (acceptable \u2014 it's a corner case), or add a sentence: \"If `<path>` already ends in `.count.md`, warn the user that they may be counting a previously generated report.\"\n\n#### M2. No handling of paths with embedded newlines / unusual filenames\nThe skill assumes shell-style `[ -f \"$path\" ]` and `wc -wlc \"$path\"`. Quoted properly in the doc, but if Claude expands `$path` without quoting on its own, paths with spaces or special chars will break. Worth being explicit.\n\n**Fix:** Add a one-liner: \"Always double-quote `$path` in shell commands.\"\n\n#### M3. Symlink behavior is unspecified\n`[ -f \"$path\" ]` follows symlinks (returns true for a symlink to a regular file). `wc` also follows symlinks. Probably the right default, but the skill doesn't say so. A user may expect a `[ -f \"$path\" ] && [ ! -L \"$path\" ]` style stricter check.\n\n**Fix:** Add a sentence: \"Symlinks to regular text files are accepted; the report is written next to the symlink, not the target.\"\n\n#### M4. \"regular file\" claim vs `[ -f ]`\nThe Inputs section says \"must exist and be a text file\" with the test `[ -f \"$path\" ]`. `[ -f ]` is \"regular file (after symlink resolution),\" which is fine but doesn't distinguish text from binary \u2014 that's what the `file --mime-type` check is for. Wording is slightly redundant; not a bug.\n\n**Fix:** Cosmetic. \"Validation: file must exist (`[ -f \"$path\" ]`) **and** be a text file (test with `file --mime-type`)\" \u2014 the existing wording already does this; the redundancy I flagged is mild.\n\n### Low priority / polish\n\n#### L1. `argument-hint` says `<path-to-file>` (singular), description says \"a specific file or set of files\"\nThe description says \"a specific file or set of files\" but the skill only handles one file per invocation. The argument hint correctly shows a single positional. This is a minor mismatch that could either be:\n- Tighten description to \"a single specific file,\" or\n- Loosen the skill to iterate over multiple positional args.\n\n**Fix:** Tighten the description; current behavior is single-file.\n\n#### L2. Frontmatter completeness\nFrontmatter has `name`, `description`, `argument-hint`. This is fine for a skill of this size. No `model`, `tools`, or `allowed-tools` keys \u2014 appropriate, since the skill only needs `Bash` and `Write`. If the skill were to be tightened against accidental tool sprawl, an `allowed-tools: [Bash, Write]` would be defensible.\n\n**Fix:** Optional. Add `allowed-tools` if you want a tighter sandbox.\n\n#### L3. No example invocation\nThe skill is small enough that an example is arguably overkill, but a one-line example like:\n```\n$ /word-count ./README.md\n# writes ./README.md.count.md\n```\nwould help a reader who skims.\n\n**Fix:** Optional polish.\n\n#### L4. Error-message contract is vague\n\"Exit with a one-line error to the user and do not write anything.\" Doesn't specify whether to use stderr, prefix with `error:`, exit code, etc. For a Claude skill (where output is conversational, not a CLI), \"one-line error\" is fine \u2014 but if anyone ever wraps this in a script, they'll wish there were an exit code contract.\n\n**Fix:** Optional. Spell out the user-facing error format.\n\n#### L5. Idempotence claim is correct but worth stress-testing\nThe skill claims \"re-running on the same input file overwrites the report.\" That's true given the workflow as written. No issue; flagging only because idempotence is a load-bearing claim and should be preserved through any future changes.\n\n#### L6. No mention of what to do if `wc` itself fails\n`wc` rarely fails, but on a permission-denied or vanished-mid-read file it can. The skill validates existence up front but doesn't say to check `wc`'s exit code.\n\n**Fix:** Optional. Add: \"If `wc` fails, surface its stderr and don't write the report.\"\n\n---\n\n## What looks good\n\n- Frontmatter is well-formed: `name`, `description`, `argument-hint` are all present and appropriate.\n- The description's \"Use when / Skip when\" structure is exemplary \u2014 this is exactly the shape that helps Claude trigger the skill correctly.\n- Scope is tight. The skill resists feature creep (frequency analysis, sentiment, etc.) and explicitly defers.\n- Workflow is numbered, short, and testable.\n- Output location (`<path>.count.md`) is predictable and idempotent.\n- No surprising tool requirements; relies on standard `wc` and `file`.\n\n## Recommended action order\n\n1. Fix H1 (`wc` field-order foot-gun) \u2014 this is a real correctness bug as written.\n2. Decide on H3 (validation list for non-`text/*` mime types). If the answer is \"stay strict,\" document it so users aren't surprised.\n3. Add a note for H2 (bytes-vs-characters at the output site).\n4. Sweep the medium items as time allows.\n5. Polish items (L*) are optional.\n\n## Files reviewed\n\n- `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-2/eval-1/without_skill/work/skills/word-count/SKILL.md` (1760 bytes, 30 lines)\n\nNo other files were present in the skill directory.\n"}], "eval-2-with_skill": [{"name": "audit-word-count-2026-04-29.md", "type": "text", "content": "# Audit: word-count\n\n- Target: `/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-2/eval-2/with_skill/work/.claude/skills/word-count/`\n- Date: 2026-04-29\n- Findings: 1  (idempotency: 0, reproducibility: 0, context-management: 0, strict-definitions: 1)\n\n## Findings\n\n### Idempotency\n\nNo findings.\n\n### Reproducibility\n\nNo findings.\n\n### Context management\n\nNo findings.\n\n### Strict definitions\n\n- `SKILL.md:3` \u2014 description's \"when to use\" claims \"a specific file or set of files\" (plural) but `argument-hint` on line 4 is `\"<path-to-file>\"` and the workflow accepts a single `path`. Either narrow the description to a single file or extend the workflow to iterate over multiple paths.\n\n## Passing checks\n\n- Idempotency declaration is present and specific (`SKILL.md:11` states \"This skill is **idempotent**\" and `SKILL.md:19` documents overwrite intent).\n- Description names what (count words/lines/bytes and write a report), when to use (user asks for word/line/byte counts), and when to skip (sentiment, readability, frequency analysis) \u2014 all three triggering elements (`SKILL.md:3`).\n- Inputs section declares name, source, required-ness, and validation rule for `path` (`SKILL.md:13-15`).\n- Output section declares path pattern (`<path>.count.md`), format (three lines, named keys), and pre-existing-file handling (overwrite) (`SKILL.md:17-19`).\n- Workflow steps 1-3 are linear with explicit preconditions (validate before compute, compute before write) (`SKILL.md:23-25`).\n- `When to skip` section lists concrete near-miss cases by name (`SKILL.md:27-29`).\n\n## Next step\n\nHand this report back to `skill-creator` to revise: `/skill-creator /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-2/eval-2/with_skill/work/audit-word-count-2026-04-29.md`. The skill-creator workflow will treat each finding as feedback for an iteration.\n"}], "eval-2-without_skill": [{"name": "audit-report.md", "type": "text", "content": "# Audit Report: `word-count` skill\n\n**Target:** `./.claude/skills/word-count/SKILL.md` (29 lines, 1760 bytes)\n**Date:** 2026-04-29\n**Auditor:** Claude Code\n\n## Summary\n\nThe `word-count` skill is a small, single-purpose skill that wraps `wc -wlc` and writes a sibling `.count.md` report. The SKILL.md is concise, well-scoped, and frontmatter is structurally valid. The skill correctly documents its inputs, outputs, idempotency, and \"when to skip\" boundary conditions. No supporting scripts/resources exist \u2014 the workflow is small enough that a bundled script isn't strictly required, but as written the workflow depends on the model running shell commands correctly.\n\nOverall assessment: **acceptable for its declared scope, with a handful of correctness and clarity issues** that should be addressed before relying on it in production.\n\n## Findings\n\n### 1. Frontmatter\n\n| Field | Value | Status |\n|---|---|---|\n| `name` | `word-count` | OK \u2014 matches directory name. |\n| `description` | Two sentences, includes use-when and skip-when guidance. | OK \u2014 concrete and discriminating. The skip-when clause helps the harness avoid mis-triggering on sentiment/readability requests. |\n| `argument-hint` | `<path-to-file>` | OK \u2014 positional, single argument, matches the workflow. |\n\nNo `allowed-tools` field is present. This is not strictly required, but for a skill that only needs Bash + Write, declaring `allowed-tools` would be a useful least-privilege improvement.\n\n### 2. Scope and triggering\n\n- The description is well-bounded: it names the deliverable (three-number report), the trigger condition (word/line/byte counts on a specific file), and the explicit skip cases (sentiment, readability, frequency).\n- \"a specific file or set of files\" in the description is **inconsistent** with the actual workflow, which only supports a single file (the `path` input is described as a single positional arg, and the output is a single `<path>.count.md`). Either drop \"or set of files\" from the description, or document a multi-file iteration in the workflow.\n\n### 3. Inputs / validation\n\n- `path` is required and must be a regular file. The validation rule `[ -f \"$path\" ]` is correct for \"regular file.\"\n- The text-file check uses `file --mime-type` and rejects anything not starting with `text/`. This is reasonable, but **MIME detection via `file(1)` has known false negatives**: files such as JSON, JavaScript, YAML, and many source files are sometimes returned as `application/json`, `application/javascript`, etc. The skill would refuse to count them despite being plain text. Consider one of:\n  - Broadening the allow-list to `text/*` plus `application/json`, `application/xml`, `application/javascript`, etc.\n  - Falling back to checking that the file is non-binary (no NUL bytes in the first N KB) instead of strict MIME-prefix matching.\n- No size cap. A multi-GB file would be processed without warning. Documenting (or enforcing) a size ceiling would be safer.\n- No handling for symlinks. `[ -f ]` follows symlinks \u2014 usually fine, but should be acknowledged.\n\n### 4. Output\n\n- Output path is `<path>.count.md` \u2014 sibling to the input with `.count.md` appended to the **full** filename, e.g. `notes.txt` \u2192 `notes.txt.count.md`. This is unambiguous but slightly unusual; users might expect `notes.count.md`. Document the chosen convention explicitly with an example to remove ambiguity.\n- The output is described as a Markdown file but contains only three plain `key: N` lines with no Markdown structure (no heading, no code fence). The `.md` extension is therefore decorative. Either:\n  - Use a `.txt` extension, or\n  - Add a real Markdown structure (heading + fenced block or table) so the extension is meaningful.\n- Idempotency is documented (overwrite on re-run). Good.\n- Output path collision: if the input is itself named `something.count.md`, re-running would clobber the input. Worth a one-line guard.\n\n### 5. Workflow correctness (highest-impact finding)\n\nStep 2 says: *\"Run `wc -wlc \"$path\"` and capture the three numbers from the first whitespace-delimited fields.\"*\n\n- `wc -wlc` is correct (words, lines, bytes), but `wc`'s **output column order is fixed as `lines words bytes` regardless of flag order**. The instruction \"the three numbers from the first whitespace-delimited fields\" is therefore correct only if the model also knows that the first field is *lines*, not *words*. A naive read of the flag order (`-wlc` \u2192 words, lines, chars) maps the fields wrong and silently swaps the `words` and `lines` numbers in the report.\n- Recommend rewriting step 2 to either:\n  - Run `wc -l`, `wc -w`, `wc -c` separately and assign each result to the labelled output line, or\n  - Explicitly note that `wc` always prints `lines words bytes` in that order regardless of flags, and parse accordingly.\n- `-c` counts bytes, not characters. The skill correctly labels the field `bytes`, and the \"When to skip\" section correctly defers character counts elsewhere. Good.\n\n### 6. Error handling\n\n- \"exit with a one-line error to the user and do not write anything\" \u2014 clear, but doesn't say what the error wording or exit shape should be. Since there's no script, this is an instruction to the model; a tiny example string would reduce variance.\n- No coverage for: unreadable file (exists but no read permission), `wc` returning non-zero, write failure on the output path.\n\n### 7. \"When to skip\" section\n\nStrong. It names concrete adjacent capabilities (character vs byte, grapheme counts, frequency, language detection) and tells the model to defer rather than approximate. This is exactly the boundary-setting that helps a skill stay narrow.\n\n### 8. Bundled assets\n\nThere are no scripts, references, or assets \u2014 only `SKILL.md`. For a skill this small that's defensible, but the correctness risk in step 2 (finding 5) would be eliminated by a 5-line bundled `scripts/count.sh` that does the parsing deterministically and writes the report. Recommend adding one.\n\n## Recommendations (priority order)\n\n1. **High \u2014 fix the `wc` parsing instruction** so the output order (`lines words bytes`) cannot be confused with the flag order (`-wlc`). Either rewrite step 2 or add a `scripts/count.sh`.\n2. **Medium \u2014 reconcile \"single file\" vs \"set of files\"** in the description, or add a multi-file workflow.\n3. **Medium \u2014 broaden or replace the MIME check** so common plain-text formats (JSON, YAML, JS, etc.) aren't rejected.\n4. **Low \u2014 clarify the output filename convention** with an example, and add a guard against clobbering an input named `*.count.md`.\n5. **Low \u2014 make the `.md` extension meaningful** (real Markdown structure) or switch to `.txt`.\n6. **Low \u2014 declare `allowed-tools`** (Bash, Write) for least privilege.\n7. **Low \u2014 document failure modes** (unreadable, write-fail, oversized) and suggest a size cap.\n\n## Verdict\n\nThe skill is small, well-scoped, and the description does a good job at triggering and skip behavior. The primary substantive risk is the `wc` field-ordering ambiguity in step 2, which can produce a silently wrong report. Addressing finding #1 would move this from \"acceptable\" to \"solid.\"\n"}]}, "benchmark": {"metadata": {"skill_name": "audit-skill", "skill_path": "<path/to/skill>", "executor_model": "<model-name>", "analyzer_model": "<model-name>", "timestamp": "2026-04-29T20:09:04Z", "evals_run": [0, 1, 2], "runs_per_configuration": 3}, "runs": [{"eval_id": 0, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 16, "failed": 0, "total": 16, "time_seconds": 228.9, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-0/with_skill/outputs/audit-bad-skill-2026-04-29.md"}, {"text": "the report file is non-empty (at least 800 bytes)", "passed": true, "evidence": "4518 bytes"}, {"text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)", "passed": true, "evidence": "unchanged=True"}, {"text": "the report has an Idempotency section (heading or labeled findings list)", "passed": true, "evidence": "found Idempotency heading/label"}, {"text": "the report has a Reproducibility section", "passed": true, "evidence": ""}, {"text": "the report has a Context management section", "passed": true, "evidence": ""}, {"text": "the report has a Strict definitions section", "passed": true, "evidence": ""}, {"text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)", "passed": true, "evidence": ""}, {"text": "at least one finding cites a specific vague phrase from the bad skill", "passed": true, "evidence": ""}, {"text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)", "passed": true, "evidence": ""}, {"text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration", "passed": true, "evidence": ""}, {"text": "a finding flags the long inline output template as content that should move to references/", "passed": true, "evidence": ""}, {"text": "a finding notes the description doesn't mention the workflow's side effects (tag push, PR creation)", "passed": true, "evidence": ""}, {"text": "at least 80% of findings cite a `file:line` reference", "passed": true, "evidence": "19/19 bullets cite file:line"}, {"text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)", "passed": true, "evidence": ""}, {"text": "findings are grouped by objective (the four objective names appear as headings or list-section labels)", "passed": true, "evidence": ""}], "notes": []}, {"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 269.4, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "a markdown report file is written and the path is named in the assistant's final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-1/with_skill/outputs/audit-word-count-2026-04-29.md"}, {"text": "./skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}, {"text": "total finding count across all four objectives is \u2264 4", "passed": true, "evidence": "2 findings"}, {"text": "a finding catches the description \u2194 workflow scope mismatch (set of files vs single-path)", "passed": true, "evidence": ""}, {"text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right", "passed": true, "evidence": ""}, {"text": "the report does NOT raise a finding for missing idempotency declaration", "passed": true, "evidence": ""}, {"text": "the report does NOT raise a finding for missing 'when to skip'", "passed": true, "evidence": ""}, {"text": "the report does not use severity tiers", "passed": true, "evidence": ""}], "notes": []}, {"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 3, "failed": 0, "total": 3, "time_seconds": 239.9, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/", "passed": true, "evidence": ""}, {"text": "a report file is written and its path is named in the final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-2/with_skill/outputs/audit-word-count-2026-04-29.md"}, {"text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}], "notes": []}, {"eval_id": 0, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.4375, "passed": 7, "failed": 9, "total": 16, "time_seconds": 86.3, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-0/without_skill/outputs/audit-report.md"}, {"text": "the report file is non-empty (at least 800 bytes)", "passed": true, "evidence": "9476 bytes"}, {"text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)", "passed": true, "evidence": "unchanged=True"}, {"text": "the report has an Idempotency section (heading or labeled findings list)", "passed": false, "evidence": "no Idempotency section"}, {"text": "the report has a Reproducibility section", "passed": false, "evidence": ""}, {"text": "the report has a Context management section", "passed": false, "evidence": ""}, {"text": "the report has a Strict definitions section", "passed": false, "evidence": ""}, {"text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)", "passed": true, "evidence": ""}, {"text": "at least one finding cites a specific vague phrase from the bad skill", "passed": true, "evidence": ""}, {"text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)", "passed": false, "evidence": ""}, {"text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration", "passed": true, "evidence": ""}, {"text": "a finding flags the long inline output template as content that should move to references/", "passed": false, "evidence": ""}, {"text": "a finding notes the description doesn't mention the workflow's side effects (tag push, PR creation)", "passed": false, "evidence": ""}, {"text": "at least 80% of findings cite a `file:line` reference", "passed": false, "evidence": "0/38 bullets cite file:line"}, {"text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)", "passed": true, "evidence": ""}, {"text": "findings are grouped by objective (the four objective names appear as headings or list-section labels)", "passed": false, "evidence": ""}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.875, "passed": 7, "failed": 1, "total": 8, "time_seconds": 245.2, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "a markdown report file is written and the path is named in the assistant's final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-1/without_skill/outputs/audit-report.md"}, {"text": "./skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}, {"text": "total finding count across all four objectives is \u2264 4", "passed": true, "evidence": "0 findings"}, {"text": "a finding catches the description \u2194 workflow scope mismatch (set of files vs single-path)", "passed": true, "evidence": ""}, {"text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right", "passed": false, "evidence": ""}, {"text": "the report does NOT raise a finding for missing idempotency declaration", "passed": true, "evidence": ""}, {"text": "the report does NOT raise a finding for missing 'when to skip'", "passed": true, "evidence": ""}, {"text": "the report does not use severity tiers", "passed": true, "evidence": ""}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1.0, "passed": 3, "failed": 0, "total": 3, "time_seconds": 69.7, "tokens": 0, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/", "passed": true, "evidence": ""}, {"text": "a report file is written and its path is named in the final message", "passed": true, "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-2/without_skill/outputs/word-count-audit.md"}, {"text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture", "passed": true, "evidence": ""}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0}, "time_seconds": {"mean": 246.0667, "stddev": 20.9424, "min": 228.9, "max": 269.4}, "tokens": {"mean": 0.0, "stddev": 0.0, "min": 0, "max": 0}}, "without_skill": {"pass_rate": {"mean": 0.7708, "stddev": 0.2954, "min": 0.4375, "max": 1.0}, "time_seconds": {"mean": 133.7333, "stddev": 96.8891, "min": 69.7, "max": 245.2}, "tokens": {"mean": 0.0, "stddev": 0.0, "min": 0, "max": 0}}, "delta": {"pass_rate": "+0.23", "time_seconds": "+112.3", "tokens": "+0"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

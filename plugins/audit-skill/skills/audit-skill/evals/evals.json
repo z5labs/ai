@@ -40,7 +40,7 @@
         {"id": "low-finding-count", "text": "total finding count across all four objectives is ≤ 4 (the skill is genuinely clean — over-flagging it would mean the audit is noisy)"},
         {"id": "finds-set-of-files-mismatch", "text": "a finding catches the description ↔ workflow scope mismatch: description says 'or set of files' but argument-hint and workflow are single-file (under strict-definitions)"},
         {"id": "passing-checks-section", "text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right"},
-        {"id": "idempotency-not-flagged-as-missing", "text": "the report does NOT raise a finding for missing idempotency declaration (because the skill declares it on line 8: 'This skill is idempotent')"},
+        {"id": "idempotency-not-flagged-as-missing", "text": "the report does NOT raise a finding for missing idempotency declaration (because the skill declares it on line 11: 'This skill is idempotent')"},
         {"id": "when-to-skip-not-flagged", "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants more sophisticated text analysis...')"},
         {"id": "no-severity-tiers", "text": "the report does not use severity tiers"}
       ]

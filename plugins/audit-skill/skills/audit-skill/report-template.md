@@ -1,6 +1,6 @@
 # Audit report template
 
-This is the exact output format. Use it verbatim in file mode and as the body of the top-level review comment in PR mode.
+This file defines two output formats — one for file mode, one for PR mode. Use the format that matches the routing decision in `SKILL.md`. The two are not interchangeable: file mode produces a standalone markdown report; PR mode produces a set of inline review comments plus a summary review whose body starts with a deduplication marker.
 
 ## File-mode template
 
@@ -61,9 +61,10 @@ The objective name (in bold) makes the category scannable in the PR thread. Keep
 
 ### Top-level review summary
 
-A single review comment posted via `gh pr review --comment`:
+A single review posted via `gh api -X POST /pulls/{n}/reviews -f event=COMMENT` (see `references/pr-mode.md` for the full invocation). The first line is a deduplication marker: re-running the audit on the same head commit looks for this marker and short-circuits, so the format is load-bearing — keep the angle-bracket comment exactly as shown:
 
 ```
+<!-- audit-skill: $HEAD_SHA -->
 audit-skill: <total> findings across <N> objectives
 
 idempotency: <n>, reproducibility: <n>, context-management: <n>, strict-definitions: <n>
@@ -74,6 +75,8 @@ idempotency: <n>, reproducibility: <n>, context-management: <n>, strict-definiti
 <if total == 0:>
 audit clean — <total-checks-run> checks passed across all four objectives.
 ```
+
+`$HEAD_SHA` is the PR's `headRefOid` at the moment the audit ran. The marker is the only way to detect a prior audit on the same commit — don't omit it, and don't reformat it.
 
 ## Phrasing rules
 

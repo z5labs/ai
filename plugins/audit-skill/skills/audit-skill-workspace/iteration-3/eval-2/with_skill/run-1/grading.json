@@ -1,0 +1,33 @@
+{
+  "eval_id": 2,
+  "kind": "with_skill",
+  "report_path": "/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-2/with_skill/outputs/audit-word-count-2026-04-29.md",
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "total_tokens": 36115,
+    "duration_ms": 239851,
+    "total_duration_seconds": 239.9
+  },
+  "expectations": [
+    {
+      "text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "a report file is written and its path is named in the final message",
+      "passed": true,
+      "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-3/eval-2/with_skill/outputs/audit-word-count-2026-04-29.md"
+    },
+    {
+      "text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture",
+      "passed": true,
+      "evidence": ""
+    }
+  ]
+}

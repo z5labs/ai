@@ -23,8 +23,10 @@ If the skip condition didn't fire, raise one finding at `SKILL.md:1`:
 Grep for verbs/commands that mutate state:
 
 ```
-grep -nE '\b(rm|mv|cp|mkdir|chmod|chown|git push|git commit|git tag|gh pr create|gh issue create|gh pr review|gh release create|curl -X (POST|PUT|DELETE|PATCH)|wget -O)\b' SKILL.md scripts/ references/ 2>/dev/null
+grep -nE '(rm|mv|cp|mkdir|chmod|chown|git push|git commit|git tag|gh pr create|gh issue create|gh pr review|gh release create|curl -X (POST|PUT|DELETE|PATCH)|wget -O)' SKILL.md scripts/ references/ 2>/dev/null
 ```
+
+The pattern omits `\b` word boundaries because BSD `grep -E` doesn't support them portably (and can interpret `\b` as a literal backspace). This grep is a candidate-finder; expect substring matches (e.g. `mvln` matches `mv`) and ignore them during triage.
 
 For each hit, check whether the surrounding 5–10 lines:
 - Test for the resource's existence first (e.g. `[ -f X ]`, `if [ -d X ]`, "if the file already exists, ..."), OR

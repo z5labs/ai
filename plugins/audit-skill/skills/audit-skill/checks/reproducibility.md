@@ -9,8 +9,10 @@ Two invocations with the same inputs should produce equivalent outputs. Vague la
 Grep for hedge words that ask the model to use judgment without telling it the rubric:
 
 ```
-grep -niE '\b(as appropriate|as needed|when relevant|if relevant|when applicable|appropriately|reasonable|reasonably|sensible|properly|where suitable|use (your )?(best )?judgment|carefully|thoroughly|rigorously)\b' SKILL.md checks/ references/ 2>/dev/null
+grep -niE '(as appropriate|as needed|when relevant|if relevant|when applicable|appropriately|reasonable|reasonably|sensible|properly|where suitable|use (your )?(best )?judgment|carefully|thoroughly|rigorously)' SKILL.md checks/ references/ 2>/dev/null
 ```
+
+The pattern omits `\b` word boundaries because BSD `grep -E` doesn't support them portably. The grep is a candidate-finder; expect substring matches (e.g. "thoroughfare" would match "thoroughly") and ignore them during triage.
 
 For each hit, check whether the surrounding sentence DEFINES what "appropriate" / "needed" / "relevant" means in this context. If the criterion is named (e.g. "when the file exceeds 500 lines, do X" — "when" + concrete threshold = fine), it's not a finding. If the model is left to guess, it is.
 
@@ -23,8 +25,10 @@ Be selective. "Use the appropriate tool" with a concrete table below it is fine.
 Search for reads from the runtime environment that aren't declared as inputs:
 
 ```
-grep -nE '\b(date|whoami|hostname|pwd|uname|git status|git log|curl|wget|gh (api|pr view|pr list|repo view))\b' SKILL.md scripts/ 2>/dev/null
+grep -nE '(date|whoami|hostname|pwd|uname|git status|git log|curl|wget|gh (api|pr view|pr list|repo view))' SKILL.md scripts/ 2>/dev/null
 ```
+
+Same caveat as above: no `\b` boundaries. Expect substring matches (e.g. "update" matches "date"); ignore them during triage.
 
 A skill that uses any of these must list it under "Inputs" or "Preconditions" with the expected shape. Otherwise the same prompt run on a different day, a different working directory, or a different network can silently produce different results.
 
@@ -46,7 +50,7 @@ This check is the one most likely to require careful reading rather than grep. S
 
 If the skill calls for sampling, LLM-as-judge, or "pick the best N", check whether there's a tiebreaker, a seed, or a rubric. Subjective LLM judgments are the easiest reproducibility leak — two runs return two different answers and there's no way to tell which was right.
 
-Grep for: `\b(pick|select|choose|sample|prioritize|rank|score)\b` and look for an accompanying rubric or deterministic rule.
+Grep for: `(pick|select|choose|sample|prioritize|rank|score)` (no `\b` boundaries — BSD `grep -E` doesn't support them portably) and look for an accompanying rubric or deterministic rule.
 
 Raise: `<file>:<line> — <verb> is asked of the model without a tiebreaker or rubric; runs will diverge`.
 
