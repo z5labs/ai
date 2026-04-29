@@ -1,0 +1,9 @@
+$ go mod tidy
+go: finding module for package github.com/stretchr/testify/require
+go: found github.com/stretchr/testify/require in github.com/stretchr/testify v1.11.1
+
+$ go build ./graphql/...
+(no output; build succeeded)
+
+$ go test -race ./graphql/...
+ok  	example.com/graphql-eval/graphql	1.012s

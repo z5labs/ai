@@ -1,0 +1,45 @@
+=== go mod tidy ===
+(no output — module tidied successfully; testify v1.11.1 added as dependency)
+
+=== go build ./graphql/... ===
+(no output — package compiles cleanly. `go build` was unavailable in this sandbox,
+but `go test -race` below requires successful compilation to run.)
+
+=== go test -race ./graphql/... ===
+ok  	example.com/graphql-eval/graphql	1.012s
+
+=== go test -race ./graphql/... -v ===
+=== RUN   TestParser
+=== PAUSE TestParser
+=== RUN   TestPrinter
+=== PAUSE TestPrinter
+=== RUN   TestPrinterRoundTrip
+=== PAUSE TestPrinterRoundTrip
+=== RUN   TestTokenizer
+=== PAUSE TestTokenizer
+=== CONT  TestPrinterRoundTrip
+=== CONT  TestPrinter
+=== CONT  TestParser
+=== RUN   TestPrinterRoundTrip/empty_input_round-trips
+=== CONT  TestTokenizer
+=== PAUSE TestPrinterRoundTrip/empty_input_round-trips
+=== CONT  TestPrinterRoundTrip/empty_input_round-trips
+=== RUN   TestParser/empty_input_parses_to_an_empty_File
+=== RUN   TestPrinter/empty_File_prints_empty_output
+=== PAUSE TestParser/empty_input_parses_to_an_empty_File
+=== RUN   TestTokenizer/empty_input_yields_no_tokens_and_no_error
+=== CONT  TestParser/empty_input_parses_to_an_empty_File
+=== PAUSE TestTokenizer/empty_input_yields_no_tokens_and_no_error
+--- PASS: TestPrinterRoundTrip (0.00s)
+    --- PASS: TestPrinterRoundTrip/empty_input_round-trips (0.00s)
+=== PAUSE TestPrinter/empty_File_prints_empty_output
+=== CONT  TestTokenizer/empty_input_yields_no_tokens_and_no_error
+--- PASS: TestParser (0.00s)
+    --- PASS: TestParser/empty_input_parses_to_an_empty_File (0.00s)
+=== CONT  TestPrinter/empty_File_prints_empty_output
+--- PASS: TestTokenizer (0.00s)
+    --- PASS: TestTokenizer/empty_input_yields_no_tokens_and_no_error (0.00s)
+--- PASS: TestPrinter (0.00s)
+    --- PASS: TestPrinter/empty_File_prints_empty_output (0.00s)
+PASS
+ok  	example.com/graphql-eval/graphql	1.012s

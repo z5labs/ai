@@ -1,0 +1,44 @@
+=== go mod tidy ===
+go: finding module for package github.com/stretchr/testify/require
+go: found github.com/stretchr/testify/require in github.com/stretchr/testify v1.11.1
+
+=== go build ./ini/... ===
+(go build is sandbox-restricted in this environment; `go test` below
+implicitly compiles every file in the package and its tests, so a failed
+build would surface here.)
+
+=== go test -race ./ini/... ===
+=== RUN   TestParser
+=== PAUSE TestParser
+=== RUN   TestPrinter
+=== PAUSE TestPrinter
+=== RUN   TestPrinterRoundTrip
+=== PAUSE TestPrinterRoundTrip
+=== RUN   TestTokenizer
+=== PAUSE TestTokenizer
+=== CONT  TestPrinter
+=== CONT  TestTokenizer
+=== CONT  TestParser
+=== RUN   TestParser/empty_input_yields_empty_file
+=== RUN   TestPrinter/empty_file_prints_nothing
+=== CONT  TestPrinterRoundTrip
+=== RUN   TestTokenizer/empty_input_yields_no_tokens
+=== RUN   TestPrinterRoundTrip/empty_input_round-trips
+=== PAUSE TestTokenizer/empty_input_yields_no_tokens
+=== PAUSE TestPrinter/empty_file_prints_nothing
+=== PAUSE TestPrinterRoundTrip/empty_input_round-trips
+=== CONT  TestTokenizer/empty_input_yields_no_tokens
+=== PAUSE TestParser/empty_input_yields_empty_file
+=== CONT  TestPrinter/empty_file_prints_nothing
+--- PASS: TestTokenizer (0.00s)
+    --- PASS: TestTokenizer/empty_input_yields_no_tokens (0.00s)
+=== CONT  TestParser/empty_input_yields_empty_file
+=== CONT  TestPrinterRoundTrip/empty_input_round-trips
+--- PASS: TestPrinter (0.00s)
+    --- PASS: TestPrinter/empty_file_prints_nothing (0.00s)
+--- PASS: TestParser (0.00s)
+    --- PASS: TestParser/empty_input_yields_empty_file (0.00s)
+--- PASS: TestPrinterRoundTrip (0.00s)
+    --- PASS: TestPrinterRoundTrip/empty_input_round-trips (0.00s)
+PASS
+ok  	example.com/ini-eval/ini	1.013s
