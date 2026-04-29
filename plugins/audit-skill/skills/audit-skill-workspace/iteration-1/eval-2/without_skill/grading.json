@@ -1,0 +1,22 @@
+{
+  "eval_id": 2,
+  "kind": "without_skill",
+  "report_path": "/home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/without_skill/outputs/audit-report.md",
+  "expectations": [
+    {
+      "text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "a report file is written and its path is named in the final message",
+      "passed": true,
+      "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/without_skill/outputs/audit-report.md"
+    },
+    {
+      "text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture",
+      "passed": true,
+      "evidence": ""
+    }
+  ]
+}

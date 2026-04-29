@@ -1,0 +1,443 @@
+{
+  "metadata": {
+    "skill_name": "audit-skill",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-29T19:06:15Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 16,
+        "failed": 0,
+        "total": 16,
+        "time_seconds": 110.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)",
+          "passed": true,
+          "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/with_skill/outputs/audit-bad-skill-2026-04-29.md"
+        },
+        {
+          "text": "the report file is non-empty (at least 800 bytes)",
+          "passed": true,
+          "evidence": "4890 bytes"
+        },
+        {
+          "text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)",
+          "passed": true,
+          "evidence": "unchanged=True"
+        },
+        {
+          "text": "the report has an Idempotency section (heading or labeled findings list)",
+          "passed": true,
+          "evidence": "found Idempotency heading/label"
+        },
+        {
+          "text": "the report has a Reproducibility section",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "the report has a Context management section",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "the report has a Strict definitions section",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "at least one finding cites a specific vague phrase from the bad skill",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "a finding flags the long inline output template as content that should move to references/",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "a finding notes the description doesn't mention the workflow's side effects (tag push, PR creation)",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "at least 80% of findings cite a `file:line` reference",
+          "passed": true,
+          "evidence": "24/24 bullets cite file:line"
+        },
+        {
+          "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "findings are grouped by objective (the four objective names appear as headings or list-section labels)",
+          "passed": true,
+          "evidence": ""
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.875,
+        "passed": 7,
+        "failed": 1,
+        "total": 8,
+        "time_seconds": 84.3,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written and the path is named in the assistant's final message",
+          "passed": true,
+          "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-1/with_skill/outputs/audit-word-count-2026-04-29.md"
+        },
+        {
+          "text": "./skills/word-count/SKILL.md is byte-identical to the input fixture",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "total finding count across all four objectives is \u2264 4",
+          "passed": true,
+          "evidence": "0 findings"
+        },
+        {
+          "text": "a finding catches the description \u2194 workflow scope mismatch (set of files vs single-path)",
+          "passed": false,
+          "evidence": ""
+        },
+        {
+          "text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "the report does NOT raise a finding for missing idempotency declaration",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "the report does NOT raise a finding for missing 'when to skip'",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "the report does not use severity tiers",
+          "passed": true,
+          "evidence": ""
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 109.5,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "a report file is written and its path is named in the final message",
+          "passed": true,
+          "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/with_skill/outputs/audit-word-count-2026-04-29.md"
+        },
+        {
+          "text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture",
+          "passed": true,
+          "evidence": ""
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.3125,
+        "passed": 5,
+        "failed": 11,
+        "total": 16,
+        "time_seconds": 96.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)",
+          "passed": true,
+          "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-0/without_skill/outputs/AUDIT_REPORT.md"
+        },
+        {
+          "text": "the report file is non-empty (at least 800 bytes)",
+          "passed": true,
+          "evidence": "10127 bytes"
+        },
+        {
+          "text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)",
+          "passed": true,
+          "evidence": "unchanged=True"
+        },
+        {
+          "text": "the report has an Idempotency section (heading or labeled findings list)",
+          "passed": false,
+          "evidence": "no Idempotency section"
+        },
+        {
+          "text": "the report has a Reproducibility section",
+          "passed": false,
+          "evidence": ""
+        },
+        {
+          "text": "the report has a Context management section",
+          "passed": false,
+          "evidence": ""
+        },
+        {
+          "text": "the report has a Strict definitions section",
+          "passed": false,
+          "evidence": ""
+        },
+        {
+          "text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)",
+          "passed": false,
+          "evidence": ""
+        },
+        {
+          "text": "at least one finding cites a specific vague phrase from the bad skill",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)",
+          "passed": false,
+          "evidence": ""
+        },
+        {
+          "text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "a finding flags the long inline output template as content that should move to references/",
+          "passed": false,
+          "evidence": ""
+        },
+        {
+          "text": "a finding notes the description doesn't mention the workflow's side effects (tag push, PR creation)",
+          "passed": false,
+          "evidence": ""
+        },
+        {
+          "text": "at least 80% of findings cite a `file:line` reference",
+          "passed": false,
+          "evidence": "0/0 bullets cite file:line"
+        },
+        {
+          "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)",
+          "passed": false,
+          "evidence": ""
+        },
+        {
+          "text": "findings are grouped by objective (the four objective names appear as headings or list-section labels)",
+          "passed": false,
+          "evidence": ""
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.875,
+        "passed": 7,
+        "failed": 1,
+        "total": 8,
+        "time_seconds": 93.2,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written and the path is named in the assistant's final message",
+          "passed": true,
+          "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-1/without_skill/outputs/AUDIT.md"
+        },
+        {
+          "text": "./skills/word-count/SKILL.md is byte-identical to the input fixture",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "total finding count across all four objectives is \u2264 4",
+          "passed": true,
+          "evidence": "0 findings"
+        },
+        {
+          "text": "a finding catches the description \u2194 workflow scope mismatch (set of files vs single-path)",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right",
+          "passed": false,
+          "evidence": ""
+        },
+        {
+          "text": "the report does NOT raise a finding for missing idempotency declaration",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "the report does NOT raise a finding for missing 'when to skip'",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "the report does not use severity tiers",
+          "passed": true,
+          "evidence": ""
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 78.2,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/",
+          "passed": true,
+          "evidence": ""
+        },
+        {
+          "text": "a report file is written and its path is named in the final message",
+          "passed": true,
+          "evidence": "report at /home/carson/github.com/z5labs/ai/plugins/audit-skill/skills/audit-skill-workspace/iteration-1/eval-2/without_skill/outputs/audit-report.md"
+        },
+        {
+          "text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture",
+          "passed": true,
+          "evidence": ""
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.9583,
+        "stddev": 0.0722,
+        "min": 0.875,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 101.2667,
+        "stddev": 14.6957,
+        "min": 84.3,
+        "max": 110.0
+      },
+      "tokens": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.7292,
+        "stddev": 0.3662,
+        "min": 0.3125,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 89.1333,
+        "stddev": 9.5715,
+        "min": 78.2,
+        "max": 96.0
+      },
+      "tokens": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0,
+        "max": 0
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.23",
+      "time_seconds": "+12.1",
+      "tokens": "+0"
+    }
+  },
+  "notes": []
+}

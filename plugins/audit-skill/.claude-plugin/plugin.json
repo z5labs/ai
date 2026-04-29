@@ -1,0 +1,8 @@
+{
+  "name": "audit-skill",
+  "description": "Statically audit a Claude Code skill against quality objectives: idempotency, reproducibility, context management, and strict definitions",
+  "version": "0.1.0",
+  "author": {
+    "name": "z5labs"
+  }
+}

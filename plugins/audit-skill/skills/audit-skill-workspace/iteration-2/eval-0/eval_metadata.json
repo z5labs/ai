@@ -1,0 +1,71 @@
+{
+  "eval_id": 0,
+  "eval_name": "bad-skill-finds-violations",
+  "prompt": "I wrote a draft skill at ./skills/bad-skill/ for generating release notes and I'm not sure how solid it is. There's no PR open right now, so just write me a report file I can read through. Audit it and tell me where the file is when you're done.",
+  "assertions": [
+    {
+      "id": "report-file-written",
+      "text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)"
+    },
+    {
+      "id": "report-not-empty",
+      "text": "the report file is non-empty (at least 800 bytes)"
+    },
+    {
+      "id": "target-not-modified",
+      "text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)"
+    },
+    {
+      "id": "objective-idempotency-section",
+      "text": "the report has an Idempotency section (heading or labeled findings list)"
+    },
+    {
+      "id": "objective-reproducibility-section",
+      "text": "the report has a Reproducibility section"
+    },
+    {
+      "id": "objective-context-mgmt-section",
+      "text": "the report has a Context management section"
+    },
+    {
+      "id": "objective-strict-defs-section",
+      "text": "the report has a Strict definitions section"
+    },
+    {
+      "id": "finds-when-to-skip-missing",
+      "text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)"
+    },
+    {
+      "id": "finds-vague-language",
+      "text": "at least one finding cites a specific vague phrase from the bad skill ('as needed', 'appropriately', 'reasonably', or 'use your judgment')"
+    },
+    {
+      "id": "finds-date-implicit-input",
+      "text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)"
+    },
+    {
+      "id": "finds-gh-pr-create-precondition",
+      "text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration"
+    },
+    {
+      "id": "finds-inline-template",
+      "text": "a finding flags the long inline output template as content that should move to references/ (under context-management)"
+    },
+    {
+      "id": "finds-description-side-effects",
+      "text": "a finding notes that the description ('Generate release notes from git history.') does not mention the workflow's side effects \u2014 pushing a tag and creating a PR \u2014 under strict-definitions"
+    },
+    {
+      "id": "findings-cite-file-line",
+      "text": "at least 80% of findings cite a `file:line` reference"
+    },
+    {
+      "id": "no-severity-tiers",
+      "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)"
+    },
+    {
+      "id": "findings-flat-by-objective",
+      "text": "findings are grouped by objective (the four objective names appear as headings or list-section labels), not by severity"
+    }
+  ]
+}
