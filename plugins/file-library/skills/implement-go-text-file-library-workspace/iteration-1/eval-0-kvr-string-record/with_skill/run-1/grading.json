@@ -1,0 +1,92 @@
+{
+  "eval_id": 0,
+  "eval_name": "kvr-string-record",
+  "config": "with_skill",
+  "summary": {
+    "passed": 16,
+    "total": 16,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "tokenizer.go defines a TokenString constant in the TokenType const block",
+      "passed": true,
+      "evidence": "TokenString constant defined"
+    },
+    {
+      "text": "tokenizer.go has an action (function or closure) that handles double-quoted string literals and yields a TokenString",
+      "passed": true,
+      "evidence": "tokenizer handles quoted strings"
+    },
+    {
+      "text": "parser.go defines a Record struct (or equivalent AST node) with at least a Type, Key, and Value field",
+      "passed": true,
+      "evidence": "Record struct present with fields ['Type', 'Key', 'Value']"
+    },
+    {
+      "text": "the File struct in parser.go has a Records slice (or equivalent collection field)",
+      "passed": true,
+      "evidence": "File.Records present"
+    },
+    {
+      "text": "parser.go defines a parseRecord (or equivalent) action consumed by the parser's action loop",
+      "passed": true,
+      "evidence": "parseRecord-style action present"
+    },
+    {
+      "text": "parser.go uses p.expect(...) at sites that require a specific token type \u2014 no inline TokenType comparisons in the new code",
+      "passed": true,
+      "evidence": "p.expect used; inline compares=0"
+    },
+    {
+      "text": "printer.go has a function or action that emits a Record back to source text",
+      "passed": true,
+      "evidence": "printer handles Record"
+    },
+    {
+      "text": "tokenizer_test.go has a test for a string literal that asserts an exact Pos{Line, Column} value (not a zero/placeholder Pos)",
+      "passed": true,
+      "evidence": "exact Pos in tokenizer test (has_pos=True, has_string_test=True)"
+    },
+    {
+      "text": "parser_test.go uses Parse(strings.NewReader(...)) for the test inputs and does not hand-construct Record literals as expected values (the empty-input scaffold case is the only allowed exception)",
+      "passed": true,
+      "evidence": "parser tests use Parse() (has_parse=True, bad_literal=False)"
+    },
+    {
+      "text": "printer_test.go has a direct test that calls Print on a *File and asserts the output string matches an expected literal",
+      "passed": true,
+      "evidence": "direct print test (has_print=True, has_assert=True)"
+    },
+    {
+      "text": "printer_test.go has a round-trip test that runs Parse \u2192 Print \u2192 Parse and asserts require.Equal on the two *File values",
+      "passed": true,
+      "evidence": "round-trip test present"
+    },
+    {
+      "text": "all new tests call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "t.Parallel at both levels in all test files"
+    },
+    {
+      "text": "tests use github.com/stretchr/testify/require",
+      "passed": true,
+      "evidence": "tests use testify/require"
+    },
+    {
+      "text": "go test -race ./... exits cleanly",
+      "passed": true,
+      "evidence": "go test -race ./... passes"
+    },
+    {
+      "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory",
+      "passed": true,
+      "evidence": "no _*.md scratch files"
+    },
+    {
+      "text": "no scratch copy of SPEC.md content was written to the package (e.g. _spec_tokens.md should not exist)",
+      "passed": true,
+      "evidence": "no _spec*.md scratch copies"
+    }
+  ]
+}

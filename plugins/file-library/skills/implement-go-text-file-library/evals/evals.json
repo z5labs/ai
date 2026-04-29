@@ -1,0 +1,71 @@
+{
+  "skill_name": "implement-go-text-file-library",
+  "evals": [
+    {
+      "id": 0,
+      "name": "kvr-string-record",
+      "prompt": "I have a scaffolded Go package at ./kvr/ with tokenizer.go/parser.go/printer.go stubs and a SPEC.md describing the KVR format. Implement support for string-typed records of the form `record string KEY = \"value\"` end-to-end (per SPEC.md's Lexical Elements and Structure (Grammar) sections): the TokenString token type, a Record AST node with Type/Key/Value fields, parsing that turns the source into the AST, and a printer rule that turns it back. Update File to hold a slice of Records. I want tokenizer tests with exact Pos values, parser tests that drive Parse() (no hand-constructed AST), a direct printer test, and a round-trip test. Don't read the whole SPEC.md — slice it.",
+      "expected_output": "kvr/tokenizer.go gains a TokenString case yielding tokens with the string value (no surrounding quotes); kvr/parser.go gains parseRecord plus a Record struct in the AST; kvr/printer.go gains a printRecord rule; tests cover tokenizer Pos values, parser via Parse(), direct print, and round-trip; `go test -race ./...` passes.",
+      "files": ["fixtures/kvr"],
+      "assertions": [
+        {"id": "token-string-defined", "text": "tokenizer.go defines a TokenString constant in the TokenType const block"},
+        {"id": "tokenizer-handles-quoted-string", "text": "tokenizer.go has an action (function or closure) that handles double-quoted string literals and yields a TokenString"},
+        {"id": "record-ast-node", "text": "parser.go defines a Record struct (or equivalent AST node) with at least a Type, Key, and Value field"},
+        {"id": "file-holds-records", "text": "the File struct in parser.go has a Records slice (or equivalent collection field)"},
+        {"id": "parse-record-action", "text": "parser.go defines a parseRecord (or equivalent) action consumed by the parser's action loop"},
+        {"id": "expect-used", "text": "parser.go uses p.expect(...) at sites that require a specific token type — no inline TokenType comparisons in the new code"},
+        {"id": "print-record-rule", "text": "printer.go has a function or action that emits a Record back to source text"},
+        {"id": "tokenizer-test-exact-pos", "text": "tokenizer_test.go has a test for a string literal that asserts an exact Pos{Line, Column} value (not a zero/placeholder Pos)"},
+        {"id": "parser-test-via-parse", "text": "parser_test.go uses Parse(strings.NewReader(...)) for the test inputs and does not hand-construct Record literals as expected values (the empty-input scaffold case is the only allowed exception)"},
+        {"id": "printer-direct-test", "text": "printer_test.go has a direct test that calls Print on a *File and asserts the output string matches an expected literal"},
+        {"id": "printer-round-trip-test", "text": "printer_test.go has a round-trip test that runs Parse → Print → Parse and asserts require.Equal on the two *File values"},
+        {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
+        {"id": "tests-testify-require", "text": "tests use github.com/stretchr/testify/require"},
+        {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
+        {"id": "no-scratch-files-left", "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory"},
+        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package (e.g. _spec_tokens.md should not exist)"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "kvr-nested-block",
+      "prompt": "Extend the KVR package at ./kvr/ to support nested blocks of the form `block NAME { record string KEY = \"v\"; record string KEY2 = \"v2\"; }` — see SPEC.md's Structure (Grammar) section. Add a Block AST node containing a Records slice; update File to hold both top-level Records and a slice of Blocks. The parser MUST use the inner action loop pattern for parseBlock (separate parserAction[*Block] functions for the open brace, each member, the separator, and the close brace) — no flat for-with-switch. Add tokenizer tests for the brace and semicolon tokens, parser tests covering an empty block, a block with one record, and a block with two records, and a printer round-trip for each. Don't read the whole SPEC.md.",
+      "expected_output": "kvr/tokenizer.go yields TokenLBrace/TokenRBrace/TokenSemicolon as appropriate; kvr/parser.go has a parseBlock outer action plus parseBlockOpen/parseBlockMember/parseBlockSeparator/parseBlockClose (or equivalent named states) running through an inner action loop; kvr/printer.go formats blocks with their Records on separate lines; all tests pass under `go test -race`.",
+      "files": ["fixtures/kvr"],
+      "assertions": [
+        {"id": "block-ast-node", "text": "parser.go defines a Block struct (or equivalent AST node) with a Records slice"},
+        {"id": "file-holds-blocks", "text": "the File struct has a Blocks slice (or the top-level AST holds Block values somehow)"},
+        {"id": "brace-tokens", "text": "tokenizer.go yields distinct token types for { and } (e.g. TokenLBrace and TokenRBrace, or symbol tokens with distinguishable values)"},
+        {"id": "inner-action-loop-used", "text": "parser.go's block-parsing implementation uses an inner action loop (a for-loop driving parserAction[*Block] values), not a flat for-loop with a switch over token types — verifiable by the presence of multiple named parseBlockX functions OR a function variable typed parserAction[*Block] driven by a for-loop in parseBlock"},
+        {"id": "expect-used", "text": "parser.go uses p.expect(...) for the open-brace, separator, and close-brace tokens — no inline tok.Type == TokenLBrace comparisons"},
+        {"id": "parser-test-empty-block", "text": "parser_test.go has a subtest for an empty block (no records inside the braces)"},
+        {"id": "parser-test-multi-record-block", "text": "parser_test.go has a subtest for a block with at least two records"},
+        {"id": "parser-test-via-parse", "text": "parser_test.go drives Parse() for its expected values and does not hand-construct Block literals (the empty-input scaffold case excepted)"},
+        {"id": "printer-round-trip-test", "text": "printer_test.go has at least one round-trip test covering a block (Parse → Print → Parse → require.Equal)"},
+        {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
+        {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
+        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "kvr-comment-round-trip",
+      "prompt": "Add comment support to the KVR package at ./kvr/ — comments are lines starting with `#` and run to end-of-line (per SPEC.md's Lexical Elements and Semantics sections). Comments above a Record or Block must round-trip cleanly: the parser captures them as leading trivia attached to the next AST node, and the printer emits them before the node's own output. Add a TokenComment token type, attach a LeadingComments []string field to Record and Block, and update parser+printer accordingly. Tests should cover: a comment above a record, a blank-line then a comment then a record, two comments above the same record, and a round-trip for each case. Don't read the whole SPEC.md.",
+      "expected_output": "kvr/tokenizer.go yields TokenComment for `# ...` runs; kvr/parser.go captures leading comments and attaches them to Record (and Block where applicable); kvr/printer.go emits the leading comments before the node; round-trip tests pass for every comment scenario; `go test -race` passes.",
+      "files": ["fixtures/kvr"],
+      "assertions": [
+        {"id": "token-comment-defined", "text": "tokenizer.go defines a TokenComment constant in the TokenType const block"},
+        {"id": "tokenizer-handles-hash-comment", "text": "tokenizer.go has an action (function or closure) that consumes # to end-of-line and yields a TokenComment"},
+        {"id": "leading-comments-on-record", "text": "parser.go's Record struct has a LeadingComments []string field (or an equivalent trivia attachment that survives round-trip)"},
+        {"id": "parser-attaches-comments", "text": "parser.go captures TokenComment tokens before a record and stores them on the next AST node (look for code that reads TokenComment and appends to a slice that flushes when the next non-comment token arrives)"},
+        {"id": "printer-emits-leading-comments", "text": "printer.go emits the LeadingComments before the record's own output (look for a write call inside printRecord that iterates comments before printing the record body)"},
+        {"id": "round-trip-single-comment", "text": "printer_test.go (or a parser+printer interaction test) has a round-trip subtest with one comment above a record"},
+        {"id": "round-trip-multiple-comments", "text": "printer_test.go has a round-trip subtest with at least two comments above the same record"},
+        {"id": "tokenizer-test-comment-pos", "text": "tokenizer_test.go has a test for a comment token that asserts an exact Pos value for the comment"},
+        {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
+        {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
+        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"}
+      ]
+    }
+  ]
+}

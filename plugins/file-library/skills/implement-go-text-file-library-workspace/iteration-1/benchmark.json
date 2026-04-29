@@ -1,0 +1,563 @@
+{
+  "metadata": {
+    "skill_name": "implement-go-text-file-library",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-29T23:21:53Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 16,
+        "failed": 0,
+        "total": 16,
+        "time_seconds": 270.8,
+        "tokens": 67371,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "tokenizer.go defines a TokenString constant in the TokenType const block",
+          "passed": true,
+          "evidence": "TokenString constant defined"
+        },
+        {
+          "text": "tokenizer.go has an action (function or closure) that handles double-quoted string literals and yields a TokenString",
+          "passed": true,
+          "evidence": "tokenizer handles quoted strings"
+        },
+        {
+          "text": "parser.go defines a Record struct (or equivalent AST node) with at least a Type, Key, and Value field",
+          "passed": true,
+          "evidence": "Record struct present with fields ['Type', 'Key', 'Value']"
+        },
+        {
+          "text": "the File struct in parser.go has a Records slice (or equivalent collection field)",
+          "passed": true,
+          "evidence": "File.Records present"
+        },
+        {
+          "text": "parser.go defines a parseRecord (or equivalent) action consumed by the parser's action loop",
+          "passed": true,
+          "evidence": "parseRecord-style action present"
+        },
+        {
+          "text": "parser.go uses p.expect(...) at sites that require a specific token type \u2014 no inline TokenType comparisons in the new code",
+          "passed": true,
+          "evidence": "p.expect used; inline compares=0"
+        },
+        {
+          "text": "printer.go has a function or action that emits a Record back to source text",
+          "passed": true,
+          "evidence": "printer handles Record"
+        },
+        {
+          "text": "tokenizer_test.go has a test for a string literal that asserts an exact Pos{Line, Column} value (not a zero/placeholder Pos)",
+          "passed": true,
+          "evidence": "exact Pos in tokenizer test (has_pos=True, has_string_test=True)"
+        },
+        {
+          "text": "parser_test.go uses Parse(strings.NewReader(...)) for the test inputs and does not hand-construct Record literals as expected values (the empty-input scaffold case is the only allowed exception)",
+          "passed": true,
+          "evidence": "parser tests use Parse() (has_parse=True, bad_literal=False)"
+        },
+        {
+          "text": "printer_test.go has a direct test that calls Print on a *File and asserts the output string matches an expected literal",
+          "passed": true,
+          "evidence": "direct print test (has_print=True, has_assert=True)"
+        },
+        {
+          "text": "printer_test.go has a round-trip test that runs Parse \u2192 Print \u2192 Parse and asserts require.Equal on the two *File values",
+          "passed": true,
+          "evidence": "round-trip test present"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels in all test files"
+        },
+        {
+          "text": "tests use github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "tests use testify/require"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory",
+          "passed": true,
+          "evidence": "no _*.md scratch files"
+        },
+        {
+          "text": "no scratch copy of SPEC.md content was written to the package (e.g. _spec_tokens.md should not exist)",
+          "passed": true,
+          "evidence": "no _spec*.md scratch copies"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9166666666666666,
+        "passed": 11,
+        "failed": 0,
+        "total": 12,
+        "time_seconds": 363.9,
+        "tokens": 78442,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "parser.go defines a Block struct (or equivalent AST node) with a Records slice",
+          "passed": true,
+          "evidence": "Block struct with Records slice"
+        },
+        {
+          "text": "the File struct has a Blocks slice (or the top-level AST holds Block values somehow)",
+          "passed": true,
+          "evidence": "File.Blocks slice present"
+        },
+        {
+          "text": "tokenizer.go yields distinct token types for { and } (e.g. TokenLBrace and TokenRBrace, or symbol tokens with distinguishable values)",
+          "passed": true,
+          "evidence": "brace tokens distinguishable"
+        },
+        {
+          "text": "parser.go's block-parsing implementation uses an inner action loop (a for-loop driving parserAction[*Block] values), not a flat for-loop with a switch over token types \u2014 verifiable by the presence of multiple named parseBlockX functions OR a function variable typed parserAction[*Block] driven by a for-loop in parseBlock",
+          "passed": true,
+          "evidence": "inner action loop (named_actions=['parseBlockClose', 'parseBlockKeyword', 'parseBlockMember', 'parseBlockName', 'parseBlockOpen', 'parseBlockSeparator'], parserAction[*Block]=True, for-action-loop=False)"
+        },
+        {
+          "text": "parser.go uses p.expect(...) for the open-brace, separator, and close-brace tokens \u2014 no inline tok.Type == TokenLBrace comparisons",
+          "passed": false,
+          "evidence": "p.expect used; inline compares=5"
+        },
+        {
+          "text": "parser_test.go has a subtest for an empty block (no records inside the braces)",
+          "passed": true,
+          "evidence": "empty-block test present"
+        },
+        {
+          "text": "parser_test.go has a subtest for a block with at least two records",
+          "passed": true,
+          "evidence": "multi-record block test present"
+        },
+        {
+          "text": "parser_test.go drives Parse() for its expected values and does not hand-construct Block literals (the empty-input scaffold case excepted)",
+          "passed": true,
+          "evidence": "parser tests use Parse() (has_parse=True, bad_literal=False)"
+        },
+        {
+          "text": "printer_test.go has at least one round-trip test covering a block (Parse \u2192 Print \u2192 Parse \u2192 require.Equal)",
+          "passed": true,
+          "evidence": "round-trip test covering block present"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no scratch copy of SPEC.md content was written to the package",
+          "passed": true,
+          "evidence": "no _spec*.md leftovers"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 11,
+        "failed": 0,
+        "total": 11,
+        "time_seconds": 412.8,
+        "tokens": 83108,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "tokenizer.go defines a TokenComment constant in the TokenType const block",
+          "passed": true,
+          "evidence": "TokenComment constant defined"
+        },
+        {
+          "text": "tokenizer.go has an action (function or closure) that consumes # to end-of-line and yields a TokenComment",
+          "passed": true,
+          "evidence": "tokenizer handles # comments"
+        },
+        {
+          "text": "parser.go's Record struct has a LeadingComments []string field (or an equivalent trivia attachment that survives round-trip)",
+          "passed": true,
+          "evidence": "Record carries ['LeadingComments', 'Comments', 'Leading']"
+        },
+        {
+          "text": "parser.go captures TokenComment tokens before a record and stores them on the next AST node (look for code that reads TokenComment and appends to a slice that flushes when the next non-comment token arrives)",
+          "passed": true,
+          "evidence": "parser captures and attaches comments"
+        },
+        {
+          "text": "printer.go emits the LeadingComments before the record's own output (look for a write call inside printRecord that iterates comments before printing the record body)",
+          "passed": true,
+          "evidence": "printer emits leading comments"
+        },
+        {
+          "text": "printer_test.go (or a parser+printer interaction test) has a round-trip subtest with one comment above a record",
+          "passed": true,
+          "evidence": "round-trip with comment present"
+        },
+        {
+          "text": "printer_test.go has a round-trip subtest with at least two comments above the same record",
+          "passed": true,
+          "evidence": "multi-comment round-trip test present"
+        },
+        {
+          "text": "tokenizer_test.go has a test for a comment token that asserts an exact Pos value for the comment",
+          "passed": true,
+          "evidence": "comment Pos test (has_pos=True, has_comment=True)"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no scratch copy of SPEC.md content was written to the package",
+          "passed": true,
+          "evidence": "no _spec*.md leftovers"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9375,
+        "passed": 15,
+        "failed": 0,
+        "total": 16,
+        "time_seconds": 312.8,
+        "tokens": 60062,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "tokenizer.go defines a TokenString constant in the TokenType const block",
+          "passed": true,
+          "evidence": "TokenString constant defined"
+        },
+        {
+          "text": "tokenizer.go has an action (function or closure) that handles double-quoted string literals and yields a TokenString",
+          "passed": true,
+          "evidence": "tokenizer handles quoted strings"
+        },
+        {
+          "text": "parser.go defines a Record struct (or equivalent AST node) with at least a Type, Key, and Value field",
+          "passed": true,
+          "evidence": "Record struct present with fields ['Type', 'Key', 'Value']"
+        },
+        {
+          "text": "the File struct in parser.go has a Records slice (or equivalent collection field)",
+          "passed": true,
+          "evidence": "File.Records present"
+        },
+        {
+          "text": "parser.go defines a parseRecord (or equivalent) action consumed by the parser's action loop",
+          "passed": true,
+          "evidence": "parseRecord-style action present"
+        },
+        {
+          "text": "parser.go uses p.expect(...) at sites that require a specific token type \u2014 no inline TokenType comparisons in the new code",
+          "passed": true,
+          "evidence": "p.expect used; inline compares=0"
+        },
+        {
+          "text": "printer.go has a function or action that emits a Record back to source text",
+          "passed": true,
+          "evidence": "printer handles Record"
+        },
+        {
+          "text": "tokenizer_test.go has a test for a string literal that asserts an exact Pos{Line, Column} value (not a zero/placeholder Pos)",
+          "passed": true,
+          "evidence": "exact Pos in tokenizer test (has_pos=True, has_string_test=True)"
+        },
+        {
+          "text": "parser_test.go uses Parse(strings.NewReader(...)) for the test inputs and does not hand-construct Record literals as expected values (the empty-input scaffold case is the only allowed exception)",
+          "passed": false,
+          "evidence": "parser tests use Parse() (has_parse=True, bad_literal=True)"
+        },
+        {
+          "text": "printer_test.go has a direct test that calls Print on a *File and asserts the output string matches an expected literal",
+          "passed": true,
+          "evidence": "direct print test (has_print=True, has_assert=True)"
+        },
+        {
+          "text": "printer_test.go has a round-trip test that runs Parse \u2192 Print \u2192 Parse and asserts require.Equal on the two *File values",
+          "passed": true,
+          "evidence": "round-trip test present"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels in all test files"
+        },
+        {
+          "text": "tests use github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "tests use testify/require"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory",
+          "passed": true,
+          "evidence": "no _*.md scratch files"
+        },
+        {
+          "text": "no scratch copy of SPEC.md content was written to the package (e.g. _spec_tokens.md should not exist)",
+          "passed": true,
+          "evidence": "no _spec*.md scratch copies"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8333333333333334,
+        "passed": 10,
+        "failed": 0,
+        "total": 12,
+        "time_seconds": 289.7,
+        "tokens": 59932,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "parser.go defines a Block struct (or equivalent AST node) with a Records slice",
+          "passed": true,
+          "evidence": "Block struct with Records slice"
+        },
+        {
+          "text": "the File struct has a Blocks slice (or the top-level AST holds Block values somehow)",
+          "passed": true,
+          "evidence": "File.Blocks slice present"
+        },
+        {
+          "text": "tokenizer.go yields distinct token types for { and } (e.g. TokenLBrace and TokenRBrace, or symbol tokens with distinguishable values)",
+          "passed": true,
+          "evidence": "brace tokens distinguishable"
+        },
+        {
+          "text": "parser.go's block-parsing implementation uses an inner action loop (a for-loop driving parserAction[*Block] values), not a flat for-loop with a switch over token types \u2014 verifiable by the presence of multiple named parseBlockX functions OR a function variable typed parserAction[*Block] driven by a for-loop in parseBlock",
+          "passed": true,
+          "evidence": "inner action loop (named_actions=['parseBlockBody', 'parseBlockClose', 'parseBlockMember', 'parseBlockMemberWithLeading', 'parseBlockOpen', 'parseBlockSeparator', 'parseBlockWithLeading'], parserAction[*Block]=True, for-action-loop=False)"
+        },
+        {
+          "text": "parser.go uses p.expect(...) for the open-brace, separator, and close-brace tokens \u2014 no inline tok.Type == TokenLBrace comparisons",
+          "passed": false,
+          "evidence": "p.expect used; inline compares=4"
+        },
+        {
+          "text": "parser_test.go has a subtest for an empty block (no records inside the braces)",
+          "passed": true,
+          "evidence": "empty-block test present"
+        },
+        {
+          "text": "parser_test.go has a subtest for a block with at least two records",
+          "passed": true,
+          "evidence": "multi-record block test present"
+        },
+        {
+          "text": "parser_test.go drives Parse() for its expected values and does not hand-construct Block literals (the empty-input scaffold case excepted)",
+          "passed": false,
+          "evidence": "parser tests use Parse() (has_parse=True, bad_literal=True)"
+        },
+        {
+          "text": "printer_test.go has at least one round-trip test covering a block (Parse \u2192 Print \u2192 Parse \u2192 require.Equal)",
+          "passed": true,
+          "evidence": "round-trip test covering block present"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no scratch copy of SPEC.md content was written to the package",
+          "passed": true,
+          "evidence": "no _spec*.md leftovers"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 11,
+        "failed": 0,
+        "total": 11,
+        "time_seconds": 238.9,
+        "tokens": 54927,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "tokenizer.go defines a TokenComment constant in the TokenType const block",
+          "passed": true,
+          "evidence": "TokenComment constant defined"
+        },
+        {
+          "text": "tokenizer.go has an action (function or closure) that consumes # to end-of-line and yields a TokenComment",
+          "passed": true,
+          "evidence": "tokenizer handles # comments"
+        },
+        {
+          "text": "parser.go's Record struct has a LeadingComments []string field (or an equivalent trivia attachment that survives round-trip)",
+          "passed": true,
+          "evidence": "Record carries ['LeadingComments', 'Comments', 'Leading']"
+        },
+        {
+          "text": "parser.go captures TokenComment tokens before a record and stores them on the next AST node (look for code that reads TokenComment and appends to a slice that flushes when the next non-comment token arrives)",
+          "passed": true,
+          "evidence": "parser captures and attaches comments"
+        },
+        {
+          "text": "printer.go emits the LeadingComments before the record's own output (look for a write call inside printRecord that iterates comments before printing the record body)",
+          "passed": true,
+          "evidence": "printer emits leading comments"
+        },
+        {
+          "text": "printer_test.go (or a parser+printer interaction test) has a round-trip subtest with one comment above a record",
+          "passed": true,
+          "evidence": "round-trip with comment present"
+        },
+        {
+          "text": "printer_test.go has a round-trip subtest with at least two comments above the same record",
+          "passed": true,
+          "evidence": "multi-comment round-trip test present"
+        },
+        {
+          "text": "tokenizer_test.go has a test for a comment token that asserts an exact Pos value for the comment",
+          "passed": true,
+          "evidence": "comment Pos test (has_pos=True, has_comment=True)"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no scratch copy of SPEC.md content was written to the package",
+          "passed": true,
+          "evidence": "no _spec*.md leftovers"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.9722,
+        "stddev": 0.0481,
+        "min": 0.9167,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 349.1667,
+        "stddev": 72.1374,
+        "min": 270.8,
+        "max": 412.8
+      },
+      "tokens": {
+        "mean": 76307.0,
+        "stddev": 8082.8189,
+        "min": 67371,
+        "max": 83108
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.9236,
+        "stddev": 0.0842,
+        "min": 0.8333,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 280.4667,
+        "stddev": 37.8053,
+        "min": 238.9,
+        "max": 312.8
+      },
+      "tokens": {
+        "mean": 58307.0,
+        "stddev": 2927.8875,
+        "min": 54927,
+        "max": 60062
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.05",
+      "time_seconds": "+68.7",
+      "tokens": "+18000"
+    }
+  },
+  "notes": []
+}

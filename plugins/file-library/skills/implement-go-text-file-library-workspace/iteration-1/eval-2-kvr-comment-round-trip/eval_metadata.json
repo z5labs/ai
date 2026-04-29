@@ -1,0 +1,18 @@
+{
+  "eval_id": 2,
+  "eval_name": "kvr-comment-round-trip",
+  "prompt": "Add comment support to the KVR package at ./kvr/ — comments are lines starting with `#` and run to end-of-line (per SPEC.md's Lexical Elements and Semantics sections). Comments above a Record or Block must round-trip cleanly: the parser captures them as leading trivia attached to the next AST node, and the printer emits them before the node's own output. Add a TokenComment token type, attach a LeadingComments []string field to Record and Block, and update parser+printer accordingly. Tests should cover: a comment above a record, a blank-line then a comment then a record, two comments above the same record, and a round-trip for each case. Don't read the whole SPEC.md.",
+  "assertions": [
+    {"id": "token-comment-defined", "text": "tokenizer.go defines a TokenComment constant in the TokenType const block"},
+    {"id": "tokenizer-handles-hash-comment", "text": "tokenizer.go has an action (function or closure) that consumes # to end-of-line and yields a TokenComment"},
+    {"id": "leading-comments-on-record", "text": "parser.go's Record struct has a LeadingComments []string field (or an equivalent trivia attachment that survives round-trip)"},
+    {"id": "parser-attaches-comments", "text": "parser.go captures TokenComment tokens before a record and stores them on the next AST node (look for code that reads TokenComment and appends to a slice that flushes when the next non-comment token arrives)"},
+    {"id": "printer-emits-leading-comments", "text": "printer.go emits the LeadingComments before the record's own output (look for a write call inside printRecord that iterates comments before printing the record body)"},
+    {"id": "round-trip-single-comment", "text": "printer_test.go (or a parser+printer interaction test) has a round-trip subtest with one comment above a record"},
+    {"id": "round-trip-multiple-comments", "text": "printer_test.go has a round-trip subtest with at least two comments above the same record"},
+    {"id": "tokenizer-test-comment-pos", "text": "tokenizer_test.go has a test for a comment token that asserts an exact Pos value for the comment"},
+    {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
+    {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
+    {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"}
+  ]
+}
