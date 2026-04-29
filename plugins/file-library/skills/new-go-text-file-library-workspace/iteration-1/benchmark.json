@@ -1,0 +1,930 @@
+{
+  "metadata": {
+    "skill_name": "new-go-text-file-library",
+    "skill_path": "plugins/file-library/skills/new-go-text-file-library",
+    "executor_model": "claude-opus-4-7",
+    "analyzer_model": "claude-opus-4-7",
+    "timestamp": "2026-04-29T21:38:55Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 1,
+    "delta_direction": "old_minus_with"
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 21,
+        "failed": 0,
+        "total": 21,
+        "time_seconds": 328.1,
+        "tokens": 52983,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "toml/doc.go exists",
+          "passed": true,
+          "evidence": "toml/doc.go present"
+        },
+        {
+          "id": "files-tokenizer-go",
+          "text": "toml/tokenizer.go exists",
+          "passed": true,
+          "evidence": "tokenizer.go present"
+        },
+        {
+          "id": "files-tokenizer-test",
+          "text": "toml/tokenizer_test.go exists",
+          "passed": true,
+          "evidence": "tokenizer_test.go present"
+        },
+        {
+          "id": "files-parser-go",
+          "text": "toml/parser.go exists",
+          "passed": true,
+          "evidence": "parser.go present"
+        },
+        {
+          "id": "files-parser-test",
+          "text": "toml/parser_test.go exists",
+          "passed": true,
+          "evidence": "parser_test.go present"
+        },
+        {
+          "id": "files-printer-go",
+          "text": "toml/printer.go exists",
+          "passed": true,
+          "evidence": "printer.go present"
+        },
+        {
+          "id": "files-printer-test",
+          "text": "toml/printer_test.go exists",
+          "passed": true,
+          "evidence": "printer_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "toml/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./toml/... exits cleanly",
+          "passed": true,
+          "evidence": "go test reports ok (compilation succeeded)"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./toml/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "tests PASS / ok"
+        },
+        {
+          "id": "tokenize-signature",
+          "text": "tokenizer.go defines `func Tokenize(r io.Reader) iter.Seq2[Token, error]`",
+          "passed": true,
+          "evidence": "Tokenize signature found"
+        },
+        {
+          "id": "parse-signature",
+          "text": "parser.go defines `func Parse(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "Parse signature found"
+        },
+        {
+          "id": "print-signature",
+          "text": "printer.go defines `func Print(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "Print signature found"
+        },
+        {
+          "id": "tokenizer-action-type",
+          "text": "tokenizer.go defines `tokenizerAction` type with signature `func(t *tokenizer, yield func(Token, error) bool) tokenizerAction`",
+          "passed": true,
+          "evidence": "tokenizerAction type matches"
+        },
+        {
+          "id": "parser-action-type",
+          "text": "parser.go defines a generic `parserAction[T any]` type with signature `func(p *parser, t T) (parserAction[T], error)`",
+          "passed": true,
+          "evidence": "parserAction[T any] type matches"
+        },
+        {
+          "id": "printer-action-type",
+          "text": "printer.go defines `printerAction` type with signature `func(pr *printer, f *File) printerAction`",
+          "passed": true,
+          "evidence": "printerAction type matches"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel() appears 8 times across test files (\u22656)"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "all three test files import testify/require"
+        },
+        {
+          "id": "parser-test-uses-parse",
+          "text": "parser_test.go drives the public Parse() function (does not construct AST nodes by hand)",
+          "passed": true,
+          "evidence": "parser_test.go calls Parse()"
+        },
+        {
+          "id": "printer-test-roundtrip",
+          "text": "printer_test.go contains a round-trip test (TestPrinterRoundTrip or equivalent) showing the Parse\u2192Print\u2192Parse pattern",
+          "passed": true,
+          "evidence": "TestPrinterRoundTrip present"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "toml/CLAUDE.md documents the action-loop pattern, the inner-action-loop rule for complex types, and the testing conventions",
+          "passed": true,
+          "evidence": "CLAUDE.md covers action-loop, inner-action rule, testing conventions"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 21,
+        "failed": 0,
+        "total": 21,
+        "time_seconds": 303.0,
+        "tokens": 56854,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "ini/doc.go exists",
+          "passed": true,
+          "evidence": "ini/doc.go present"
+        },
+        {
+          "id": "files-tokenizer-go",
+          "text": "ini/tokenizer.go exists",
+          "passed": true,
+          "evidence": "tokenizer.go present"
+        },
+        {
+          "id": "files-tokenizer-test",
+          "text": "ini/tokenizer_test.go exists",
+          "passed": true,
+          "evidence": "tokenizer_test.go present"
+        },
+        {
+          "id": "files-parser-go",
+          "text": "ini/parser.go exists",
+          "passed": true,
+          "evidence": "parser.go present"
+        },
+        {
+          "id": "files-parser-test",
+          "text": "ini/parser_test.go exists",
+          "passed": true,
+          "evidence": "parser_test.go present"
+        },
+        {
+          "id": "files-printer-go",
+          "text": "ini/printer.go exists",
+          "passed": true,
+          "evidence": "printer.go present"
+        },
+        {
+          "id": "files-printer-test",
+          "text": "ini/printer_test.go exists",
+          "passed": true,
+          "evidence": "printer_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "ini/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./ini/... exits cleanly",
+          "passed": true,
+          "evidence": "go test reports ok (compilation succeeded)"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./ini/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "tests PASS / ok"
+        },
+        {
+          "id": "tokenize-signature",
+          "text": "tokenizer.go defines `func Tokenize(r io.Reader) iter.Seq2[Token, error]`",
+          "passed": true,
+          "evidence": "Tokenize signature found"
+        },
+        {
+          "id": "parse-signature",
+          "text": "parser.go defines `func Parse(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "Parse signature found"
+        },
+        {
+          "id": "print-signature",
+          "text": "printer.go defines `func Print(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "Print signature found"
+        },
+        {
+          "id": "tokenizer-action-type",
+          "text": "tokenizer.go defines `tokenizerAction` type with signature `func(t *tokenizer, yield func(Token, error) bool) tokenizerAction`",
+          "passed": true,
+          "evidence": "tokenizerAction type matches"
+        },
+        {
+          "id": "parser-action-type",
+          "text": "parser.go defines a generic `parserAction[T any]` type with signature `func(p *parser, t T) (parserAction[T], error)`",
+          "passed": true,
+          "evidence": "parserAction[T any] type matches"
+        },
+        {
+          "id": "printer-action-type",
+          "text": "printer.go defines `printerAction` type with signature `func(pr *printer, f *File) printerAction`",
+          "passed": true,
+          "evidence": "printerAction type matches"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel() appears 8 times across test files (\u22656)"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "all three test files import testify/require"
+        },
+        {
+          "id": "parser-test-uses-parse",
+          "text": "parser_test.go drives the public Parse() function (does not construct AST nodes by hand)",
+          "passed": true,
+          "evidence": "parser_test.go calls Parse()"
+        },
+        {
+          "id": "printer-test-roundtrip",
+          "text": "printer_test.go contains a round-trip test (TestPrinterRoundTrip or equivalent)",
+          "passed": true,
+          "evidence": "TestPrinterRoundTrip present"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "ini/CLAUDE.md documents the action-loop pattern, the inner-action-loop rule for complex types, and the testing conventions",
+          "passed": true,
+          "evidence": "CLAUDE.md covers action-loop, inner-action rule, testing conventions"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 21,
+        "failed": 0,
+        "total": 21,
+        "time_seconds": 347.4,
+        "tokens": 61087,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "graphql/doc.go exists",
+          "passed": true,
+          "evidence": "graphql/doc.go present"
+        },
+        {
+          "id": "files-tokenizer-go",
+          "text": "graphql/tokenizer.go exists",
+          "passed": true,
+          "evidence": "tokenizer.go present"
+        },
+        {
+          "id": "files-tokenizer-test",
+          "text": "graphql/tokenizer_test.go exists",
+          "passed": true,
+          "evidence": "tokenizer_test.go present"
+        },
+        {
+          "id": "files-parser-go",
+          "text": "graphql/parser.go exists",
+          "passed": true,
+          "evidence": "parser.go present"
+        },
+        {
+          "id": "files-parser-test",
+          "text": "graphql/parser_test.go exists",
+          "passed": true,
+          "evidence": "parser_test.go present"
+        },
+        {
+          "id": "files-printer-go",
+          "text": "graphql/printer.go exists",
+          "passed": true,
+          "evidence": "printer.go present"
+        },
+        {
+          "id": "files-printer-test",
+          "text": "graphql/printer_test.go exists",
+          "passed": true,
+          "evidence": "printer_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "graphql/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./graphql/... exits cleanly",
+          "passed": true,
+          "evidence": "go test reports ok (compilation succeeded)"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./graphql/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "tests PASS / ok"
+        },
+        {
+          "id": "tokenize-signature",
+          "text": "tokenizer.go defines `func Tokenize(r io.Reader) iter.Seq2[Token, error]`",
+          "passed": true,
+          "evidence": "Tokenize signature found"
+        },
+        {
+          "id": "parse-signature",
+          "text": "parser.go defines `func Parse(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "Parse signature found"
+        },
+        {
+          "id": "print-signature",
+          "text": "printer.go defines `func Print(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "Print signature found"
+        },
+        {
+          "id": "tokenizer-action-type",
+          "text": "tokenizer.go defines `tokenizerAction` type with signature `func(t *tokenizer, yield func(Token, error) bool) tokenizerAction`",
+          "passed": true,
+          "evidence": "tokenizerAction type matches"
+        },
+        {
+          "id": "parser-action-type",
+          "text": "parser.go defines a generic `parserAction[T any]` type with signature `func(p *parser, t T) (parserAction[T], error)`",
+          "passed": true,
+          "evidence": "parserAction[T any] type matches"
+        },
+        {
+          "id": "printer-action-type",
+          "text": "printer.go defines `printerAction` type with signature `func(pr *printer, f *File) printerAction`",
+          "passed": true,
+          "evidence": "printerAction type matches"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel() appears 8 times across test files (\u22656)"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "all three test files import testify/require"
+        },
+        {
+          "id": "parser-test-uses-parse",
+          "text": "parser_test.go drives the public Parse() function (does not construct AST nodes by hand)",
+          "passed": true,
+          "evidence": "parser_test.go calls Parse()"
+        },
+        {
+          "id": "printer-test-roundtrip",
+          "text": "printer_test.go contains a round-trip test (TestPrinterRoundTrip or equivalent)",
+          "passed": true,
+          "evidence": "TestPrinterRoundTrip present"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "graphql/CLAUDE.md documents the action-loop pattern, the inner-action-loop rule for complex types, and the testing conventions",
+          "passed": true,
+          "evidence": "CLAUDE.md covers action-loop, inner-action rule, testing conventions"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 21,
+        "failed": 0,
+        "total": 21,
+        "time_seconds": 433.1,
+        "tokens": 70487,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "toml/doc.go exists",
+          "passed": true,
+          "evidence": "toml/doc.go present"
+        },
+        {
+          "id": "files-tokenizer-go",
+          "text": "toml/tokenizer.go exists",
+          "passed": true,
+          "evidence": "tokenizer.go present"
+        },
+        {
+          "id": "files-tokenizer-test",
+          "text": "toml/tokenizer_test.go exists",
+          "passed": true,
+          "evidence": "tokenizer_test.go present"
+        },
+        {
+          "id": "files-parser-go",
+          "text": "toml/parser.go exists",
+          "passed": true,
+          "evidence": "parser.go present"
+        },
+        {
+          "id": "files-parser-test",
+          "text": "toml/parser_test.go exists",
+          "passed": true,
+          "evidence": "parser_test.go present"
+        },
+        {
+          "id": "files-printer-go",
+          "text": "toml/printer.go exists",
+          "passed": true,
+          "evidence": "printer.go present"
+        },
+        {
+          "id": "files-printer-test",
+          "text": "toml/printer_test.go exists",
+          "passed": true,
+          "evidence": "printer_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "toml/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./toml/... exits cleanly",
+          "passed": true,
+          "evidence": "go test reports ok (compilation succeeded)"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./toml/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "tests PASS / ok"
+        },
+        {
+          "id": "tokenize-signature",
+          "text": "tokenizer.go defines `func Tokenize(r io.Reader) iter.Seq2[Token, error]`",
+          "passed": true,
+          "evidence": "Tokenize signature found"
+        },
+        {
+          "id": "parse-signature",
+          "text": "parser.go defines `func Parse(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "Parse signature found"
+        },
+        {
+          "id": "print-signature",
+          "text": "printer.go defines `func Print(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "Print signature found"
+        },
+        {
+          "id": "tokenizer-action-type",
+          "text": "tokenizer.go defines `tokenizerAction` type with signature `func(t *tokenizer, yield func(Token, error) bool) tokenizerAction`",
+          "passed": true,
+          "evidence": "tokenizerAction type matches"
+        },
+        {
+          "id": "parser-action-type",
+          "text": "parser.go defines a generic `parserAction[T any]` type with signature `func(p *parser, t T) (parserAction[T], error)`",
+          "passed": true,
+          "evidence": "parserAction[T any] type matches"
+        },
+        {
+          "id": "printer-action-type",
+          "text": "printer.go defines `printerAction` type with signature `func(pr *printer, f *File) printerAction`",
+          "passed": true,
+          "evidence": "printerAction type matches"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel() appears 8 times across test files (\u22656)"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "all three test files import testify/require"
+        },
+        {
+          "id": "parser-test-uses-parse",
+          "text": "parser_test.go drives the public Parse() function (does not construct AST nodes by hand)",
+          "passed": true,
+          "evidence": "parser_test.go calls Parse()"
+        },
+        {
+          "id": "printer-test-roundtrip",
+          "text": "printer_test.go contains a round-trip test (TestPrinterRoundTrip or equivalent) showing the Parse\u2192Print\u2192Parse pattern",
+          "passed": true,
+          "evidence": "TestPrinterRoundTrip present"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "toml/CLAUDE.md documents the action-loop pattern, the inner-action-loop rule for complex types, and the testing conventions",
+          "passed": true,
+          "evidence": "CLAUDE.md covers action-loop, inner-action rule, testing conventions"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 21,
+        "failed": 0,
+        "total": 21,
+        "time_seconds": 419.8,
+        "tokens": 74353,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "ini/doc.go exists",
+          "passed": true,
+          "evidence": "ini/doc.go present"
+        },
+        {
+          "id": "files-tokenizer-go",
+          "text": "ini/tokenizer.go exists",
+          "passed": true,
+          "evidence": "tokenizer.go present"
+        },
+        {
+          "id": "files-tokenizer-test",
+          "text": "ini/tokenizer_test.go exists",
+          "passed": true,
+          "evidence": "tokenizer_test.go present"
+        },
+        {
+          "id": "files-parser-go",
+          "text": "ini/parser.go exists",
+          "passed": true,
+          "evidence": "parser.go present"
+        },
+        {
+          "id": "files-parser-test",
+          "text": "ini/parser_test.go exists",
+          "passed": true,
+          "evidence": "parser_test.go present"
+        },
+        {
+          "id": "files-printer-go",
+          "text": "ini/printer.go exists",
+          "passed": true,
+          "evidence": "printer.go present"
+        },
+        {
+          "id": "files-printer-test",
+          "text": "ini/printer_test.go exists",
+          "passed": true,
+          "evidence": "printer_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "ini/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./ini/... exits cleanly",
+          "passed": true,
+          "evidence": "go test reports ok (compilation succeeded)"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./ini/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "tests PASS / ok"
+        },
+        {
+          "id": "tokenize-signature",
+          "text": "tokenizer.go defines `func Tokenize(r io.Reader) iter.Seq2[Token, error]`",
+          "passed": true,
+          "evidence": "Tokenize signature found"
+        },
+        {
+          "id": "parse-signature",
+          "text": "parser.go defines `func Parse(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "Parse signature found"
+        },
+        {
+          "id": "print-signature",
+          "text": "printer.go defines `func Print(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "Print signature found"
+        },
+        {
+          "id": "tokenizer-action-type",
+          "text": "tokenizer.go defines `tokenizerAction` type with signature `func(t *tokenizer, yield func(Token, error) bool) tokenizerAction`",
+          "passed": true,
+          "evidence": "tokenizerAction type matches"
+        },
+        {
+          "id": "parser-action-type",
+          "text": "parser.go defines a generic `parserAction[T any]` type with signature `func(p *parser, t T) (parserAction[T], error)`",
+          "passed": true,
+          "evidence": "parserAction[T any] type matches"
+        },
+        {
+          "id": "printer-action-type",
+          "text": "printer.go defines `printerAction` type with signature `func(pr *printer, f *File) printerAction`",
+          "passed": true,
+          "evidence": "printerAction type matches"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel() appears 8 times across test files (\u22656)"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "all three test files import testify/require"
+        },
+        {
+          "id": "parser-test-uses-parse",
+          "text": "parser_test.go drives the public Parse() function (does not construct AST nodes by hand)",
+          "passed": true,
+          "evidence": "parser_test.go calls Parse()"
+        },
+        {
+          "id": "printer-test-roundtrip",
+          "text": "printer_test.go contains a round-trip test (TestPrinterRoundTrip or equivalent)",
+          "passed": true,
+          "evidence": "TestPrinterRoundTrip present"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "ini/CLAUDE.md documents the action-loop pattern, the inner-action-loop rule for complex types, and the testing conventions",
+          "passed": true,
+          "evidence": "CLAUDE.md covers action-loop, inner-action rule, testing conventions"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 21,
+        "failed": 0,
+        "total": 21,
+        "time_seconds": 459.4,
+        "tokens": 71479,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "files-doc-go",
+          "text": "graphql/doc.go exists",
+          "passed": true,
+          "evidence": "graphql/doc.go present"
+        },
+        {
+          "id": "files-tokenizer-go",
+          "text": "graphql/tokenizer.go exists",
+          "passed": true,
+          "evidence": "tokenizer.go present"
+        },
+        {
+          "id": "files-tokenizer-test",
+          "text": "graphql/tokenizer_test.go exists",
+          "passed": true,
+          "evidence": "tokenizer_test.go present"
+        },
+        {
+          "id": "files-parser-go",
+          "text": "graphql/parser.go exists",
+          "passed": true,
+          "evidence": "parser.go present"
+        },
+        {
+          "id": "files-parser-test",
+          "text": "graphql/parser_test.go exists",
+          "passed": true,
+          "evidence": "parser_test.go present"
+        },
+        {
+          "id": "files-printer-go",
+          "text": "graphql/printer.go exists",
+          "passed": true,
+          "evidence": "printer.go present"
+        },
+        {
+          "id": "files-printer-test",
+          "text": "graphql/printer_test.go exists",
+          "passed": true,
+          "evidence": "printer_test.go present"
+        },
+        {
+          "id": "files-claude-md",
+          "text": "graphql/CLAUDE.md exists",
+          "passed": true,
+          "evidence": "CLAUDE.md present"
+        },
+        {
+          "id": "go-build-passes",
+          "text": "go build ./graphql/... exits cleanly",
+          "passed": true,
+          "evidence": "go test reports ok (compilation succeeded)"
+        },
+        {
+          "id": "go-test-passes",
+          "text": "go test ./graphql/... exits cleanly with all tests passing",
+          "passed": true,
+          "evidence": "tests PASS / ok"
+        },
+        {
+          "id": "tokenize-signature",
+          "text": "tokenizer.go defines `func Tokenize(r io.Reader) iter.Seq2[Token, error]`",
+          "passed": true,
+          "evidence": "Tokenize signature found"
+        },
+        {
+          "id": "parse-signature",
+          "text": "parser.go defines `func Parse(r io.Reader) (*File, error)`",
+          "passed": true,
+          "evidence": "Parse signature found"
+        },
+        {
+          "id": "print-signature",
+          "text": "printer.go defines `func Print(w io.Writer, f *File) error`",
+          "passed": true,
+          "evidence": "Print signature found"
+        },
+        {
+          "id": "tokenizer-action-type",
+          "text": "tokenizer.go defines `tokenizerAction` type with signature `func(t *tokenizer, yield func(Token, error) bool) tokenizerAction`",
+          "passed": true,
+          "evidence": "tokenizerAction type matches"
+        },
+        {
+          "id": "parser-action-type",
+          "text": "parser.go defines a generic `parserAction[T any]` type with signature `func(p *parser, t T) (parserAction[T], error)`",
+          "passed": true,
+          "evidence": "parserAction[T any] type matches"
+        },
+        {
+          "id": "printer-action-type",
+          "text": "printer.go defines `printerAction` type with signature `func(pr *printer, f *File) printerAction`",
+          "passed": true,
+          "evidence": "printerAction type matches"
+        },
+        {
+          "id": "tests-parallel",
+          "text": "test files call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel() appears 8 times across test files (\u22656)"
+        },
+        {
+          "id": "tests-testify-require",
+          "text": "test files import github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "all three test files import testify/require"
+        },
+        {
+          "id": "parser-test-uses-parse",
+          "text": "parser_test.go drives the public Parse() function (does not construct AST nodes by hand)",
+          "passed": true,
+          "evidence": "parser_test.go calls Parse()"
+        },
+        {
+          "id": "printer-test-roundtrip",
+          "text": "printer_test.go contains a round-trip test (TestPrinterRoundTrip or equivalent)",
+          "passed": true,
+          "evidence": "TestPrinterRoundTrip present"
+        },
+        {
+          "id": "claude-md-content",
+          "text": "graphql/CLAUDE.md documents the action-loop pattern, the inner-action-loop rule for complex types, and the testing conventions",
+          "passed": true,
+          "evidence": "CLAUDE.md covers action-loop, inner-action rule, testing conventions"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "old_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 326.1667,
+        "stddev": 22.263,
+        "min": 303.0,
+        "max": 347.4
+      },
+      "tokens": {
+        "mean": 56974.6667,
+        "stddev": 4053.3473,
+        "min": 52983,
+        "max": 61087
+      }
+    },
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 437.4333,
+        "stddev": 20.1525,
+        "min": 419.8,
+        "max": 459.4
+      },
+      "tokens": {
+        "mean": 72106.3333,
+        "stddev": 2007.8967,
+        "min": 70487,
+        "max": 74353
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "-111.3",
+      "tokens": "-15132"
+    }
+  },
+  "notes": []
+}

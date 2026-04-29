@@ -1,0 +1,28 @@
+{
+  "eval_id": 0,
+  "eval_name": "scaffold-toml",
+  "prompt": "I'm starting a small Go library for parsing and formatting TOML files. Scaffold a new package called `toml` so I can start filling in the format details.",
+  "assertions": [
+    {"id": "files-doc-go", "text": "toml/doc.go exists"},
+    {"id": "files-tokenizer-go", "text": "toml/tokenizer.go exists"},
+    {"id": "files-tokenizer-test", "text": "toml/tokenizer_test.go exists"},
+    {"id": "files-parser-go", "text": "toml/parser.go exists"},
+    {"id": "files-parser-test", "text": "toml/parser_test.go exists"},
+    {"id": "files-printer-go", "text": "toml/printer.go exists"},
+    {"id": "files-printer-test", "text": "toml/printer_test.go exists"},
+    {"id": "files-claude-md", "text": "toml/CLAUDE.md exists"},
+    {"id": "go-build-passes", "text": "go build ./toml/... exits cleanly"},
+    {"id": "go-test-passes", "text": "go test ./toml/... exits cleanly with all tests passing"},
+    {"id": "tokenize-signature", "text": "tokenizer.go defines `func Tokenize(r io.Reader) iter.Seq2[Token, error]`"},
+    {"id": "parse-signature", "text": "parser.go defines `func Parse(r io.Reader) (*File, error)`"},
+    {"id": "print-signature", "text": "printer.go defines `func Print(w io.Writer, f *File) error`"},
+    {"id": "tokenizer-action-type", "text": "tokenizer.go defines `tokenizerAction` type with signature `func(t *tokenizer, yield func(Token, error) bool) tokenizerAction`"},
+    {"id": "parser-action-type", "text": "parser.go defines a generic `parserAction[T any]` type with signature `func(p *parser, t T) (parserAction[T], error)`"},
+    {"id": "printer-action-type", "text": "printer.go defines `printerAction` type with signature `func(pr *printer, f *File) printerAction`"},
+    {"id": "tests-parallel", "text": "test files call t.Parallel() at both function and subtest level"},
+    {"id": "tests-testify-require", "text": "test files import github.com/stretchr/testify/require"},
+    {"id": "parser-test-uses-parse", "text": "parser_test.go drives the public Parse() function (does not construct AST nodes by hand)"},
+    {"id": "printer-test-roundtrip", "text": "printer_test.go contains a round-trip test (TestPrinterRoundTrip or equivalent) showing the Parse→Print→Parse pattern"},
+    {"id": "claude-md-content", "text": "toml/CLAUDE.md documents the action-loop pattern, the inner-action-loop rule for complex types, and the testing conventions"}
+  ]
+}

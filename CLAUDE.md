@@ -9,7 +9,7 @@ This repo contains Claude Code agents and skills maintained by z5labs. It is not
 ## Repository Structure
 
 - `agents/` — Agent definitions (markdown files with frontmatter). Each agent describes a specialized subprocess with specific tools, model, and instructions.
-- `skills/` — Skill definitions. Each skill lives in its own subdirectory containing a `SKILL.md` file that defines the skill's behavior and scaffolding instructions.
+- `plugins/` — Plugin packages, each containing a `.claude-plugin/plugin.json` manifest and a `skills/` subdirectory. Each skill lives in its own subdirectory containing a `SKILL.md` file that defines the skill's behavior and scaffolding instructions.
 
 ## Key Concepts
 
@@ -17,7 +17,7 @@ This repo contains Claude Code agents and skills maintained by z5labs. It is not
 The primary domain is **file library packages** — Go packages for parsing and formatting file formats. Two pipeline shapes are supported:
 
 - **Text formats** follow **Tokenizer → Parser → AST → Printer**.
-  - Scaffold: `/new-go-text-file-library [name]`
+  - Scaffold: `/new-go-text-file-library [name]` (lives in the `file-library` plugin)
   - Implementer agent: `implement-go-text-file-library` (test-first: tokenizer tests → tokenizer → parser tests → parser → printer tests → printer)
 - **Binary formats** follow **Types → Decoder → Encoder**.
   - Scaffold: `/new-go-binary-file-library [name]` (lives in the `file-library` plugin)

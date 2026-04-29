@@ -1,0 +1,136 @@
+{
+  "summary": {
+    "passed": 21,
+    "failed": 0,
+    "total": 21,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "id": "files-doc-go",
+      "text": "toml/doc.go exists",
+      "passed": true,
+      "evidence": "toml/doc.go present"
+    },
+    {
+      "id": "files-tokenizer-go",
+      "text": "toml/tokenizer.go exists",
+      "passed": true,
+      "evidence": "tokenizer.go present"
+    },
+    {
+      "id": "files-tokenizer-test",
+      "text": "toml/tokenizer_test.go exists",
+      "passed": true,
+      "evidence": "tokenizer_test.go present"
+    },
+    {
+      "id": "files-parser-go",
+      "text": "toml/parser.go exists",
+      "passed": true,
+      "evidence": "parser.go present"
+    },
+    {
+      "id": "files-parser-test",
+      "text": "toml/parser_test.go exists",
+      "passed": true,
+      "evidence": "parser_test.go present"
+    },
+    {
+      "id": "files-printer-go",
+      "text": "toml/printer.go exists",
+      "passed": true,
+      "evidence": "printer.go present"
+    },
+    {
+      "id": "files-printer-test",
+      "text": "toml/printer_test.go exists",
+      "passed": true,
+      "evidence": "printer_test.go present"
+    },
+    {
+      "id": "files-claude-md",
+      "text": "toml/CLAUDE.md exists",
+      "passed": true,
+      "evidence": "CLAUDE.md present"
+    },
+    {
+      "id": "go-build-passes",
+      "text": "go build ./toml/... exits cleanly",
+      "passed": true,
+      "evidence": "go test reports ok (compilation succeeded)"
+    },
+    {
+      "id": "go-test-passes",
+      "text": "go test ./toml/... exits cleanly with all tests passing",
+      "passed": true,
+      "evidence": "tests PASS / ok"
+    },
+    {
+      "id": "tokenize-signature",
+      "text": "tokenizer.go defines `func Tokenize(r io.Reader) iter.Seq2[Token, error]`",
+      "passed": true,
+      "evidence": "Tokenize signature found"
+    },
+    {
+      "id": "parse-signature",
+      "text": "parser.go defines `func Parse(r io.Reader) (*File, error)`",
+      "passed": true,
+      "evidence": "Parse signature found"
+    },
+    {
+      "id": "print-signature",
+      "text": "printer.go defines `func Print(w io.Writer, f *File) error`",
+      "passed": true,
+      "evidence": "Print signature found"
+    },
+    {
+      "id": "tokenizer-action-type",
+      "text": "tokenizer.go defines `tokenizerAction` type with signature `func(t *tokenizer, yield func(Token, error) bool) tokenizerAction`",
+      "passed": true,
+      "evidence": "tokenizerAction type matches"
+    },
+    {
+      "id": "parser-action-type",
+      "text": "parser.go defines a generic `parserAction[T any]` type with signature `func(p *parser, t T) (parserAction[T], error)`",
+      "passed": true,
+      "evidence": "parserAction[T any] type matches"
+    },
+    {
+      "id": "printer-action-type",
+      "text": "printer.go defines `printerAction` type with signature `func(pr *printer, f *File) printerAction`",
+      "passed": true,
+      "evidence": "printerAction type matches"
+    },
+    {
+      "id": "tests-parallel",
+      "text": "test files call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "t.Parallel() appears \u22652\u00d7 in every test file (total 8)"
+    },
+    {
+      "id": "tests-testify-require",
+      "text": "test files import github.com/stretchr/testify/require",
+      "passed": true,
+      "evidence": "all three test files import testify/require"
+    },
+    {
+      "id": "parser-test-uses-parse",
+      "text": "parser_test.go drives the public Parse() function (does not construct AST nodes by hand)",
+      "passed": true,
+      "evidence": "parser_test.go calls Parse()"
+    },
+    {
+      "id": "printer-test-roundtrip",
+      "text": "printer_test.go contains a round-trip test (TestPrinterRoundTrip or equivalent) showing the Parse\u2192Print\u2192Parse pattern",
+      "passed": true,
+      "evidence": "TestPrinterRoundTrip present"
+    },
+    {
+      "id": "claude-md-content",
+      "text": "toml/CLAUDE.md documents the action-loop pattern, the inner-action-loop rule for complex types, and the testing conventions",
+      "passed": true,
+      "evidence": "CLAUDE.md covers action-loop, inner-action rule, testing conventions"
+    }
+  ]
+}

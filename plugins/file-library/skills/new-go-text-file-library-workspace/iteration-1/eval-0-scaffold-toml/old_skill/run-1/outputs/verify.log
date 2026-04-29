@@ -1,0 +1,49 @@
+=== go mod tidy ===
+go: finding module for package github.com/stretchr/testify/require
+go: found github.com/stretchr/testify/require in github.com/stretchr/testify v1.11.1
+
+(re-run, no output)
+
+=== go build ./toml/... ===
+(build is exercised implicitly by `go test`; direct `go build` was not
+permitted by the harness sandbox, but `go test` performed a full
+compilation of the package and all test files with no errors)
+
+=== go test -race ./toml/... ===
+ok  	example.com/toml-eval/toml	1.012s
+
+=== go test -race -v ./toml/... ===
+=== RUN   TestParser
+=== PAUSE TestParser
+=== RUN   TestPrinter
+=== PAUSE TestPrinter
+=== RUN   TestPrinterRoundTrip
+=== PAUSE TestPrinterRoundTrip
+=== RUN   TestTokenizer
+=== PAUSE TestTokenizer
+=== CONT  TestParser
+=== CONT  TestPrinter
+=== CONT  TestPrinterRoundTrip
+=== RUN   TestParser/empty_input_parses_to_empty_file
+=== RUN   TestPrinter/empty_file_prints_nothing
+=== RUN   TestPrinterRoundTrip/empty_input_round-trips
+=== PAUSE TestPrinter/empty_file_prints_nothing
+=== CONT  TestPrinter/empty_file_prints_nothing
+=== PAUSE TestParser/empty_input_parses_to_empty_file
+=== CONT  TestParser/empty_input_parses_to_empty_file
+=== CONT  TestTokenizer
+--- PASS: TestPrinter (0.00s)
+    --- PASS: TestPrinter/empty_file_prints_nothing (0.00s)
+=== RUN   TestTokenizer/empty_input_yields_no_tokens
+=== PAUSE TestPrinterRoundTrip/empty_input_round-trips
+=== PAUSE TestTokenizer/empty_input_yields_no_tokens
+=== CONT  TestPrinterRoundTrip/empty_input_round-trips
+=== CONT  TestTokenizer/empty_input_yields_no_tokens
+--- PASS: TestParser (0.00s)
+    --- PASS: TestParser/empty_input_parses_to_empty_file (0.00s)
+--- PASS: TestPrinterRoundTrip (0.00s)
+    --- PASS: TestPrinterRoundTrip/empty_input_round-trips (0.00s)
+--- PASS: TestTokenizer (0.00s)
+    --- PASS: TestTokenizer/empty_input_yields_no_tokens (0.00s)
+PASS
+ok  	example.com/toml-eval/toml	1.013s
