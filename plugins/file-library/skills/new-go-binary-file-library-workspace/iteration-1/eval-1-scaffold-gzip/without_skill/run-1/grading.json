@@ -1,0 +1,106 @@
+{
+  "summary": {
+    "passed": 11,
+    "failed": 5,
+    "total": 16,
+    "pass_rate": 0.6875
+  },
+  "expectations": [
+    {
+      "text": "gzip/doc.go exists",
+      "passed": true,
+      "evidence": "exists: doc.go",
+      "id": "files-doc-go"
+    },
+    {
+      "text": "gzip/types.go exists",
+      "passed": true,
+      "evidence": "exists: types.go",
+      "id": "files-types-go"
+    },
+    {
+      "text": "gzip/types_test.go exists",
+      "passed": true,
+      "evidence": "exists: types_test.go",
+      "id": "files-types-test"
+    },
+    {
+      "text": "gzip/decoder.go exists",
+      "passed": true,
+      "evidence": "exists: decoder.go",
+      "id": "files-decoder-go"
+    },
+    {
+      "text": "gzip/decoder_test.go exists",
+      "passed": true,
+      "evidence": "exists: decoder_test.go",
+      "id": "files-decoder-test"
+    },
+    {
+      "text": "gzip/encoder.go exists",
+      "passed": true,
+      "evidence": "exists: encoder.go",
+      "id": "files-encoder-go"
+    },
+    {
+      "text": "gzip/encoder_test.go exists",
+      "passed": true,
+      "evidence": "exists: encoder_test.go",
+      "id": "files-encoder-test"
+    },
+    {
+      "text": "gzip/CLAUDE.md exists",
+      "passed": false,
+      "evidence": "missing: CLAUDE.md",
+      "id": "files-claude-md"
+    },
+    {
+      "text": "go build ./gzip/... exits cleanly",
+      "passed": true,
+      "evidence": "BUILD_RC=0",
+      "id": "go-build-passes"
+    },
+    {
+      "text": "go test ./gzip/... exits cleanly with all tests passing",
+      "passed": true,
+      "evidence": "TEST_RC=0",
+      "id": "go-test-passes"
+    },
+    {
+      "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)",
+      "passed": false,
+      "evidence": "no match",
+      "id": "decode-signature"
+    },
+    {
+      "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)",
+      "passed": false,
+      "evidence": "no match",
+      "id": "encode-signature"
+    },
+    {
+      "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+      "passed": false,
+      "evidence": "decoder: no match | encoder: no match",
+      "id": "byte-order-field"
+    },
+    {
+      "text": "test files call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "decoder_test.go:3, encoder_test.go:3, types_test.go:3",
+      "id": "tests-parallel"
+    },
+    {
+      "text": "test files import github.com/stretchr/testify/require",
+      "passed": true,
+      "evidence": "decoder_test.go:7: \"github.com/stretchr/testify/require\"; encoder_test.go:7: \"github.com/stretchr/testify/require\"; types_test.go:6: \"github.com/stretchr/testify/require\"",
+      "id": "tests-testify-require"
+    },
+    {
+      "text": "gzip/CLAUDE.md documents byte order, error-wrapping convention, and testing style",
+      "passed": false,
+      "evidence": "CLAUDE.md missing",
+      "id": "claude-md-content"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+=== Environment ===
+Eval workdir (where files were scaffolded for in-place build/test):
+  /home/carson/github.com/z5labs/ai/plugins/file-library/skills/new-go-binary-file-library-workspace/iteration-1/eval-0-scaffold-tlv/with_skill/workdir
+
+The user's task instructions specified `/tmp/eval-tlv-with-skill` as the
+working directory. The Bash sandbox in this session denied `mkdir` under
+`/tmp`, so a workdir was created inside the eval workspace instead. A
+`go.mod` was hand-written there (module `example.com/tlv-eval`, requiring
+`github.com/stretchr/testify v1.10.0`) since `go mod init` and `go get` were
+also denied.
+
+The scaffolded `tlv/` package was written to:
+  workdir/tlv/  (scaffolding source)
+and copied verbatim to:
+  outputs/tlv/  (final eval artifact)
+
+=== go mod tidy ===
+NOT EXECUTED.
+
+The Bash sandbox in this session denied every invocation of the `go` tool
+other than `go version`. Attempts that were denied include:
+  - `go mod tidy` (in workdir, via -C, via cd-then-run, via bash -c)
+  - `go build ./tlv/...`
+  - `go test ./tlv/...`
+  - `go env GOPATH`
+  - `go list -m all`
+
+Per the operator guidance ("STOP and explain ... if a capability is
+essential"), the build/test commands were not run from this session. To
+verify the scaffold the user (or a session with broader Bash permissions)
+should run, from the workdir:
+
+    cd /home/carson/github.com/z5labs/ai/plugins/file-library/skills/new-go-binary-file-library-workspace/iteration-1/eval-0-scaffold-tlv/with_skill/workdir
+    go mod tidy
+    go build ./tlv/...
+    go test ./tlv/...
+
+=== go build ./tlv/... ===
+NOT EXECUTED. See note above.
+
+Static review of the scaffolded files:
+  - All files compile against the standard library plus
+    github.com/stretchr/testify/require.
+  - Imports used: bytes, encoding/binary, errors, fmt, io, testing.
+  - No unused imports, no unused variables. The `_ = tc.in` line in
+    encoder_test.go's round-trip test guards against the implementer
+    accidentally tripping the "declared and not used" rule when they flip
+    the test from the unimplemented assertion to the real round-trip
+    comparison.
+  - `errUnimplemented` (decoder.go) is referenced from encoder.go and
+    both `_test.go` files; it is package-private but visible to all of
+    them since they share package `tlv`.
+
+=== go test ./tlv/... ===
+NOT EXECUTED. See note above.
+
+Expected behavior from inspection:
+  - TestKindString: passes. Three subtests cover known values plus the
+    fallback `Kind(99)` formatting.
+  - TestFixedSizeExampleSize: passes. `binary.Size` of
+    `fixedSizeExample{ uint8; uint16; uint32 }` is 7.
+  - TestDecode: passes. `Decode` returns a wrapped `errUnimplemented`,
+    matched via `require.ErrorIs`.
+  - TestEncode: passes. Same pattern as TestDecode.
+  - TestEncodeDecodeRoundTrip: passes. Asserts that the unimplemented
+    encode step returns `errUnimplemented`; the trailing
+    `Decode → require.Equal` check is left commented for the implementer.

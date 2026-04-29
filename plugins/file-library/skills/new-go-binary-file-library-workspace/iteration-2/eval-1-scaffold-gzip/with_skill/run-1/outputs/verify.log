@@ -1,0 +1,7 @@
+==== go build ====
+BUILD_RC=0
+==== go test ====
+ok  	example.com/iter2-gzip/gzip	0.003s
+TEST_RC=0
+==== verdict ====
+build=0 test=0

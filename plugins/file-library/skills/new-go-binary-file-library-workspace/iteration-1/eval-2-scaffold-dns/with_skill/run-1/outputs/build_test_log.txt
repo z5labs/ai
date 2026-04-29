@@ -1,0 +1,143 @@
+Eval: new-go-binary-file-library skill, $ARGUMENTS[0] = "dns"
+=================================================================
+
+Scaffolded package: ./dns/
+Files generated (8):
+  - dns/doc.go
+  - dns/types.go
+  - dns/types_test.go
+  - dns/decoder.go
+  - dns/decoder_test.go
+  - dns/encoder.go
+  - dns/encoder_test.go
+  - dns/CLAUDE.md
+
+Byte order chosen: binary.BigEndian (network byte order, RFC 1035 section
+2.3.2).
+
+------------------------------------------------------------
+Build / test commands
+------------------------------------------------------------
+
+The eval task instructs:
+
+    mkdir -p /tmp/eval-dns-with-skill
+    cd /tmp/eval-dns-with-skill
+    go mod init example.com/dns-eval
+    go get github.com/stretchr/testify/require
+    # ... copy scaffolded ./dns/ here ...
+    go mod tidy
+    go build ./dns/...
+    go test ./dns/...
+
+Status: NOT EXECUTED.
+
+The harness sandbox denied every attempt to write to /tmp and every `go`
+subcommand other than `go version`. Reproduced denials (truncated):
+
+  $ mkdir -p /tmp/eval-dns-with-skill
+  Permission to use Bash has been denied.
+
+  $ cd <workspace>/scratch && go mod init example.com/dns-eval
+  Permission to use Bash has been denied.
+
+  $ cd <workspace>/scratch && go mod tidy
+  Permission to use Bash has been denied.
+
+  $ go env GOPATH
+  Permission to use Bash has been denied.
+
+  $ go build ./...
+  Permission to use Bash has been denied.
+
+The only `go` invocation that succeeded was `go version`:
+
+  $ go version
+  go version go1.26.2 linux/amd64
+
+I attempted a workaround by creating a scratch module inside the workspace
+(<workspace>/scratch with a hand-written go.mod and the scaffolded files
+copied into ./dns/), but `go mod tidy`, `go build`, and `go test` were
+still denied by the sandbox. The scratch directory has since been removed.
+
+------------------------------------------------------------
+Static review of the scaffold (in lieu of runtime verification)
+------------------------------------------------------------
+
+The generated files were inspected by hand against the skill's
+requirements and the patterns in references/architecture.md.
+
+types.go
+  - File struct with one placeholder uint16 field so binary.Size /
+    binary.Read work against the scaffold.
+  - Kind enum (uint8) with const block (KindUnknown, KindA) and a
+    String() method that falls back to "Kind(N)" for unknown values.
+  - flagsQRMask / flagsQRShift placeholder demonstrating the bit-field
+    convention.
+  - ErrInvalid sentinel and InvalidFieldError struct (Field, Got,
+    Reason) implementing Error() and Unwrap() -> ErrInvalid so
+    errors.Is matching works.
+
+types_test.go
+  - TestKindString: table-driven, t.Parallel() at function and subtest
+    level, require assertions, covers known + fallback values.
+  - TestFileBinarySize: uses binary.Size against the placeholder File,
+    expecting 2 bytes (the uint16 placeholder field).
+
+decoder.go
+  - Internal `decoder` struct wrapping io.Reader + binary.ByteOrder
+    field.
+  - newDecoder(r) defaults byteOrder to binary.BigEndian.
+  - readFile() returns &File{} and fmt.Errorf("decoding File: %w",
+    errUnimplemented).
+  - Public Decode(r) constructs newDecoder and calls readFile.
+  - UnexpectedEOFError struct with Field, Error(), and Unwrap() ->
+    io.ErrUnexpectedEOF.
+
+decoder_test.go
+  - TestDecode: table-driven, hex byte literal []byte{0x00},
+    bytes.NewReader, asserts ErrorIs(err, errUnimplemented).
+  - t.Parallel() at both levels, require assertions.
+
+encoder.go
+  - Internal `encoder` struct wrapping io.Writer + binary.ByteOrder.
+  - newEncoder(w) defaults byteOrder to binary.BigEndian.
+  - writeFile(f) returns fmt.Errorf("encoding File: %w",
+    errUnimplemented).
+  - Public Encode(w, f) constructs newEncoder and calls writeFile.
+
+encoder_test.go
+  - TestEncode: table-driven, bytes.Buffer writer, asserts
+    ErrorIs(err, errUnimplemented).
+  - TestEncodeDecodeRoundTrip: documents the Encode -> Decode ->
+    require.Equal pattern, currently asserts the unimplemented error
+    path. Comment block shows what to flip once writeFile is real.
+  - t.Parallel() at both levels, require assertions.
+
+CLAUDE.md
+  - Documents the types/decoder/encoder pipeline.
+  - Records byte order (binary.BigEndian, RFC 1035 section 2.3.2) and
+    why both decoder and encoder must agree.
+  - Records the error-wrapping convention
+    fmt.Errorf("decoding %s: %w", structName, err) /
+    fmt.Errorf("encoding %s: %w", structName, err).
+  - Records the testing style: hex byte literals, bytes.NewReader /
+    bytes.Buffer, table-driven, require, t.Parallel() at both levels,
+    round-trip subtest for every encoder method.
+
+Expected go build / go test outcome (when run in an environment with
+network + write access):
+
+  go build ./dns/...    -> success (no syntax errors, no unused imports)
+  go test  ./dns/...    -> all 5 tests PASS:
+                              TestKindString (3 subtests)
+                              TestFileBinarySize (1 subtest)
+                              TestDecode (1 subtest)
+                              TestEncode (1 subtest)
+                              TestEncodeDecodeRoundTrip (1 subtest)
+                           Each test asserts the unimplemented-error path
+                           or the documented placeholder behavior, so
+                           they pass against the stub implementation.
+
+To actually execute the build/test, re-run the eval in an environment
+where the harness allows /tmp writes and `go mod`/`go build`/`go test`.

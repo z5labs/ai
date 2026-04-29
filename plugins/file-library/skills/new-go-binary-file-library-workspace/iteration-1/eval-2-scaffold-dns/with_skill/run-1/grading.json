@@ -1,0 +1,106 @@
+{
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "total": 16,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "dns/doc.go exists",
+      "passed": true,
+      "evidence": "exists: doc.go",
+      "id": "files-doc-go"
+    },
+    {
+      "text": "dns/types.go exists",
+      "passed": true,
+      "evidence": "exists: types.go",
+      "id": "files-types-go"
+    },
+    {
+      "text": "dns/types_test.go exists",
+      "passed": true,
+      "evidence": "exists: types_test.go",
+      "id": "files-types-test"
+    },
+    {
+      "text": "dns/decoder.go exists",
+      "passed": true,
+      "evidence": "exists: decoder.go",
+      "id": "files-decoder-go"
+    },
+    {
+      "text": "dns/decoder_test.go exists",
+      "passed": true,
+      "evidence": "exists: decoder_test.go",
+      "id": "files-decoder-test"
+    },
+    {
+      "text": "dns/encoder.go exists",
+      "passed": true,
+      "evidence": "exists: encoder.go",
+      "id": "files-encoder-go"
+    },
+    {
+      "text": "dns/encoder_test.go exists",
+      "passed": true,
+      "evidence": "exists: encoder_test.go",
+      "id": "files-encoder-test"
+    },
+    {
+      "text": "dns/CLAUDE.md exists",
+      "passed": true,
+      "evidence": "exists: CLAUDE.md",
+      "id": "files-claude-md"
+    },
+    {
+      "text": "go build ./dns/... exits cleanly",
+      "passed": true,
+      "evidence": "BUILD_RC=0",
+      "id": "go-build-passes"
+    },
+    {
+      "text": "go test ./dns/... exits cleanly with all tests passing",
+      "passed": true,
+      "evidence": "TEST_RC=0",
+      "id": "go-test-passes"
+    },
+    {
+      "text": "decoder.go defines `func Decode(r io.Reader) (*File, error)` (or named-type equivalent)",
+      "passed": true,
+      "evidence": "60: func Decode(r io.Reader) (*File, error) {",
+      "id": "decode-signature"
+    },
+    {
+      "text": "encoder.go defines `func Encode(w io.Writer, f *File) error` (or named-type equivalent)",
+      "passed": true,
+      "evidence": "39: func Encode(w io.Writer, f *File) error {",
+      "id": "encode-signature"
+    },
+    {
+      "text": "decoder.go and encoder.go store byte order as `binary.ByteOrder` field",
+      "passed": true,
+      "evidence": "decoder: 38: byteOrder binary.ByteOrder | encoder: 17: byteOrder binary.ByteOrder",
+      "id": "byte-order-field"
+    },
+    {
+      "text": "test files call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "types_test.go:4, decoder_test.go:2, encoder_test.go:4",
+      "id": "tests-parallel"
+    },
+    {
+      "text": "test files import github.com/stretchr/testify/require",
+      "passed": true,
+      "evidence": "decoder_test.go:11: \"github.com/stretchr/testify/require\"; encoder_test.go:11: \"github.com/stretchr/testify/require\"; types_test.go:11: \"github.com/stretchr/testify/require\"",
+      "id": "tests-testify-require"
+    },
+    {
+      "text": "# dns\n\ngo binary file library for dns wire-format messages.\n\n## pipeline\n\nthis package follows the **types / decoder / encoder** pipeline:\n\n```\nbytes  \u2500\u2500 decode \u2500\u25ba  *file  \u2500\u2500 encode \u2500\u25ba  bytes\n              \u2502         \u2502           \u2502\n          decoder.go  types.go   encoder.go\n```\n\n- `types.go` \u2014 go translation of the dns wire format. one struct per spec\n  structure, fields in wire order, sized integers and `[n]byte` arrays so\n  `binary.size` / `binary.read` work directly. enums use `type x uintn` plus\n  a `const` block and a `string()` method. bit fields keep their underlying\n  integer type and expose mask/shift constants (and accessor methods when\n  helpful).\n- `decoder.go` \u2014 internal `decoder` struct wrapping an `io.reader` and the\n  byte order, with `readx` methods (`readfile`, `readheader`, ...) and the\n  public `decode(r io.reader) (*file, error)` entry point.\n- `encoder.go` \u2014 internal `encoder` struct wrapping an `io.writer` and the\n  byte order, with `writex` methods and the public\n  `encode(w io.writer, f *file) error` entry point.\n\n## byte order\n\ndns messages are framed in **network byte order** (big-endian) per\nrfc 1035 section 2.3.2. both the decoder and encoder default to\n`binary.bigendian`. they must always agree \u2014 a byte-order mismatch is the\nsingle most common cause of round-trip failures in this package.\n\n## error wrapping convention\n\nevery non-trivial decode/encode error is wrapped with structural context:\n\n```go\nreturn nil, fmt.errorf(\"decoding header.length: %w\", err)\nreturn fmt.errorf(\"encoding header.length: %w\", err)\n```\n\nuse `fmt.errorf(\"decoding %s: %w\", structname, err)` and\n`fmt.errorf(\"encoding %s: %w\", structname, err)` when wrapping at the\nstruct boundary. distinguish \"the bytes ran out\" (wrap\n`io.errunexpectedeof`, e.g. via `unexpectedeoferror`) from \"the bytes were\nfine but the value was illegal\" (return `errinvalid` /\n`invalidfielderror`).\n\n## testing\n\n- hex byte literals for binary inputs/outputs: `[]byte{0x00, 0x01, 0xff}`.\n  comment each block with the field name from the spec.\n- `bytes.newreader` for decoder tests, `bytes.buffer` for encoder tests.\n- table-driven tests with `testcases` slices and `t.run(tc.name, ...)`.\n- `t.parallel()` at both the test function level and inside each subtest.\n- assertions via `github.com/stretchr/testify/require` (not `assert`) \u2014 a\n  binary-format test that keeps running after the first mismatch produces\n  noise, not signal.\n- every encoder method gets a round-trip subtest: `encode -> decode ->\n  require.equal(original, decoded)`. round-trip is the cheapest end-to-end\n  correctness check available.\n\n## what to implement next\n\nthe current scaffolding contains placeholder types (`file`, `kind`,\n`invalidfielderror`) and stub `readfile` / `writefile` methods that return\nan \"unimplemented\" error. to turn the scaffold into a real dns library:\n\n1. define the real types in `types.go` from the dns wire-format spec\n   (rfc 1035 plus relevant extensions). start with the 12-byte header,\n   then question / resource record sections.\n2. run the `implement-binary-file-library` agent (or follow the same\n   test-first workflow manually) to flesh out `decoder.go` and\n   `encoder.go`, replacing the stubs and updating the placeholder tests.\n",
+      "passed": true,
+      "evidence": "byte order=True, error wrapping=True, testing=True",
+      "id": "claude-md-content"
+    }
+  ]
+}

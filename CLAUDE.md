@@ -14,10 +14,16 @@ This repo contains Claude Code agents and skills maintained by z5labs. It is not
 ## Key Concepts
 
 ### File Library Pattern
-The primary domain is **file library packages** — Go packages that follow a **Tokenizer → Parser → AST → Printer** pipeline for parsing and formatting file formats. The agent (`implement-file-library`) and skill (`new-file-library`) both support this pattern:
+The primary domain is **file library packages** — Go packages for parsing and formatting file formats. Two pipeline shapes are supported:
 
-- **Skill** (`/new-file-library [name]`): Scaffolds a new file library package with all pipeline components and tests.
-- **Agent** (`implement-file-library`): Implements features within an existing file library package following a strict test-first workflow (tokenizer tests → tokenizer → parser tests → parser → printer tests → printer).
+- **Text formats** follow **Tokenizer → Parser → AST → Printer**.
+  - Scaffold: `/new-go-text-file-library [name]`
+  - Implementer agent: `implement-go-text-file-library` (test-first: tokenizer tests → tokenizer → parser tests → parser → printer tests → printer)
+- **Binary formats** follow **Types → Decoder → Encoder**.
+  - Scaffold: `/new-go-binary-file-library [name]` (lives in the `file-library` plugin)
+  - Implementer agent: `implement-go-binary-file-library`
+
+Skill and agent names carry the `-go-` language prefix so the orchestration shape can be reused across other languages later.
 
 ### Go Conventions (for file library packages)
 - State machine pattern with recursive action functions for tokenizer, parser, and printer
