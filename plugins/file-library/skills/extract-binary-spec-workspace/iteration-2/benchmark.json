@@ -1,0 +1,466 @@
+{
+  "metadata": {
+    "skill_name": "extract-binary-spec",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-29T03:15:31Z",
+    "evals_run": [
+      0,
+      1
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 16,
+        "failed": 0,
+        "total": 16,
+        "time_seconds": 372.3,
+        "tokens": 63522,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "SPEC.md exists at the root of the output directory",
+          "passed": true,
+          "evidence": "SPEC.md present at iteration-2/eval-0-gzip-rfc-1952-tier-1/with_skill/run-1/outputs/gzip-spec/SPEC.md"
+        },
+        {
+          "text": "structures/ directory exists and contains at least 2 .md files",
+          "passed": true,
+          "evidence": "structures/ has 9 .md files (need \u22652)"
+        },
+        {
+          "text": "examples/ directory exists and contains at least 3 .md files (minimal/typical/complex or equivalent)",
+          "passed": true,
+          "evidence": "examples/ has 3 .md files (need \u22653)"
+        },
+        {
+          "text": "every .md file produced is non-empty (at least 200 bytes)",
+          "passed": true,
+          "evidence": "all .md files \u2265 200 bytes"
+        },
+        {
+          "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _structures_index.md) in the output directory",
+          "passed": true,
+          "evidence": "no scratch files in output tree"
+        },
+        {
+          "text": "SPEC.md contains a 'Conventions' section that states byte order explicitly",
+          "passed": true,
+          "evidence": "SPEC.md has a Conventions section that mentions byte order"
+        },
+        {
+          "text": "SPEC.md identifies gzip as little-endian (or LSB-first / Intel byte order)",
+          "passed": true,
+          "evidence": "SPEC.md byte-order term: little-endian"
+        },
+        {
+          "text": "SPEC.md contains a 'Structures index' section linking to each structures/<name>.md file",
+          "passed": true,
+          "evidence": "index section: True, structures/*.md links present: True"
+        },
+        {
+          "text": "every structures/<name>.md file contains a markdown field table with Offset / Size / Type / Name / Description columns",
+          "passed": true,
+          "evidence": "all 9 structures have a canonical field table or declared variant"
+        },
+        {
+          "text": "field tables use Go-friendly types (uint8, uint16, uint32, [N]byte, []byte)",
+          "passed": true,
+          "evidence": "all 9 structures use Go-friendly types"
+        },
+        {
+          "text": "the FLG byte's bit fields are documented (FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT) with bit numbers",
+          "passed": true,
+          "evidence": "FLG bit names missing: none"
+        },
+        {
+          "text": "the gzip magic identifier (ID1=0x1f, ID2=0x8b) is captured",
+          "passed": true,
+          "evidence": "ID1=0x1f present: True, ID2=0x8b present: True"
+        },
+        {
+          "text": "a structure file describes the trailer with CRC32 (4 bytes) and ISIZE (4 bytes)",
+          "passed": true,
+          "evidence": "trailer fields found in member-header.md"
+        },
+        {
+          "text": "an encoding table for OS values exists (or OS values are documented inline with at least 5 entries)",
+          "passed": true,
+          "evidence": "OS encoding table at os-values.md"
+        },
+        {
+          "text": "FEXTRA, FNAME, FCOMMENT, FHCRC are documented as conditional/optional, with their presence tied to FLG bits",
+          "passed": true,
+          "evidence": "optional fields documented: True, conditional on FLG: True"
+        },
+        {
+          "text": "the compressed-data block (DEFLATE format) is not extracted as a structure (user explicitly excluded it)",
+          "passed": true,
+          "evidence": "no deflate structure files in structures/ \u2014 scope respected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 17,
+        "failed": 0,
+        "total": 17,
+        "time_seconds": 638.8,
+        "tokens": 107363,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "SPEC.md exists at the root of the output directory",
+          "passed": true,
+          "evidence": "SPEC.md present at iteration-2/eval-1-dns-rfc-1035-tier-2/with_skill/run-1/outputs/dns-spec/SPEC.md"
+        },
+        {
+          "text": "structures/ directory exists and contains at least 3 .md files (header, question, resource-record at minimum)",
+          "passed": true,
+          "evidence": "structures/ has 22 .md files (need \u22652)"
+        },
+        {
+          "text": "encoding-tables/ directory exists and contains at least 4 .md files",
+          "passed": true,
+          "evidence": "encoding-tables/ has 6 .md files (need \u22654)"
+        },
+        {
+          "text": "examples/ directory exists and contains at least 3 .md files",
+          "passed": true,
+          "evidence": "examples/ has 3 .md files (need \u22653)"
+        },
+        {
+          "text": "every .md file produced is non-empty (at least 200 bytes)",
+          "passed": true,
+          "evidence": "all .md files \u2265 200 bytes"
+        },
+        {
+          "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _structures_index.md) in the output directory",
+          "passed": true,
+          "evidence": "no scratch files in output tree"
+        },
+        {
+          "text": "SPEC.md contains a 'Conventions' section that states byte order explicitly",
+          "passed": true,
+          "evidence": "SPEC.md has a Conventions section that mentions byte order"
+        },
+        {
+          "text": "SPEC.md identifies DNS as network byte order / big-endian",
+          "passed": true,
+          "evidence": "SPEC.md byte-order term: big-endian"
+        },
+        {
+          "text": "SPEC.md contains a 'Structures index' section linking to each structures/<name>.md file",
+          "passed": true,
+          "evidence": "index section: True, structures/*.md links present: True"
+        },
+        {
+          "text": "every structures/<name>.md file contains a markdown field table with Offset / Size / Type / Name / Description columns",
+          "passed": true,
+          "evidence": "all 22 structures have a canonical field table or declared variant"
+        },
+        {
+          "text": "field tables use Go-friendly types (uint8, uint16, uint32, [N]byte, []byte)",
+          "passed": true,
+          "evidence": "all 22 structures use Go-friendly types"
+        },
+        {
+          "text": "the DNS header structure documents 12 bytes: ID (2), Flags (2), QDCOUNT (2), ANCOUNT (2), NSCOUNT (2), ARCOUNT (2)",
+          "passed": true,
+          "evidence": "header.md missing fields: none"
+        },
+        {
+          "text": "the DNS header's flags bytes have a bit-fields section covering QR, Opcode (4 bits), AA, TC, RD, RA, Z, RCODE \u2014 with correct bit positions",
+          "passed": true,
+          "evidence": "header.md missing flag bits: none"
+        },
+        {
+          "text": "domain name encoding documents both the length-prefixed label format and the compression pointer format (two high bits = 11, 14-bit offset)",
+          "passed": true,
+          "evidence": "label format: True, compression pointer: True"
+        },
+        {
+          "text": "encoding tables exist for opcodes, RCODEs (response codes), TYPE / QTYPE values, and CLASS / QCLASS values",
+          "passed": true,
+          "evidence": "encoding tables: ['classes', 'opcodes', 'qclasses', 'qtypes', 'rcodes', 'types']; missing categories: none"
+        },
+        {
+          "text": "the resource record structure documents NAME, TYPE, CLASS, TTL, RDLENGTH, RDATA fields",
+          "passed": true,
+          "evidence": "resource-record fields missing: none"
+        },
+        {
+          "text": "the master file format (zone file syntax) is NOT extracted as part of the binary spec \u2014 user explicitly excluded it",
+          "passed": true,
+          "evidence": "no zone-file structures \u2014 scope respected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4375,
+        "passed": 7,
+        "failed": 9,
+        "total": 16,
+        "time_seconds": 173.6,
+        "tokens": 38732,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "SPEC.md exists at the root of the output directory",
+          "passed": false,
+          "evidence": "SPEC.md missing at iteration-2/eval-0-gzip-rfc-1952-tier-1/without_skill/run-1/outputs/gzip-spec/SPEC.md"
+        },
+        {
+          "text": "structures/ directory exists and contains at least 2 .md files",
+          "passed": false,
+          "evidence": "structures/ has 0 .md files (need \u22652)"
+        },
+        {
+          "text": "examples/ directory exists and contains at least 3 .md files (minimal/typical/complex or equivalent)",
+          "passed": false,
+          "evidence": "examples/ has 0 .md files (need \u22653)"
+        },
+        {
+          "text": "every .md file produced is non-empty (at least 200 bytes)",
+          "passed": true,
+          "evidence": "all .md files \u2265 200 bytes"
+        },
+        {
+          "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _structures_index.md) in the output directory",
+          "passed": true,
+          "evidence": "no scratch files in output tree"
+        },
+        {
+          "text": "SPEC.md contains a 'Conventions' section that states byte order explicitly",
+          "passed": false,
+          "evidence": "SPEC.md missing a Conventions section that mentions byte order"
+        },
+        {
+          "text": "SPEC.md identifies gzip as little-endian (or LSB-first / Intel byte order)",
+          "passed": false,
+          "evidence": "SPEC.md byte-order term: NOT FOUND"
+        },
+        {
+          "text": "SPEC.md contains a 'Structures index' section linking to each structures/<name>.md file",
+          "passed": false,
+          "evidence": "index section: False, structures/*.md links present: False"
+        },
+        {
+          "text": "every structures/<name>.md file contains a markdown field table with Offset / Size / Type / Name / Description columns",
+          "passed": false,
+          "evidence": "no structures/*.md files"
+        },
+        {
+          "text": "field tables use Go-friendly types (uint8, uint16, uint32, [N]byte, []byte)",
+          "passed": false,
+          "evidence": "no structures/*.md files"
+        },
+        {
+          "text": "the FLG byte's bit fields are documented (FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT) with bit numbers",
+          "passed": true,
+          "evidence": "FLG bit names missing: none"
+        },
+        {
+          "text": "the gzip magic identifier (ID1=0x1f, ID2=0x8b) is captured",
+          "passed": true,
+          "evidence": "ID1=0x1f present: True, ID2=0x8b present: True"
+        },
+        {
+          "text": "a structure file describes the trailer with CRC32 (4 bytes) and ISIZE (4 bytes)",
+          "passed": false,
+          "evidence": "no structure file mentions both CRC32 and ISIZE"
+        },
+        {
+          "text": "an encoding table for OS values exists (or OS values are documented inline with at least 5 entries)",
+          "passed": true,
+          "evidence": "inline OS values: 38 entries"
+        },
+        {
+          "text": "FEXTRA, FNAME, FCOMMENT, FHCRC are documented as conditional/optional, with their presence tied to FLG bits",
+          "passed": true,
+          "evidence": "optional fields documented: True, conditional on FLG: True"
+        },
+        {
+          "text": "the compressed-data block (DEFLATE format) is not extracted as a structure (user explicitly excluded it)",
+          "passed": true,
+          "evidence": "no deflate structure files in structures/ \u2014 scope respected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.2353,
+        "passed": 4,
+        "failed": 13,
+        "total": 17,
+        "time_seconds": 306.6,
+        "tokens": 57268,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "SPEC.md exists at the root of the output directory",
+          "passed": false,
+          "evidence": "SPEC.md missing at iteration-2/eval-1-dns-rfc-1035-tier-2/without_skill/run-1/outputs/dns-spec/SPEC.md"
+        },
+        {
+          "text": "structures/ directory exists and contains at least 3 .md files (header, question, resource-record at minimum)",
+          "passed": false,
+          "evidence": "structures/ has 0 .md files (need \u22652)"
+        },
+        {
+          "text": "encoding-tables/ directory exists and contains at least 4 .md files",
+          "passed": false,
+          "evidence": "encoding-tables/ has 0 .md files (need \u22654)"
+        },
+        {
+          "text": "examples/ directory exists and contains at least 3 .md files",
+          "passed": false,
+          "evidence": "examples/ has 0 .md files (need \u22653)"
+        },
+        {
+          "text": "every .md file produced is non-empty (at least 200 bytes)",
+          "passed": true,
+          "evidence": "all .md files \u2265 200 bytes"
+        },
+        {
+          "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _structures_index.md) in the output directory",
+          "passed": true,
+          "evidence": "no scratch files in output tree"
+        },
+        {
+          "text": "SPEC.md contains a 'Conventions' section that states byte order explicitly",
+          "passed": false,
+          "evidence": "SPEC.md missing a Conventions section that mentions byte order"
+        },
+        {
+          "text": "SPEC.md identifies DNS as network byte order / big-endian",
+          "passed": false,
+          "evidence": "SPEC.md byte-order term: NOT FOUND"
+        },
+        {
+          "text": "SPEC.md contains a 'Structures index' section linking to each structures/<name>.md file",
+          "passed": false,
+          "evidence": "index section: False, structures/*.md links present: False"
+        },
+        {
+          "text": "every structures/<name>.md file contains a markdown field table with Offset / Size / Type / Name / Description columns",
+          "passed": false,
+          "evidence": "no structures/*.md files"
+        },
+        {
+          "text": "field tables use Go-friendly types (uint8, uint16, uint32, [N]byte, []byte)",
+          "passed": false,
+          "evidence": "no structures/*.md files"
+        },
+        {
+          "text": "the DNS header structure documents 12 bytes: ID (2), Flags (2), QDCOUNT (2), ANCOUNT (2), NSCOUNT (2), ARCOUNT (2)",
+          "passed": false,
+          "evidence": "no structure file with 'header' in name"
+        },
+        {
+          "text": "the DNS header's flags bytes have a bit-fields section covering QR, Opcode (4 bits), AA, TC, RD, RA, Z, RCODE \u2014 with correct bit positions",
+          "passed": false,
+          "evidence": "no structure file with 'header' in name"
+        },
+        {
+          "text": "domain name encoding documents both the length-prefixed label format and the compression pointer format (two high bits = 11, 14-bit offset)",
+          "passed": true,
+          "evidence": "label format: True, compression pointer: True"
+        },
+        {
+          "text": "encoding tables exist for opcodes, RCODEs (response codes), TYPE / QTYPE values, and CLASS / QCLASS values",
+          "passed": false,
+          "evidence": "encoding tables: []; missing categories: ['opcode', 'rcode', 'type', 'class']"
+        },
+        {
+          "text": "the resource record structure documents NAME, TYPE, CLASS, TTL, RDLENGTH, RDATA fields",
+          "passed": false,
+          "evidence": "no resource-record structure file found"
+        },
+        {
+          "text": "the master file format (zone file syntax) is NOT extracted as part of the binary spec \u2014 user explicitly excluded it",
+          "passed": true,
+          "evidence": "no zone-file structures \u2014 scope respected"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 505.55,
+        "stddev": 188.444,
+        "min": 372.3,
+        "max": 638.8
+      },
+      "tokens": {
+        "mean": 85442.5,
+        "stddev": 31000.2684,
+        "min": 63522,
+        "max": 107363
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.3364,
+        "stddev": 0.143,
+        "min": 0.2353,
+        "max": 0.4375
+      },
+      "time_seconds": {
+        "mean": 240.1,
+        "stddev": 94.0452,
+        "min": 173.6,
+        "max": 306.6
+      },
+      "tokens": {
+        "mean": 48000.0,
+        "stddev": 13106.9313,
+        "min": 38732,
+        "max": 57268
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.66",
+      "time_seconds": "+265.5",
+      "tokens": "+37442"
+    }
+  },
+  "notes": []
+}

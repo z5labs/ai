@@ -1,0 +1,7 @@
+{
+  "total_tokens": 57268,
+  "duration_ms": 306597,
+  "total_duration_seconds": 306.6,
+  "tool_uses": 22,
+  "notes": "Network verified — fetched RFC 1035 from rfc-editor.org. Output organized as README.md + 8 numbered topic files (still not the skill's SPEC.md/structures/ tree, since this is the baseline)."
+}

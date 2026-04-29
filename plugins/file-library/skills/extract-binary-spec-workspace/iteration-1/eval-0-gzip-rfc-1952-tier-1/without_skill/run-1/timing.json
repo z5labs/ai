@@ -1,0 +1,7 @@
+{
+  "total_tokens": 31364,
+  "duration_ms": 213694,
+  "total_duration_seconds": 213.7,
+  "tool_uses": 13,
+  "notes": "WebFetch and curl were denied at runtime. Agent reconstructed gzip framing from training knowledge rather than fetching RFC 1952. Output organized as README.md + topic files, not the SPEC.md / structures/ tree."
+}

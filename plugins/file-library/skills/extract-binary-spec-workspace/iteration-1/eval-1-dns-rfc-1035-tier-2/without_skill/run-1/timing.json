@@ -1,0 +1,7 @@
+{
+  "total_tokens": 40416,
+  "duration_ms": 291839,
+  "total_duration_seconds": 291.8,
+  "tool_uses": 19,
+  "notes": "WebFetch and Bash were sandbox-denied. Agent reconstructed RFC 1035 §4 from training knowledge. Output organized as README.md + 10 topic files, not the SPEC.md / structures/ tree."
+}

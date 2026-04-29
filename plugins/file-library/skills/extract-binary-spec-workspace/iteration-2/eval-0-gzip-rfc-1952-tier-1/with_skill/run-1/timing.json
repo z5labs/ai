@@ -1,0 +1,7 @@
+{
+  "total_tokens": 63522,
+  "duration_ms": 372346,
+  "total_duration_seconds": 372.3,
+  "tool_uses": 36,
+  "notes": "Network verified, RFC 1952 fetched live (675 lines, 13K words). Tier 1 used. 9 structures + 4 encoding-tables + 3 examples + SPEC.md. flg.md correctly uses the new bit-only variant pattern (one-row uint8 field table linking to Bit fields)."
+}

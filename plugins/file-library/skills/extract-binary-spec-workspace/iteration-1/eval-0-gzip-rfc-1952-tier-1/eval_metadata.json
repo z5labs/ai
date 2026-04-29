@@ -1,0 +1,23 @@
+{
+  "eval_id": 0,
+  "eval_name": "gzip-rfc-1952-tier-1",
+  "prompt": "I want to write a Go encoder/decoder for the gzip file format and I'd like a clean reference to implement against. Pull the binary format spec from RFC 1952 (https://www.rfc-editor.org/rfc/rfc1952.txt) into ./gzip-spec/. I care about the member header, the FLG bit field, the optional extra fields (FEXTRA, FNAME, FCOMMENT, FHCRC), and the trailer (CRC32 + ISIZE). I don't need the deflate compressed-data details — just the framing.",
+  "assertions": [
+    {"id": "layout-spec-md-exists", "text": "SPEC.md exists at the root of the output directory"},
+    {"id": "layout-structures-dir", "text": "structures/ directory exists and contains at least 2 .md files"},
+    {"id": "layout-examples-dir", "text": "examples/ directory exists and contains at least 3 .md files (minimal/typical/complex or equivalent)"},
+    {"id": "layout-no-empty-files", "text": "every .md file produced is non-empty (at least 200 bytes)"},
+    {"id": "layout-no-scratch-leftovers", "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _structures_index.md) in the output directory"},
+    {"id": "spec-conventions-section", "text": "SPEC.md contains a 'Conventions' section that states byte order explicitly"},
+    {"id": "spec-byte-order-little-endian", "text": "SPEC.md identifies gzip as little-endian (or LSB-first / Intel byte order)"},
+    {"id": "spec-structures-index", "text": "SPEC.md contains a 'Structures index' section linking to each structures/<name>.md file"},
+    {"id": "structures-have-field-table", "text": "every structures/<name>.md file contains a markdown field table with Offset / Size / Type / Name / Description columns"},
+    {"id": "structures-go-types", "text": "field tables use Go-friendly types (uint8, uint16, uint32, [N]byte, []byte)"},
+    {"id": "gzip-flg-bit-field", "text": "the FLG byte's bit fields are documented (FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT) with bit numbers"},
+    {"id": "gzip-magic-id-bytes", "text": "the gzip magic identifier (ID1=0x1f, ID2=0x8b) is captured"},
+    {"id": "gzip-trailer-crc32-isize", "text": "a structure file describes the trailer with CRC32 (4 bytes) and ISIZE (4 bytes)"},
+    {"id": "gzip-os-encoding-table", "text": "an encoding table for OS values exists (or OS values are documented inline with at least 5 entries)"},
+    {"id": "gzip-optional-fields-conditional", "text": "FEXTRA, FNAME, FCOMMENT, FHCRC are documented as conditional/optional, with their presence tied to FLG bits"},
+    {"id": "gzip-out-of-scope-deflate-skipped", "text": "the compressed-data block (DEFLATE format) is not extracted as a structure (user explicitly excluded it)"}
+  ]
+}
