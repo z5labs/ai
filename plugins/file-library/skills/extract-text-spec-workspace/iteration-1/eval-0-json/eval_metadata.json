@@ -1,0 +1,25 @@
+{
+  "eval_id": 0,
+  "eval_name": "json-rfc-8259-tier-1",
+  "prompt": "I want to write a Go tokenizer/parser/printer for JSON and I'd like a clean reference to implement against. Pull the JSON spec from RFC 8259 (https://www.rfc-editor.org/rfc/rfc8259.txt) into ./json-spec/. I care about the literal forms (strings with escapes, numbers, true/false/null), the structural tokens (braces, brackets, colon, comma), and the grammar productions for objects, arrays, and members. Skip the I-JSON profile and the security considerations.",
+  "assertions": [
+    {"id": "spec-md-exists", "text": "SPEC.md exists at the root of the output directory"},
+    {"id": "spec-no-empty", "text": "SPEC.md is non-empty (at least 1500 bytes)"},
+    {"id": "no-scratch-leftovers", "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _spec_part_*.md, _sections_index.md) in the output directory"},
+    {"id": "section-overview", "text": "SPEC.md contains a `## Overview` section"},
+    {"id": "section-lexical", "text": "SPEC.md contains a `## Lexical Elements (Tokens)` section"},
+    {"id": "section-grammar", "text": "SPEC.md contains a `## Structure (Grammar)` section"},
+    {"id": "section-semantics", "text": "SPEC.md contains a `## Semantics` section"},
+    {"id": "section-examples", "text": "SPEC.md contains a `## Examples` section"},
+    {"id": "section-appendix", "text": "SPEC.md contains an `## Appendix` section"},
+    {"id": "section-order", "text": "the six top-level sections appear in this exact order: Overview, Lexical Elements (Tokens), Structure (Grammar), Semantics, Examples, Appendix"},
+    {"id": "json-string-escapes", "text": "the string literal description covers the escape sequences \\\", \\\\, \\/, \\b, \\f, \\n, \\r, \\t, and \\uXXXX"},
+    {"id": "json-number-format", "text": "the number literal description covers optional leading minus, integer part, fractional part, and exponent (e/E with optional sign)"},
+    {"id": "json-keywords", "text": "true, false, and null are documented (under Keywords/Reserved Words or as their own token classes)"},
+    {"id": "json-structural-tokens", "text": "the structural tokens { } [ ] : , are each documented with their role"},
+    {"id": "json-grammar-productions", "text": "grammar productions for object, array, and member (or value/element) appear in EBNF or ABNF"},
+    {"id": "examples-three-or-more", "text": "the Examples section contains at least three distinct example documents (minimal/typical/complex or equivalent)"},
+    {"id": "examples-parseable", "text": "every example under ## Examples is syntactically valid JSON (parses with json.loads)"},
+    {"id": "json-out-of-scope-ijson-skipped", "text": "I-JSON, security considerations, and the obsolete profiles are NOT extracted as part of the spec — user explicitly excluded them"}
+  ]
+}
