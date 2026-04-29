@@ -56,3 +56,4 @@ A finding is worth raising only if it's specific enough that the author could fi
 - Modify the target skill — read-only, always.
 - Score or rank skills — there's no aggregate grade, just findings.
 - Apply severity tiers — the author judges what matters.
+- Audit sibling `<name>-workspace/` trees under `skills/` — they are frozen skill-creator audit-trail snapshots and stay out of scope.
