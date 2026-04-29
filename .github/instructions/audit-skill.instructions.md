@@ -1,5 +1,5 @@
 ---
-applyTo: "skills/**,plugins/**/skills/**,agents/**"
+applyTo: "skills/**,plugins/**/skills/**,agents/**,!**/skills/*-workspace/**"
 ---
 
 # Skill / agent review checklist
@@ -43,6 +43,10 @@ The canonical guidance for each objective lives at `plugins/audit-skill/skills/a
 - Suggest a fix only when it's short and obvious. Don't editorialize ("this is bad practice").
 - No severity tiers — the four objectives ARE the categorization. Leave it to the author to decide what blocks the merge.
 - If everything passes, leave one short approving comment naming the checks that passed.
+
+## What this checklist does NOT apply to
+
+- Sibling `<name>-workspace/` trees under `skills/` — they are frozen audit-trail snapshots from skill-creator iterations, so findings belong on the source skill, not on the captured outputs.
 
 ## What this checklist does NOT replace
 
