@@ -1,0 +1,115 @@
+$ go test -race -v ./...
+=== RUN   TestDecodeHeader
+=== PAUSE TestDecodeHeader
+=== RUN   TestDecodeHeaderTruncated
+=== PAUSE TestDecodeHeaderTruncated
+=== RUN   TestDecodeHeaderInvalidMagic
+=== PAUSE TestDecodeHeaderInvalidMagic
+=== RUN   TestDecodeHeaderUnsupportedVersion
+=== PAUSE TestDecodeHeaderUnsupportedVersion
+=== RUN   TestDecodeHeaderReservedFlagsBitsSet
+=== PAUSE TestDecodeHeaderReservedFlagsBitsSet
+=== RUN   TestDecodeHeaderReservedFieldNonZero
+=== PAUSE TestDecodeHeaderReservedFieldNonZero
+=== RUN   TestEncodeHeader
+=== PAUSE TestEncodeHeader
+=== RUN   TestEncodeDecodeRoundTrip
+=== PAUSE TestEncodeDecodeRoundTrip
+=== RUN   TestErrorChain
+=== PAUSE TestErrorChain
+=== RUN   TestHeaderSize
+=== PAUSE TestHeaderSize
+=== RUN   TestFlagsBits
+=== PAUSE TestFlagsBits
+=== RUN   TestFlagsMaskValues
+=== PAUSE TestFlagsMaskValues
+=== CONT  TestDecodeHeaderTruncated
+=== CONT  TestEncodeHeader
+=== CONT  TestEncodeDecodeRoundTrip
+=== RUN   TestEncodeDecodeRoundTrip/no_flags
+--- PASS: TestDecodeHeaderTruncated (0.00s)
+=== CONT  TestFlagsBits
+=== RUN   TestEncodeHeader/minimal_no_flags
+=== PAUSE TestEncodeHeader/minimal_no_flags
+=== RUN   TestFlagsBits/compressed_only_has_compressed
+=== CONT  TestDecodeHeaderReservedFieldNonZero
+=== PAUSE TestEncodeDecodeRoundTrip/no_flags
+=== RUN   TestEncodeHeader/compressed_only
+--- PASS: TestDecodeHeaderReservedFieldNonZero (0.00s)
+=== CONT  TestDecodeHeaderInvalidMagic
+=== CONT  TestDecodeHeader
+--- PASS: TestDecodeHeaderInvalidMagic (0.00s)
+=== RUN   TestDecodeHeader/minimal_no_flags
+=== CONT  TestFlagsMaskValues
+=== CONT  TestErrorChain
+=== PAUSE TestDecodeHeader/minimal_no_flags
+--- PASS: TestFlagsMaskValues (0.00s)
+=== RUN   TestDecodeHeader/compressed_flag
+=== CONT  TestHeaderSize
+=== PAUSE TestDecodeHeader/compressed_flag
+=== CONT  TestDecodeHeaderReservedFlagsBitsSet
+=== RUN   TestDecodeHeader/all_three_flags
+=== PAUSE TestDecodeHeader/all_three_flags
+=== CONT  TestDecodeHeaderUnsupportedVersion
+=== CONT  TestDecodeHeader/all_three_flags
+=== PAUSE TestFlagsBits/compressed_only_has_compressed
+=== RUN   TestFlagsBits/compressed_only_no_encrypted
+=== RUN   TestEncodeDecodeRoundTrip/compressed
+=== PAUSE TestFlagsBits/compressed_only_no_encrypted
+=== CONT  TestDecodeHeader/compressed_flag
+=== RUN   TestFlagsBits/compressed_only_no_signed
+=== PAUSE TestFlagsBits/compressed_only_no_signed
+=== RUN   TestFlagsBits/all_three_has_compressed
+=== CONT  TestDecodeHeader/minimal_no_flags
+=== PAUSE TestFlagsBits/all_three_has_compressed
+--- PASS: TestErrorChain (0.00s)
+=== PAUSE TestEncodeDecodeRoundTrip/compressed
+=== PAUSE TestEncodeHeader/compressed_only
+--- PASS: TestHeaderSize (0.00s)
+--- PASS: TestDecodeHeaderReservedFlagsBitsSet (0.00s)
+=== RUN   TestFlagsBits/all_three_has_encrypted
+=== RUN   TestEncodeDecodeRoundTrip/all_three
+=== PAUSE TestEncodeDecodeRoundTrip/all_three
+=== RUN   TestEncodeHeader/all_three_flags
+=== CONT  TestEncodeDecodeRoundTrip/no_flags
+=== CONT  TestEncodeDecodeRoundTrip/all_three
+=== CONT  TestEncodeDecodeRoundTrip/compressed
+--- PASS: TestDecodeHeaderUnsupportedVersion (0.00s)
+=== PAUSE TestFlagsBits/all_three_has_encrypted
+=== RUN   TestFlagsBits/all_three_has_signed
+--- PASS: TestDecodeHeader (0.00s)
+    --- PASS: TestDecodeHeader/all_three_flags (0.00s)
+    --- PASS: TestDecodeHeader/compressed_flag (0.00s)
+    --- PASS: TestDecodeHeader/minimal_no_flags (0.00s)
+=== PAUSE TestFlagsBits/all_three_has_signed
+=== PAUSE TestEncodeHeader/all_three_flags
+=== RUN   TestFlagsBits/none_has_no_compressed
+=== CONT  TestEncodeHeader/all_three_flags
+=== CONT  TestEncodeHeader/compressed_only
+=== PAUSE TestFlagsBits/none_has_no_compressed
+=== CONT  TestFlagsBits/compressed_only_has_compressed
+=== CONT  TestFlagsBits/all_three_has_signed
+=== CONT  TestEncodeHeader/minimal_no_flags
+=== CONT  TestFlagsBits/all_three_has_encrypted
+=== CONT  TestFlagsBits/all_three_has_compressed
+=== CONT  TestFlagsBits/none_has_no_compressed
+=== CONT  TestFlagsBits/compressed_only_no_encrypted
+=== CONT  TestFlagsBits/compressed_only_no_signed
+--- PASS: TestEncodeDecodeRoundTrip (0.00s)
+    --- PASS: TestEncodeDecodeRoundTrip/no_flags (0.00s)
+    --- PASS: TestEncodeDecodeRoundTrip/all_three (0.00s)
+    --- PASS: TestEncodeDecodeRoundTrip/compressed (0.00s)
+--- PASS: TestEncodeHeader (0.00s)
+    --- PASS: TestEncodeHeader/all_three_flags (0.00s)
+    --- PASS: TestEncodeHeader/compressed_only (0.00s)
+    --- PASS: TestEncodeHeader/minimal_no_flags (0.00s)
+--- PASS: TestFlagsBits (0.00s)
+    --- PASS: TestFlagsBits/compressed_only_has_compressed (0.00s)
+    --- PASS: TestFlagsBits/all_three_has_signed (0.00s)
+    --- PASS: TestFlagsBits/all_three_has_encrypted (0.00s)
+    --- PASS: TestFlagsBits/all_three_has_compressed (0.00s)
+    --- PASS: TestFlagsBits/none_has_no_compressed (0.00s)
+    --- PASS: TestFlagsBits/compressed_only_no_encrypted (0.00s)
+    --- PASS: TestFlagsBits/compressed_only_no_signed (0.00s)
+PASS
+ok  	tlv	1.014s

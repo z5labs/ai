@@ -1,0 +1,87 @@
+$ go test -race -v ./...
+=== RUN   TestDecodeStubReturnsErrUnimplemented
+=== PAUSE TestDecodeStubReturnsErrUnimplemented
+=== RUN   TestReadRecord
+=== PAUSE TestReadRecord
+=== RUN   TestReadRecordUnknownType
+=== PAUSE TestReadRecordUnknownType
+=== RUN   TestReadRecordIntWrongLength
+=== PAUSE TestReadRecordIntWrongLength
+=== RUN   TestEncodeStubReturnsErrUnimplemented
+=== PAUSE TestEncodeStubReturnsErrUnimplemented
+=== RUN   TestWriteRecord
+=== PAUSE TestWriteRecord
+=== RUN   TestRecordRoundTrip
+=== PAUSE TestRecordRoundTrip
+=== RUN   TestWriteRecordLengthMismatch
+=== PAUSE TestWriteRecordLengthMismatch
+=== RUN   TestErrorChain
+=== PAUSE TestErrorChain
+=== RUN   TestRecordTypeConstants
+=== PAUSE TestRecordTypeConstants
+=== CONT  TestDecodeStubReturnsErrUnimplemented
+=== CONT  TestWriteRecord
+--- PASS: TestDecodeStubReturnsErrUnimplemented (0.00s)
+=== CONT  TestErrorChain
+=== RUN   TestWriteRecord/typical_STRING_record
+=== PAUSE TestWriteRecord/typical_STRING_record
+=== CONT  TestReadRecordIntWrongLength
+=== CONT  TestRecordRoundTrip
+--- PASS: TestErrorChain (0.00s)
+=== CONT  TestEncodeStubReturnsErrUnimplemented
+=== CONT  TestReadRecord
+=== RUN   TestReadRecord/typical_STRING_record
+=== CONT  TestReadRecordUnknownType
+=== PAUSE TestReadRecord/typical_STRING_record
+--- PASS: TestEncodeStubReturnsErrUnimplemented (0.00s)
+--- PASS: TestReadRecordUnknownType (0.00s)
+=== CONT  TestRecordTypeConstants
+=== RUN   TestRecordRoundTrip/STRING
+--- PASS: TestRecordTypeConstants (0.00s)
+--- PASS: TestReadRecordIntWrongLength (0.00s)
+=== CONT  TestWriteRecordLengthMismatch
+=== RUN   TestWriteRecord/empty_record_(Length=0)
+=== PAUSE TestRecordRoundTrip/STRING
+=== PAUSE TestWriteRecord/empty_record_(Length=0)
+=== RUN   TestWriteRecord/INT_record_(Length=8)
+=== RUN   TestRecordRoundTrip/INT
+=== RUN   TestReadRecord/empty_record_(Length=0)
+--- PASS: TestWriteRecordLengthMismatch (0.00s)
+=== PAUSE TestReadRecord/empty_record_(Length=0)
+=== PAUSE TestWriteRecord/INT_record_(Length=8)
+=== CONT  TestWriteRecord/empty_record_(Length=0)
+=== PAUSE TestRecordRoundTrip/INT
+=== CONT  TestWriteRecord/typical_STRING_record
+=== RUN   TestReadRecord/INT_record_(Length=8)
+=== RUN   TestRecordRoundTrip/BLOB
+=== CONT  TestWriteRecord/INT_record_(Length=8)
+=== PAUSE TestReadRecord/INT_record_(Length=8)
+=== PAUSE TestRecordRoundTrip/BLOB
+=== RUN   TestRecordRoundTrip/NESTED
+=== CONT  TestReadRecord/typical_STRING_record
+=== PAUSE TestRecordRoundTrip/NESTED
+--- PASS: TestWriteRecord (0.00s)
+    --- PASS: TestWriteRecord/empty_record_(Length=0) (0.00s)
+    --- PASS: TestWriteRecord/typical_STRING_record (0.00s)
+    --- PASS: TestWriteRecord/INT_record_(Length=8) (0.00s)
+=== RUN   TestRecordRoundTrip/empty_BLOB
+=== CONT  TestReadRecord/INT_record_(Length=8)
+=== CONT  TestReadRecord/empty_record_(Length=0)
+=== PAUSE TestRecordRoundTrip/empty_BLOB
+=== CONT  TestRecordRoundTrip/INT
+=== CONT  TestRecordRoundTrip/NESTED
+=== CONT  TestRecordRoundTrip/BLOB
+=== CONT  TestRecordRoundTrip/empty_BLOB
+--- PASS: TestReadRecord (0.00s)
+    --- PASS: TestReadRecord/typical_STRING_record (0.00s)
+    --- PASS: TestReadRecord/INT_record_(Length=8) (0.00s)
+    --- PASS: TestReadRecord/empty_record_(Length=0) (0.00s)
+=== CONT  TestRecordRoundTrip/STRING
+--- PASS: TestRecordRoundTrip (0.00s)
+    --- PASS: TestRecordRoundTrip/INT (0.00s)
+    --- PASS: TestRecordRoundTrip/BLOB (0.00s)
+    --- PASS: TestRecordRoundTrip/NESTED (0.00s)
+    --- PASS: TestRecordRoundTrip/empty_BLOB (0.00s)
+    --- PASS: TestRecordRoundTrip/STRING (0.00s)
+PASS
+ok  	tlv	1.013s

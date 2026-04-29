@@ -1,0 +1,20 @@
+{
+  "eval_id": 2,
+  "eval_name": "tlv-trailer-with-crc32",
+  "prompt": "Implement the Trailer for the TLV1 format in ./tlv/ — a 4-byte big-endian CRC32 (IEEE polynomial) covering every byte preceding the trailer (see SPEC.md's 'Trailer' field definition and 'Checksums and Integrity' section). On decode, compute the running CRC32 as bytes are read and compare it to the trailer; on mismatch, return a typed error like ErrChecksumMismatch wrapped through wrapErr. On encode, compute and write the CRC32. Update File to hold a Trailer (or expose CRC32 directly). Add tests for the happy path AND for a CRC mismatch. Don't load the full SPEC.md.",
+  "assertions": [
+    {"id": "trailer-or-crc-on-file", "text": "types.go either defines a Trailer struct or adds a CRC32 field to File"},
+    {"id": "checksum-error-sentinel", "text": "types.go defines an ErrChecksumMismatch sentinel (or equivalent typed error)"},
+    {"id": "decoder-uses-crc32-ieee", "text": "decoder.go imports hash/crc32 and uses the IEEE polynomial table"},
+    {"id": "encoder-uses-crc32-ieee", "text": "encoder.go imports hash/crc32 and uses the IEEE polynomial table"},
+    {"id": "decoder-verifies-crc", "text": "decoder.go compares the computed CRC32 against the trailer value and returns an error on mismatch"},
+    {"id": "encoder-writes-crc", "text": "encoder.go writes the computed CRC32 as the final 4 bytes"},
+    {"id": "happy-path-test", "text": "decoder_test.go has a test that decodes a payload with a valid CRC32 successfully"},
+    {"id": "mismatch-test", "text": "decoder_test.go has a test that decodes a payload with a deliberately corrupted CRC32 and asserts errors.Is(err, ErrChecksumMismatch)"},
+    {"id": "encoder-roundtrip-test", "text": "encoder_test.go has a round-trip test that runs Encode → Decode and verifies the decoded value equals the original"},
+    {"id": "errors-funnel-through-wrapErr", "text": "the CRC mismatch error funnels through d.wrapErr (FieldError → OffsetError → ErrChecksumMismatch)"},
+    {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
+    {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
+    {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"}
+  ]
+}

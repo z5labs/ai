@@ -1,0 +1,593 @@
+{
+  "metadata": {
+    "skill_name": "implement-go-binary-file-library",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-29T13:59:09Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 15,
+        "failed": 0,
+        "total": 15,
+        "time_seconds": 319.4,
+        "tokens": 57968,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "types.go defines a Header struct with Magic, Version, Flags, and Reserved fields",
+          "passed": true,
+          "evidence": "Header struct present with Magic/Version/Flags/Reserved"
+        },
+        {
+          "text": "types.go defines bit-field mask constants for COMPRESSED, ENCRYPTED, and SIGNED on the Flags byte",
+          "passed": true,
+          "evidence": "found bit-field constants: ['Compressed', 'Encrypted', 'Signed']"
+        },
+        {
+          "text": "the File struct in types.go references Header",
+          "passed": true,
+          "evidence": "File struct references Header"
+        },
+        {
+          "text": "decoder.go defines a readHeader method on the decoder type",
+          "passed": true,
+          "evidence": "readHeader on decoder"
+        },
+        {
+          "text": "encoder.go defines a writeHeader method on the encoder type",
+          "passed": true,
+          "evidence": "writeHeader on encoder"
+        },
+        {
+          "text": "every new error site in decoder.go and encoder.go uses d.wrapErr / e.wrapErr (no direct construction of FieldError or OffsetError outside the helpers)",
+          "passed": true,
+          "evidence": "all errors via wrapErr"
+        },
+        {
+          "text": "decoder_test.go has a happy-path test that decodes a hex byte literal containing the TLV1 magic and asserts Header field values",
+          "passed": true,
+          "evidence": "decoder_test has TLV1 magic in byte/hex literal"
+        },
+        {
+          "text": "decoder_test.go has a failure-path test asserting errors.Is on a leaf sentinel AND errors.As on FieldError with a header-related Field path",
+          "passed": true,
+          "evidence": "errorIs=True errorAs=True FieldError=True"
+        },
+        {
+          "text": "encoder_test.go has a happy-path test that encodes a Header and asserts the output bytes match a hex literal",
+          "passed": true,
+          "evidence": "encoder_test asserts hex-literal output"
+        },
+        {
+          "text": "encoder_test.go has a round-trip test that runs Encode \u2192 Decode and asserts require.Equal on the original",
+          "passed": true,
+          "evidence": "round-trip test present"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels in decoder/encoder tests"
+        },
+        {
+          "text": "tests use github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "tests use testify/require"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory",
+          "passed": true,
+          "evidence": "no _*.md scratch files"
+        },
+        {
+          "text": "no copy of SPEC.md content was written to a scratch file in the package (e.g. _spec_structures.md should not exist)",
+          "passed": true,
+          "evidence": "no _spec*.md scratch copies"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 14,
+        "failed": 0,
+        "total": 14,
+        "time_seconds": 337.7,
+        "tokens": 63486,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "types.go defines a Record struct with Type, Length, and Value fields",
+          "passed": true,
+          "evidence": "Record struct with Type/Length/Value"
+        },
+        {
+          "text": "types.go defines a RecordType enum with constants for STRING (0x01), INT (0x02), BLOB (0x03), and NESTED (0x04)",
+          "passed": true,
+          "evidence": "RecordType enum + all 4 constants"
+        },
+        {
+          "text": "types.go defines a String() method on the RecordType type",
+          "passed": true,
+          "evidence": "String() on RecordType"
+        },
+        {
+          "text": "the File struct in types.go has a Records slice field",
+          "passed": true,
+          "evidence": "File.Records []Record"
+        },
+        {
+          "text": "decoder.go defines a readRecord method that reads the length prefix and then the value bytes",
+          "passed": true,
+          "evidence": "readRecord(...) on decoder"
+        },
+        {
+          "text": "encoder.go defines a writeRecord method",
+          "passed": true,
+          "evidence": "writeRecord(...) on encoder"
+        },
+        {
+          "text": "decoder.go uses io.ReadFull (not r.Read) to read the variable-length Value",
+          "passed": true,
+          "evidence": "decoder uses io.ReadFull"
+        },
+        {
+          "text": "decoder_test.go has a test for a STRING record with a non-empty value",
+          "passed": true,
+          "evidence": "STRING record decode test present"
+        },
+        {
+          "text": "decoder_test.go has a test for an empty record (Length = 0)",
+          "passed": true,
+          "evidence": "empty-record decode test present"
+        },
+        {
+          "text": "encoder_test.go has a round-trip test for at least one record type",
+          "passed": true,
+          "evidence": "round-trip test present"
+        },
+        {
+          "text": "every new error site uses d.wrapErr / e.wrapErr",
+          "passed": true,
+          "evidence": "all errors via wrapErr"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no scratch copy of SPEC.md content (e.g. _spec_structures.md) was written to the package",
+          "passed": true,
+          "evidence": "no _spec*.md leftovers"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 13,
+        "failed": 0,
+        "total": 13,
+        "time_seconds": 371.3,
+        "tokens": 59359,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "types.go either defines a Trailer struct or adds a CRC32 field to File",
+          "passed": true,
+          "evidence": "Trailer struct or File.CRC32 present"
+        },
+        {
+          "text": "types.go defines an ErrChecksumMismatch sentinel (or equivalent typed error)",
+          "passed": true,
+          "evidence": "checksum-mismatch sentinel defined"
+        },
+        {
+          "text": "decoder.go imports hash/crc32 and uses the IEEE polynomial table",
+          "passed": true,
+          "evidence": "decoder uses hash/crc32 IEEE"
+        },
+        {
+          "text": "encoder.go imports hash/crc32 and uses the IEEE polynomial table",
+          "passed": true,
+          "evidence": "encoder uses hash/crc32 IEEE"
+        },
+        {
+          "text": "decoder.go compares the computed CRC32 against the trailer value and returns an error on mismatch",
+          "passed": true,
+          "evidence": "decoder compares CRC and returns error"
+        },
+        {
+          "text": "encoder.go writes the computed CRC32 as the final 4 bytes",
+          "passed": true,
+          "evidence": "encoder writes CRC32"
+        },
+        {
+          "text": "decoder_test.go has a test that decodes a payload with a valid CRC32 successfully",
+          "passed": true,
+          "evidence": "happy-path decode test present"
+        },
+        {
+          "text": "decoder_test.go has a test that decodes a payload with a deliberately corrupted CRC32 and asserts errors.Is(err, ErrChecksumMismatch)",
+          "passed": true,
+          "evidence": "asserts errors.Is(err, ErrChecksumMismatch)"
+        },
+        {
+          "text": "encoder_test.go has a round-trip test that runs Encode \u2192 Decode and verifies the decoded value equals the original",
+          "passed": true,
+          "evidence": "round-trip test present"
+        },
+        {
+          "text": "the CRC mismatch error funnels through d.wrapErr (FieldError \u2192 OffsetError \u2192 ErrChecksumMismatch)",
+          "passed": true,
+          "evidence": "CRC error funnels through wrapErr"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no scratch copy of SPEC.md content was written to the package",
+          "passed": true,
+          "evidence": "no _spec*.md leftovers"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 15,
+        "failed": 0,
+        "total": 15,
+        "time_seconds": 239.7,
+        "tokens": 45345,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "types.go defines a Header struct with Magic, Version, Flags, and Reserved fields",
+          "passed": true,
+          "evidence": "Header struct present with Magic/Version/Flags/Reserved"
+        },
+        {
+          "text": "types.go defines bit-field mask constants for COMPRESSED, ENCRYPTED, and SIGNED on the Flags byte",
+          "passed": true,
+          "evidence": "found bit-field constants: ['Compressed', 'Encrypted', 'Signed']"
+        },
+        {
+          "text": "the File struct in types.go references Header",
+          "passed": true,
+          "evidence": "File struct references Header"
+        },
+        {
+          "text": "decoder.go defines a readHeader method on the decoder type",
+          "passed": true,
+          "evidence": "readHeader on decoder"
+        },
+        {
+          "text": "encoder.go defines a writeHeader method on the encoder type",
+          "passed": true,
+          "evidence": "writeHeader on encoder"
+        },
+        {
+          "text": "every new error site in decoder.go and encoder.go uses d.wrapErr / e.wrapErr (no direct construction of FieldError or OffsetError outside the helpers)",
+          "passed": true,
+          "evidence": "all errors via wrapErr"
+        },
+        {
+          "text": "decoder_test.go has a happy-path test that decodes a hex byte literal containing the TLV1 magic and asserts Header field values",
+          "passed": true,
+          "evidence": "decoder_test has TLV1 magic in byte/hex literal"
+        },
+        {
+          "text": "decoder_test.go has a failure-path test asserting errors.Is on a leaf sentinel AND errors.As on FieldError with a header-related Field path",
+          "passed": true,
+          "evidence": "errorIs=True errorAs=True FieldError=True"
+        },
+        {
+          "text": "encoder_test.go has a happy-path test that encodes a Header and asserts the output bytes match a hex literal",
+          "passed": true,
+          "evidence": "encoder_test asserts hex-literal output"
+        },
+        {
+          "text": "encoder_test.go has a round-trip test that runs Encode \u2192 Decode and asserts require.Equal on the original",
+          "passed": true,
+          "evidence": "round-trip test present"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels in decoder/encoder tests"
+        },
+        {
+          "text": "tests use github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "tests use testify/require"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory",
+          "passed": true,
+          "evidence": "no _*.md scratch files"
+        },
+        {
+          "text": "no copy of SPEC.md content was written to a scratch file in the package (e.g. _spec_structures.md should not exist)",
+          "passed": true,
+          "evidence": "no _spec*.md scratch copies"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9285714285714286,
+        "passed": 13,
+        "failed": 0,
+        "total": 14,
+        "time_seconds": 222.8,
+        "tokens": 42850,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "types.go defines a Record struct with Type, Length, and Value fields",
+          "passed": true,
+          "evidence": "Record struct with Type/Length/Value"
+        },
+        {
+          "text": "types.go defines a RecordType enum with constants for STRING (0x01), INT (0x02), BLOB (0x03), and NESTED (0x04)",
+          "passed": true,
+          "evidence": "RecordType enum + all 4 constants"
+        },
+        {
+          "text": "types.go defines a String() method on the RecordType type",
+          "passed": false,
+          "evidence": "no String() method on RecordType"
+        },
+        {
+          "text": "the File struct in types.go has a Records slice field",
+          "passed": true,
+          "evidence": "File.Records []Record"
+        },
+        {
+          "text": "decoder.go defines a readRecord method that reads the length prefix and then the value bytes",
+          "passed": true,
+          "evidence": "readRecord(...) on decoder"
+        },
+        {
+          "text": "encoder.go defines a writeRecord method",
+          "passed": true,
+          "evidence": "writeRecord(...) on encoder"
+        },
+        {
+          "text": "decoder.go uses io.ReadFull (not r.Read) to read the variable-length Value",
+          "passed": true,
+          "evidence": "decoder uses io.ReadFull"
+        },
+        {
+          "text": "decoder_test.go has a test for a STRING record with a non-empty value",
+          "passed": true,
+          "evidence": "STRING record decode test present"
+        },
+        {
+          "text": "decoder_test.go has a test for an empty record (Length = 0)",
+          "passed": true,
+          "evidence": "empty-record decode test present"
+        },
+        {
+          "text": "encoder_test.go has a round-trip test for at least one record type",
+          "passed": true,
+          "evidence": "round-trip test present"
+        },
+        {
+          "text": "every new error site uses d.wrapErr / e.wrapErr",
+          "passed": true,
+          "evidence": "all errors via wrapErr"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no scratch copy of SPEC.md content (e.g. _spec_structures.md) was written to the package",
+          "passed": true,
+          "evidence": "no _spec*.md leftovers"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 13,
+        "failed": 0,
+        "total": 13,
+        "time_seconds": 267.7,
+        "tokens": 39836,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "types.go either defines a Trailer struct or adds a CRC32 field to File",
+          "passed": true,
+          "evidence": "Trailer struct or File.CRC32 present"
+        },
+        {
+          "text": "types.go defines an ErrChecksumMismatch sentinel (or equivalent typed error)",
+          "passed": true,
+          "evidence": "checksum-mismatch sentinel defined"
+        },
+        {
+          "text": "decoder.go imports hash/crc32 and uses the IEEE polynomial table",
+          "passed": true,
+          "evidence": "decoder uses hash/crc32 IEEE"
+        },
+        {
+          "text": "encoder.go imports hash/crc32 and uses the IEEE polynomial table",
+          "passed": true,
+          "evidence": "encoder uses hash/crc32 IEEE"
+        },
+        {
+          "text": "decoder.go compares the computed CRC32 against the trailer value and returns an error on mismatch",
+          "passed": true,
+          "evidence": "decoder compares CRC and returns error"
+        },
+        {
+          "text": "encoder.go writes the computed CRC32 as the final 4 bytes",
+          "passed": true,
+          "evidence": "encoder writes CRC32"
+        },
+        {
+          "text": "decoder_test.go has a test that decodes a payload with a valid CRC32 successfully",
+          "passed": true,
+          "evidence": "happy-path decode test present"
+        },
+        {
+          "text": "decoder_test.go has a test that decodes a payload with a deliberately corrupted CRC32 and asserts errors.Is(err, ErrChecksumMismatch)",
+          "passed": true,
+          "evidence": "asserts errors.Is(err, ErrChecksumMismatch)"
+        },
+        {
+          "text": "encoder_test.go has a round-trip test that runs Encode \u2192 Decode and verifies the decoded value equals the original",
+          "passed": true,
+          "evidence": "round-trip test present"
+        },
+        {
+          "text": "the CRC mismatch error funnels through d.wrapErr (FieldError \u2192 OffsetError \u2192 ErrChecksumMismatch)",
+          "passed": true,
+          "evidence": "CRC error funnels through wrapErr"
+        },
+        {
+          "text": "all new tests call t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel at both levels"
+        },
+        {
+          "text": "go test -race ./... exits cleanly",
+          "passed": true,
+          "evidence": "go test -race ./... passes"
+        },
+        {
+          "text": "no scratch copy of SPEC.md content was written to the package",
+          "passed": true,
+          "evidence": "no _spec*.md leftovers"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 342.8,
+        "stddev": 26.3232,
+        "min": 319.4,
+        "max": 371.3
+      },
+      "tokens": {
+        "mean": 60271.0,
+        "stddev": 2869.8239,
+        "min": 57968,
+        "max": 63486
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.9762,
+        "stddev": 0.0412,
+        "min": 0.9286,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 243.4,
+        "stddev": 22.6775,
+        "min": 222.8,
+        "max": 267.7
+      },
+      "tokens": {
+        "mean": 42677.0,
+        "stddev": 2758.5716,
+        "min": 39836,
+        "max": 45345
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.02",
+      "time_seconds": "+99.4",
+      "tokens": "+17594"
+    }
+  },
+  "notes": []
+}

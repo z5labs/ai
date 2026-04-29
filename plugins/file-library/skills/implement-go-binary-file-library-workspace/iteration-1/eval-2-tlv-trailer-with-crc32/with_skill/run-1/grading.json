@@ -1,0 +1,77 @@
+{
+  "eval_id": 2,
+  "eval_name": "tlv-trailer-with-crc32",
+  "config": "with_skill",
+  "summary": {
+    "passed": 13,
+    "total": 13,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "types.go either defines a Trailer struct or adds a CRC32 field to File",
+      "passed": true,
+      "evidence": "Trailer struct or File.CRC32 present"
+    },
+    {
+      "text": "types.go defines an ErrChecksumMismatch sentinel (or equivalent typed error)",
+      "passed": true,
+      "evidence": "checksum-mismatch sentinel defined"
+    },
+    {
+      "text": "decoder.go imports hash/crc32 and uses the IEEE polynomial table",
+      "passed": true,
+      "evidence": "decoder uses hash/crc32 IEEE"
+    },
+    {
+      "text": "encoder.go imports hash/crc32 and uses the IEEE polynomial table",
+      "passed": true,
+      "evidence": "encoder uses hash/crc32 IEEE"
+    },
+    {
+      "text": "decoder.go compares the computed CRC32 against the trailer value and returns an error on mismatch",
+      "passed": true,
+      "evidence": "decoder compares CRC and returns error"
+    },
+    {
+      "text": "encoder.go writes the computed CRC32 as the final 4 bytes",
+      "passed": true,
+      "evidence": "encoder writes CRC32"
+    },
+    {
+      "text": "decoder_test.go has a test that decodes a payload with a valid CRC32 successfully",
+      "passed": true,
+      "evidence": "happy-path decode test present"
+    },
+    {
+      "text": "decoder_test.go has a test that decodes a payload with a deliberately corrupted CRC32 and asserts errors.Is(err, ErrChecksumMismatch)",
+      "passed": true,
+      "evidence": "asserts errors.Is(err, ErrChecksumMismatch)"
+    },
+    {
+      "text": "encoder_test.go has a round-trip test that runs Encode \u2192 Decode and verifies the decoded value equals the original",
+      "passed": true,
+      "evidence": "round-trip test present"
+    },
+    {
+      "text": "the CRC mismatch error funnels through d.wrapErr (FieldError \u2192 OffsetError \u2192 ErrChecksumMismatch)",
+      "passed": true,
+      "evidence": "CRC error funnels through wrapErr"
+    },
+    {
+      "text": "all new tests call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "t.Parallel at both levels"
+    },
+    {
+      "text": "go test -race ./... exits cleanly",
+      "passed": true,
+      "evidence": "go test -race ./... passes"
+    },
+    {
+      "text": "no scratch copy of SPEC.md content was written to the package",
+      "passed": true,
+      "evidence": "no _spec*.md leftovers"
+    }
+  ]
+}

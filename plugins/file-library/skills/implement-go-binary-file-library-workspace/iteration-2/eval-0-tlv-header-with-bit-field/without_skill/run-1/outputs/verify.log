@@ -1,0 +1,143 @@
+$ go test -race -v ./...
+=== RUN   TestDecodeHeader
+=== PAUSE TestDecodeHeader
+=== RUN   TestDecodeHeaderFailures
+=== PAUSE TestDecodeHeaderFailures
+=== RUN   TestDecodeShortHeader
+=== PAUSE TestDecodeShortHeader
+=== RUN   TestEncodeHeader
+=== PAUSE TestEncodeHeader
+=== RUN   TestEncodeHeaderFailures
+=== PAUSE TestEncodeHeaderFailures
+=== RUN   TestRoundTripHeader
+=== PAUSE TestRoundTripHeader
+=== RUN   TestErrorChain
+=== PAUSE TestErrorChain
+=== RUN   TestFlagsAccessors
+=== PAUSE TestFlagsAccessors
+=== CONT  TestDecodeHeaderFailures
+=== CONT  TestDecodeHeader
+=== CONT  TestEncodeHeader
+=== CONT  TestEncodeHeaderFailures
+=== CONT  TestFlagsAccessors
+=== CONT  TestRoundTripHeader
+=== RUN   TestRoundTripHeader/no_flags
+=== RUN   TestEncodeHeaderFailures/bad_magic
+=== RUN   TestDecodeHeader/no_flags
+=== RUN   TestDecodeHeaderFailures/bad_magic
+=== PAUSE TestRoundTripHeader/no_flags
+=== CONT  TestDecodeShortHeader
+=== PAUSE TestDecodeHeaderFailures/bad_magic
+=== RUN   TestDecodeHeaderFailures/unsupported_version
+=== PAUSE TestEncodeHeaderFailures/bad_magic
+=== CONT  TestErrorChain
+=== PAUSE TestDecodeHeaderFailures/unsupported_version
+=== RUN   TestFlagsAccessors/none
+--- PASS: TestDecodeShortHeader (0.00s)
+=== RUN   TestRoundTripHeader/compressed
+=== RUN   TestEncodeHeaderFailures/wrong_version
+=== RUN   TestEncodeHeader/no_flags
+=== RUN   TestDecodeHeaderFailures/reserved_flag_bit
+=== PAUSE TestEncodeHeader/no_flags
+=== PAUSE TestEncodeHeaderFailures/wrong_version
+=== PAUSE TestDecodeHeaderFailures/reserved_flag_bit
+=== PAUSE TestRoundTripHeader/compressed
+=== RUN   TestEncodeHeader/compressed
+=== RUN   TestDecodeHeaderFailures/signed_flag_unsupported
+=== RUN   TestRoundTripHeader/encrypted
+=== PAUSE TestFlagsAccessors/none
+--- PASS: TestErrorChain (0.00s)
+=== PAUSE TestEncodeHeader/compressed
+=== RUN   TestEncodeHeaderFailures/reserved_flag_bit
+=== RUN   TestFlagsAccessors/compressed
+=== PAUSE TestDecodeHeaderFailures/signed_flag_unsupported
+=== PAUSE TestFlagsAccessors/compressed
+=== PAUSE TestDecodeHeader/no_flags
+=== RUN   TestFlagsAccessors/encrypted
+=== RUN   TestEncodeHeader/compressed+encrypted
+=== PAUSE TestEncodeHeaderFailures/reserved_flag_bit
+=== RUN   TestEncodeHeaderFailures/signed_flag
+=== RUN   TestDecodeHeader/compressed
+=== PAUSE TestRoundTripHeader/encrypted
+=== PAUSE TestFlagsAccessors/encrypted
+=== RUN   TestDecodeHeaderFailures/reserved_non-zero
+=== RUN   TestRoundTripHeader/compressed+encrypted
+=== PAUSE TestDecodeHeader/compressed
+=== PAUSE TestEncodeHeader/compressed+encrypted
+=== PAUSE TestEncodeHeaderFailures/signed_flag
+=== CONT  TestEncodeHeader/no_flags
+=== RUN   TestEncodeHeaderFailures/reserved_non-zero
+=== CONT  TestEncodeHeader/compressed+encrypted
+=== CONT  TestEncodeHeader/compressed
+=== PAUSE TestEncodeHeaderFailures/reserved_non-zero
+=== RUN   TestDecodeHeader/encrypted
+=== CONT  TestEncodeHeaderFailures/bad_magic
+=== CONT  TestEncodeHeaderFailures/reserved_flag_bit
+=== CONT  TestEncodeHeaderFailures/reserved_non-zero
+=== PAUSE TestDecodeHeader/encrypted
+=== RUN   TestDecodeHeader/compressed+encrypted
+=== CONT  TestEncodeHeaderFailures/signed_flag
+--- PASS: TestEncodeHeader (0.00s)
+    --- PASS: TestEncodeHeader/no_flags (0.00s)
+    --- PASS: TestEncodeHeader/compressed+encrypted (0.00s)
+    --- PASS: TestEncodeHeader/compressed (0.00s)
+=== PAUSE TestDecodeHeaderFailures/reserved_non-zero
+=== PAUSE TestRoundTripHeader/compressed+encrypted
+=== RUN   TestFlagsAccessors/signed
+=== CONT  TestEncodeHeaderFailures/wrong_version
+=== CONT  TestRoundTripHeader/no_flags
+=== CONT  TestRoundTripHeader/encrypted
+=== CONT  TestRoundTripHeader/compressed
+=== PAUSE TestDecodeHeader/compressed+encrypted
+=== CONT  TestRoundTripHeader/compressed+encrypted
+--- PASS: TestEncodeHeaderFailures (0.00s)
+    --- PASS: TestEncodeHeaderFailures/reserved_flag_bit (0.00s)
+    --- PASS: TestEncodeHeaderFailures/bad_magic (0.00s)
+    --- PASS: TestEncodeHeaderFailures/reserved_non-zero (0.00s)
+    --- PASS: TestEncodeHeaderFailures/signed_flag (0.00s)
+    --- PASS: TestEncodeHeaderFailures/wrong_version (0.00s)
+=== CONT  TestDecodeHeaderFailures/reserved_flag_bit
+=== CONT  TestDecodeHeader/compressed
+=== CONT  TestDecodeHeader/no_flags
+=== CONT  TestDecodeHeaderFailures/unsupported_version
+=== CONT  TestDecodeHeaderFailures/reserved_non-zero
+=== CONT  TestDecodeHeader/encrypted
+--- PASS: TestRoundTripHeader (0.00s)
+    --- PASS: TestRoundTripHeader/compressed (0.00s)
+    --- PASS: TestRoundTripHeader/no_flags (0.00s)
+    --- PASS: TestRoundTripHeader/encrypted (0.00s)
+    --- PASS: TestRoundTripHeader/compressed+encrypted (0.00s)
+=== CONT  TestDecodeHeaderFailures/bad_magic
+=== PAUSE TestFlagsAccessors/signed
+=== CONT  TestDecodeHeader/compressed+encrypted
+=== RUN   TestFlagsAccessors/compressed+encrypted
+=== CONT  TestDecodeHeaderFailures/signed_flag_unsupported
+=== PAUSE TestFlagsAccessors/compressed+encrypted
+--- PASS: TestDecodeHeader (0.00s)
+    --- PASS: TestDecodeHeader/compressed (0.00s)
+    --- PASS: TestDecodeHeader/no_flags (0.00s)
+    --- PASS: TestDecodeHeader/encrypted (0.00s)
+    --- PASS: TestDecodeHeader/compressed+encrypted (0.00s)
+=== RUN   TestFlagsAccessors/all
+=== PAUSE TestFlagsAccessors/all
+--- PASS: TestDecodeHeaderFailures (0.00s)
+    --- PASS: TestDecodeHeaderFailures/reserved_flag_bit (0.00s)
+    --- PASS: TestDecodeHeaderFailures/unsupported_version (0.00s)
+    --- PASS: TestDecodeHeaderFailures/reserved_non-zero (0.00s)
+    --- PASS: TestDecodeHeaderFailures/bad_magic (0.00s)
+    --- PASS: TestDecodeHeaderFailures/signed_flag_unsupported (0.00s)
+=== CONT  TestFlagsAccessors/signed
+=== CONT  TestFlagsAccessors/compressed+encrypted
+=== CONT  TestFlagsAccessors/encrypted
+=== CONT  TestFlagsAccessors/compressed
+=== CONT  TestFlagsAccessors/all
+=== CONT  TestFlagsAccessors/none
+--- PASS: TestFlagsAccessors (0.00s)
+    --- PASS: TestFlagsAccessors/signed (0.00s)
+    --- PASS: TestFlagsAccessors/compressed+encrypted (0.00s)
+    --- PASS: TestFlagsAccessors/encrypted (0.00s)
+    --- PASS: TestFlagsAccessors/compressed (0.00s)
+    --- PASS: TestFlagsAccessors/all (0.00s)
+    --- PASS: TestFlagsAccessors/none (0.00s)
+PASS
+ok  	tlv	1.014s

@@ -1,0 +1,35 @@
+$ go test -race -v ./...
+=== RUN   TestDecodeTrailerHappyPath
+=== PAUSE TestDecodeTrailerHappyPath
+=== RUN   TestDecodeTrailerEmptyBody
+=== PAUSE TestDecodeTrailerEmptyBody
+=== RUN   TestDecodeTrailerChecksumMismatch
+=== PAUSE TestDecodeTrailerChecksumMismatch
+=== RUN   TestDecodeTrailerTooShort
+=== PAUSE TestDecodeTrailerTooShort
+=== RUN   TestEncodeEmptyFileWritesTrailerOnly
+=== PAUSE TestEncodeEmptyFileWritesTrailerOnly
+=== RUN   TestEncodeDecodeRoundTrip
+=== PAUSE TestEncodeDecodeRoundTrip
+=== RUN   TestErrorChain
+=== PAUSE TestErrorChain
+=== RUN   TestChecksumMismatchSentinel
+=== PAUSE TestChecksumMismatchSentinel
+=== CONT  TestDecodeTrailerHappyPath
+=== CONT  TestDecodeTrailerTooShort
+=== CONT  TestErrorChain
+--- PASS: TestDecodeTrailerHappyPath (0.00s)
+--- PASS: TestDecodeTrailerTooShort (0.00s)
+=== CONT  TestDecodeTrailerEmptyBody
+=== CONT  TestEncodeDecodeRoundTrip
+--- PASS: TestErrorChain (0.00s)
+=== CONT  TestDecodeTrailerChecksumMismatch
+=== CONT  TestEncodeEmptyFileWritesTrailerOnly
+=== CONT  TestChecksumMismatchSentinel
+--- PASS: TestDecodeTrailerEmptyBody (0.00s)
+--- PASS: TestEncodeDecodeRoundTrip (0.00s)
+--- PASS: TestDecodeTrailerChecksumMismatch (0.00s)
+--- PASS: TestEncodeEmptyFileWritesTrailerOnly (0.00s)
+--- PASS: TestChecksumMismatchSentinel (0.00s)
+PASS
+ok  	tlv	1.012s

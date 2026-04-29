@@ -1,0 +1,103 @@
+$ go test -race -v ./...
+=== RUN   TestDecodeRecord
+=== PAUSE TestDecodeRecord
+=== RUN   TestDecodeRecordTruncated
+=== PAUSE TestDecodeRecordTruncated
+=== RUN   TestEncodeRecord
+=== PAUSE TestEncodeRecord
+=== RUN   TestRecordRoundTrip
+=== PAUSE TestRecordRoundTrip
+=== RUN   TestErrorChain
+=== PAUSE TestErrorChain
+=== RUN   TestRecordTypeString
+=== PAUSE TestRecordTypeString
+=== RUN   TestRecordTypeConstants
+=== PAUSE TestRecordTypeConstants
+=== RUN   TestFileHoldsRecords
+=== PAUSE TestFileHoldsRecords
+=== CONT  TestRecordTypeConstants
+=== CONT  TestRecordRoundTrip
+=== CONT  TestDecodeRecordTruncated
+=== RUN   TestRecordRoundTrip/string
+=== RUN   TestDecodeRecordTruncated/truncated_value
+=== PAUSE TestDecodeRecordTruncated/truncated_value
+--- PASS: TestRecordTypeConstants (0.00s)
+=== CONT  TestDecodeRecord
+=== RUN   TestDecodeRecord/typical_string_record
+=== PAUSE TestDecodeRecord/typical_string_record
+=== RUN   TestDecodeRecord/empty_record_length_zero
+=== CONT  TestRecordTypeString
+=== PAUSE TestDecodeRecord/empty_record_length_zero
+=== CONT  TestFileHoldsRecords
+=== RUN   TestDecodeRecord/int_record_length_eight
+=== PAUSE TestDecodeRecord/int_record_length_eight
+=== CONT  TestDecodeRecord/typical_string_record
+--- PASS: TestFileHoldsRecords (0.00s)
+=== CONT  TestErrorChain
+--- PASS: TestErrorChain (0.00s)
+=== CONT  TestDecodeRecord/int_record_length_eight
+=== RUN   TestDecodeRecordTruncated/truncated_length
+=== RUN   TestRecordTypeString/string
+=== PAUSE TestDecodeRecordTruncated/truncated_length
+=== CONT  TestDecodeRecordTruncated/truncated_length
+=== PAUSE TestRecordTypeString/string
+=== CONT  TestEncodeRecord
+=== RUN   TestEncodeRecord/typical_string_record
+=== CONT  TestDecodeRecord/empty_record_length_zero
+=== RUN   TestRecordTypeString/int
+=== PAUSE TestRecordTypeString/int
+=== PAUSE TestEncodeRecord/typical_string_record
+=== RUN   TestRecordTypeString/blob
+=== RUN   TestEncodeRecord/empty_record_length_zero
+--- PASS: TestDecodeRecord (0.00s)
+    --- PASS: TestDecodeRecord/typical_string_record (0.00s)
+    --- PASS: TestDecodeRecord/int_record_length_eight (0.00s)
+    --- PASS: TestDecodeRecord/empty_record_length_zero (0.00s)
+=== PAUSE TestRecordRoundTrip/string
+=== PAUSE TestRecordTypeString/blob
+=== RUN   TestRecordRoundTrip/int
+=== CONT  TestDecodeRecordTruncated/truncated_value
+=== PAUSE TestEncodeRecord/empty_record_length_zero
+=== RUN   TestEncodeRecord/int_record_length_eight
+=== PAUSE TestRecordRoundTrip/int
+=== RUN   TestRecordTypeString/nested
+=== PAUSE TestEncodeRecord/int_record_length_eight
+=== RUN   TestRecordRoundTrip/blob
+=== PAUSE TestRecordTypeString/nested
+=== CONT  TestEncodeRecord/empty_record_length_zero
+=== PAUSE TestRecordRoundTrip/blob
+=== RUN   TestRecordRoundTrip/nested
+=== CONT  TestRecordTypeString/blob
+=== CONT  TestEncodeRecord/int_record_length_eight
+=== CONT  TestRecordTypeString/nested
+=== CONT  TestRecordTypeString/string
+=== PAUSE TestRecordRoundTrip/nested
+=== CONT  TestEncodeRecord/typical_string_record
+=== RUN   TestRecordRoundTrip/multiple_mixed
+=== PAUSE TestRecordRoundTrip/multiple_mixed
+=== CONT  TestRecordTypeString/int
+=== CONT  TestRecordRoundTrip/string
+=== CONT  TestRecordRoundTrip/blob
+=== CONT  TestRecordRoundTrip/nested
+--- PASS: TestDecodeRecordTruncated (0.00s)
+    --- PASS: TestDecodeRecordTruncated/truncated_length (0.00s)
+    --- PASS: TestDecodeRecordTruncated/truncated_value (0.00s)
+=== CONT  TestRecordRoundTrip/int
+=== CONT  TestRecordRoundTrip/multiple_mixed
+--- PASS: TestEncodeRecord (0.00s)
+    --- PASS: TestEncodeRecord/empty_record_length_zero (0.00s)
+    --- PASS: TestEncodeRecord/int_record_length_eight (0.00s)
+    --- PASS: TestEncodeRecord/typical_string_record (0.00s)
+--- PASS: TestRecordTypeString (0.00s)
+    --- PASS: TestRecordTypeString/blob (0.00s)
+    --- PASS: TestRecordTypeString/nested (0.00s)
+    --- PASS: TestRecordTypeString/string (0.00s)
+    --- PASS: TestRecordTypeString/int (0.00s)
+--- PASS: TestRecordRoundTrip (0.00s)
+    --- PASS: TestRecordRoundTrip/string (0.00s)
+    --- PASS: TestRecordRoundTrip/blob (0.00s)
+    --- PASS: TestRecordRoundTrip/nested (0.00s)
+    --- PASS: TestRecordRoundTrip/int (0.00s)
+    --- PASS: TestRecordRoundTrip/multiple_mixed (0.00s)
+PASS
+ok  	tlv	1.014s

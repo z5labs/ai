@@ -1,0 +1,21 @@
+{
+  "eval_id": 1,
+  "eval_name": "tlv-record-variable-length",
+  "prompt": "Implement the Record structure for the TLV1 format in ./tlv/. Each Record has a Type (uint8), a Length (uint16, big-endian), and a Value of Length bytes (per SPEC.md's Field Definitions). Add an exported RecordType enum with constants for STRING, INT, BLOB, NESTED matching the encoding table. Update File to hold a slice of Records. Tests should cover: a typical STRING record, an empty record (Length=0), an INT record (Length=8), and a round-trip per record type. Don't load the full SPEC.md.",
+  "assertions": [
+    {"id": "record-struct-defined", "text": "types.go defines a Record struct with Type, Length, and Value fields"},
+    {"id": "record-type-enum", "text": "types.go defines a RecordType enum with constants for STRING (0x01), INT (0x02), BLOB (0x03), and NESTED (0x04)"},
+    {"id": "record-type-string-method", "text": "types.go defines a String() method on the RecordType type"},
+    {"id": "file-includes-records", "text": "the File struct in types.go has a Records slice field"},
+    {"id": "read-record-method", "text": "decoder.go defines a readRecord method that reads the length prefix and then the value bytes"},
+    {"id": "write-record-method", "text": "encoder.go defines a writeRecord method"},
+    {"id": "uses-readfull-for-value", "text": "decoder.go uses io.ReadFull (not r.Read) to read the variable-length Value"},
+    {"id": "decode-test-string-record", "text": "decoder_test.go has a test for a STRING record with a non-empty value"},
+    {"id": "decode-test-empty-record", "text": "decoder_test.go has a test for an empty record (Length = 0)"},
+    {"id": "round-trip-test", "text": "encoder_test.go has a round-trip test for at least one record type"},
+    {"id": "errors-funnel-through-wrapErr", "text": "every new error site uses d.wrapErr / e.wrapErr"},
+    {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
+    {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
+    {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content (e.g. _spec_structures.md) was written to the package"}
+  ]
+}
