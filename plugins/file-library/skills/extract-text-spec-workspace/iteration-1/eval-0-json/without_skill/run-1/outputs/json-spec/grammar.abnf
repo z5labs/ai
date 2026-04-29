@@ -1,0 +1,82 @@
+; JSON ABNF grammar, extracted verbatim from RFC 8259 (Bray, December 2017).
+; ABNF rules follow RFC 5234. Hex literal notation: %x<HEX>.
+; Concatenated dotted hex (e.g. %x66.61.6c.73.65) is a literal byte sequence.
+
+; ---------- Top-level (Section 2) ----------
+
+JSON-text = ws value ws
+
+; ---------- Structural characters (Section 2) ----------
+
+begin-array     = ws %x5B ws  ; [ left square bracket
+begin-object    = ws %x7B ws  ; { left curly bracket
+end-array       = ws %x5D ws  ; ] right square bracket
+end-object      = ws %x7D ws  ; } right curly bracket
+name-separator  = ws %x3A ws  ; : colon
+value-separator = ws %x2C ws  ; , comma
+
+; ---------- Whitespace (Section 2) ----------
+
+ws = *(
+        %x20 /              ; Space
+        %x09 /              ; Horizontal tab
+        %x0A /              ; Line feed or New line
+        %x0D )              ; Carriage return
+
+; ---------- Values and literal names (Section 3) ----------
+
+value = false / null / true / object / array / number / string
+
+false = %x66.61.6c.73.65   ; false
+null  = %x6e.75.6c.6c      ; null
+true  = %x74.72.75.65      ; true
+
+; ---------- Objects (Section 4) ----------
+
+object = begin-object [ member *( value-separator member ) ]
+         end-object
+
+member = string name-separator value
+
+; ---------- Arrays (Section 5) ----------
+
+array = begin-array [ value *( value-separator value ) ] end-array
+
+; ---------- Numbers (Section 6) ----------
+
+number = [ minus ] int [ frac ] [ exp ]
+
+decimal-point = %x2E       ; .
+digit1-9      = %x31-39    ; 1-9
+e             = %x65 / %x45 ; e E
+exp           = e [ minus / plus ] 1*DIGIT
+frac          = decimal-point 1*DIGIT
+int           = zero / ( digit1-9 *DIGIT )
+minus         = %x2D       ; -
+plus          = %x2B       ; +
+zero          = %x30       ; 0
+
+; DIGIT is from RFC 5234 core rules: %x30-39
+
+; ---------- Strings (Section 7) ----------
+
+string = quotation-mark *char quotation-mark
+
+char = unescaped /
+    escape (
+        %x22 /          ; "    quotation mark  U+0022
+        %x5C /          ; \    reverse solidus U+005C
+        %x2F /          ; /    solidus         U+002F
+        %x62 /          ; b    backspace       U+0008
+        %x66 /          ; f    form feed       U+000C
+        %x6E /          ; n    line feed       U+000A
+        %x72 /          ; r    carriage return U+000D
+        %x74 /          ; t    tab             U+0009
+        %x75 4HEXDIG )  ; uXXXX                U+XXXX
+
+escape         = %x5C              ; \
+quotation-mark = %x22              ; "
+unescaped      = %x20-21 / %x23-5B / %x5D-10FFFF
+
+; HEXDIG is from RFC 5234 core rules: DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
+; Per RFC 8259, the hexadecimal letters A-F may be uppercase OR lowercase.

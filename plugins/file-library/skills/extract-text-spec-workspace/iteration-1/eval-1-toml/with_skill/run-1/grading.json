@@ -1,0 +1,85 @@
+{
+  "expectations": [
+    {
+      "text": "SPEC.md exists at the root of the output directory",
+      "passed": true,
+      "evidence": "found at toml-spec/SPEC.md"
+    },
+    {
+      "text": "SPEC.md is non-empty (at least 4000 bytes)",
+      "passed": true,
+      "evidence": "SPEC.md is 39144 bytes (threshold 4000)"
+    },
+    {
+      "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _spec_part_*.md, _sections_index.md) in the output directory",
+      "passed": true,
+      "evidence": "none"
+    },
+    {
+      "text": "the six top-level sections appear in this exact order: Overview, Lexical Elements (Tokens), Structure (Grammar), Semantics, Examples, Appendix",
+      "passed": true,
+      "evidence": "all six sections in correct order"
+    },
+    {
+      "text": "TOML's `#` line comments are documented under Comments",
+      "passed": true,
+      "evidence": "# comments documented"
+    },
+    {
+      "text": "all four string variants are documented: basic (\"...\"), multi-line basic (\"\"\"...\"\"\"), literal ('...'), and multi-line literal ('''...''')",
+      "passed": true,
+      "evidence": "all four variants present"
+    },
+    {
+      "text": "integers are documented with decimal, hexadecimal (0x), octal (0o), binary (0b) prefixes and underscore separators",
+      "passed": true,
+      "evidence": "all bases"
+    },
+    {
+      "text": "float literals include +/-inf and +/-nan as documented forms",
+      "passed": true,
+      "evidence": "inf/nan present"
+    },
+    {
+      "text": "all four datetime types are documented: Offset Date-Time, Local Date-Time, Local Date, Local Time",
+      "passed": true,
+      "evidence": "all four datetime variants"
+    },
+    {
+      "text": "both standard tables ([table]) and inline tables ({key = value}) are documented as distinct grammar constructs",
+      "passed": true,
+      "evidence": "both forms documented"
+    },
+    {
+      "text": "arrays of tables ([[name]]) are documented as a distinct grammar construct",
+      "passed": true,
+      "evidence": "documented"
+    },
+    {
+      "text": "dotted keys (a.b.c = value) are documented with their nesting / table-creation semantics",
+      "passed": true,
+      "evidence": "documented"
+    },
+    {
+      "text": "the Examples section contains at least three distinct TOML documents",
+      "passed": true,
+      "evidence": "### subsections=3, fenced blocks=3"
+    },
+    {
+      "text": "the complex example exercises strings, integers, floats, booleans, datetimes, arrays, and tables",
+      "passed": true,
+      "evidence": "all features in complex example"
+    },
+    {
+      "text": "the spec produces zero `> **Ambiguity:**` callouts (TOML 1.0.0 is well-defined) OR each callout includes a clear resolution recommendation",
+      "passed": false,
+      "evidence": "6 callouts, unresolved: 6"
+    }
+  ],
+  "summary": {
+    "pass_rate": 0.9333333333333333,
+    "passed": 14,
+    "failed": 1,
+    "total": 15
+  }
+}

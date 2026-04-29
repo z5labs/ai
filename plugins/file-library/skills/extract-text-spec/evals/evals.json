@@ -1,0 +1,63 @@
+{
+  "skill_name": "extract-text-spec",
+  "evals": [
+    {
+      "id": 0,
+      "name": "json-rfc-8259-tier-1",
+      "prompt": "I want to write a Go tokenizer/parser/printer for JSON and I'd like a clean reference to implement against. Pull the JSON spec from RFC 8259 (https://www.rfc-editor.org/rfc/rfc8259.txt) into ./json-spec/. I care about the literal forms (strings with escapes, numbers, true/false/null), the structural tokens (braces, brackets, colon, comma), and the grammar productions for objects, arrays, and members. Skip the I-JSON profile and the security considerations.",
+      "expected_output": "Directory ./json-spec/ containing a single SPEC.md with ## Overview, ## Lexical Elements (Tokens), ## Structure (Grammar), ## Semantics, ## Examples, ## Appendix sections — covering JSON literals (string with escapes including \\uXXXX, number with optional minus/exponent, true/false/null), structural tokens, ABNF for object/array/member, and at least three worked example documents.",
+      "files": [],
+      "assertions": [
+        {"id": "spec-md-exists", "text": "SPEC.md exists at the root of the output directory"},
+        {"id": "spec-no-empty", "text": "SPEC.md is non-empty (at least 1500 bytes)"},
+        {"id": "no-scratch-leftovers", "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _spec_part_*.md, _sections_index.md) in the output directory"},
+        {"id": "section-overview", "text": "SPEC.md contains a `## Overview` section"},
+        {"id": "section-lexical", "text": "SPEC.md contains a `## Lexical Elements (Tokens)` section"},
+        {"id": "section-grammar", "text": "SPEC.md contains a `## Structure (Grammar)` section"},
+        {"id": "section-semantics", "text": "SPEC.md contains a `## Semantics` section"},
+        {"id": "section-examples", "text": "SPEC.md contains a `## Examples` section"},
+        {"id": "section-appendix", "text": "SPEC.md contains an `## Appendix` section"},
+        {"id": "section-order", "text": "the six top-level sections appear in this exact order: Overview, Lexical Elements (Tokens), Structure (Grammar), Semantics, Examples, Appendix"},
+        {"id": "json-string-escapes", "text": "the string literal description covers the escape sequences \\\", \\\\, \\/, \\b, \\f, \\n, \\r, \\t, and \\uXXXX"},
+        {"id": "json-number-format", "text": "the number literal description covers optional leading minus, integer part, fractional part, and exponent (e/E with optional sign)"},
+        {"id": "json-keywords", "text": "true, false, and null are documented (under Keywords/Reserved Words or as their own token classes)"},
+        {"id": "json-structural-tokens", "text": "the structural tokens { } [ ] : , are each documented with their role"},
+        {"id": "json-grammar-productions", "text": "grammar productions for object, array, and member (or value/element) appear in EBNF or ABNF"},
+        {"id": "examples-three-or-more", "text": "the Examples section contains at least three distinct example documents (minimal/typical/complex or equivalent)"},
+        {"id": "examples-parseable", "text": "every example under ## Examples is syntactically valid JSON (parses with json.loads)"},
+        {"id": "json-out-of-scope-ijson-skipped", "text": "I-JSON, security considerations, and the obsolete profiles are NOT extracted as part of the spec — user explicitly excluded them"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "toml-1.0.0-tier-2",
+      "prompt": "Extract the TOML v1.0.0 specification from https://toml.io/en/v1.0.0 into ./toml-spec/ so I can implement a Go TOML tokenizer/parser/printer. I want full coverage: comments, strings (basic, multi-line basic, literal, multi-line literal), integers (decimal/hex/octal/binary with underscores), floats, booleans, datetimes (offset/local datetime/local date/local time), arrays, tables, inline tables, and arrays of tables. Skip nothing — TOML is small enough to capture in full.",
+      "expected_output": "Directory ./toml-spec/ with a single SPEC.md containing all six required ## sections; Lexical Elements covers every TOML literal type (with multi-line string nuances and the four datetime variants), Structure covers key/value, table, inline-table, and array-of-table productions, Semantics covers dotted-key normalization and last-value-wins/duplicate-key rules, Examples has at least three real TOML documents (minimal config, typical app config, complex config exercising all literal types and nested tables).",
+      "files": [],
+      "assertions": [
+        {"id": "spec-md-exists", "text": "SPEC.md exists at the root of the output directory"},
+        {"id": "spec-no-empty", "text": "SPEC.md is non-empty (at least 4000 bytes)"},
+        {"id": "no-scratch-leftovers", "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _spec_part_*.md, _sections_index.md) in the output directory"},
+        {"id": "section-order", "text": "the six top-level sections appear in this exact order: Overview, Lexical Elements (Tokens), Structure (Grammar), Semantics, Examples, Appendix"},
+        {"id": "toml-comments-documented", "text": "TOML's `#` line comments are documented under Comments"},
+        {"id": "toml-string-variants", "text": "all four string variants are documented: basic (\"...\"), multi-line basic (\"\"\"...\"\"\"), literal ('...'), and multi-line literal ('''...''')"},
+        {"id": "toml-integer-bases", "text": "integers are documented with decimal, hexadecimal (0x), octal (0o), binary (0b) prefixes and underscore separators"},
+        {"id": "toml-float-special", "text": "float literals include +/-inf and +/-nan as documented forms"},
+        {"id": "toml-datetime-four-variants", "text": "all four datetime types are documented: Offset Date-Time, Local Date-Time, Local Date, Local Time"},
+        {"id": "toml-table-vs-inline", "text": "both standard tables ([table]) and inline tables ({key = value}) are documented as distinct grammar constructs"},
+        {"id": "toml-array-of-tables", "text": "arrays of tables ([[name]]) are documented as a distinct grammar construct"},
+        {"id": "toml-dotted-keys", "text": "dotted keys (a.b.c = value) are documented with their nesting / table-creation semantics"},
+        {"id": "examples-three-or-more", "text": "the Examples section contains at least three distinct TOML documents"},
+        {"id": "examples-exercise-multiple-types", "text": "the complex example exercises strings, integers, floats, booleans, datetimes, arrays, and tables"},
+        {"id": "ambiguity-callouts-or-explicit-resolutions", "text": "the spec produces zero `> **Ambiguity:**` callouts (TOML 1.0.0 is well-defined) OR each callout includes a clear resolution recommendation"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "ini-vendor-doc-ambiguity",
+      "prompt": "We need to document Git's config file format (gitconfig / INI dialect) so we can write a Go parser for it. The reference is https://git-scm.com/docs/git-config under the FILES / CONFIGURATION FILE / SYNTAX section. Extract a SPEC.md into ./gitconfig-spec/ covering: section headers (with optional subsections in double quotes), variable names and their case rules, value types (boolean / integer / color / path-expandable / string with escapes), comments (# and ;), line continuation with backslash, and the include / includeIf mechanism. Be careful — gitconfig has several places where the spec is loose or where multiple shells/clients disagree; use Ambiguity callouts where appropriate.",
+      "expected_output": "Directory ./gitconfig-spec/ with a single SPEC.md covering all six required ## sections. Token classes cover section headers, subsection-quoted strings, variable names, the `=`, comments (# and ;), line-continuation backslash, and value literals (boolean variants, integer with k/M/G suffix, color, path with ~). Grammar covers section, variable, include directive. Semantics covers case-insensitive section/variable matching, last-value-wins, and the includeIf condition forms. Examples cover a minimal config, a typical user config (user.email, alias), and a complex config with includes and an [http \"https://example.com/\"] subsection. At least one `> **Ambiguity:**` callout where the doc is genuinely loose.",
+      "files": []
+    }
+  ]
+}

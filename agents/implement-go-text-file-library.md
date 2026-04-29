@@ -32,7 +32,7 @@ Every file library package has three core components:
 
 ## Before You Start
 
-1. **Check for a format specification.** Look for a `SPEC.md` file in the target package directory (e.g., `<package>/SPEC.md`). This file is produced by the `extract-file-spec` agent and contains the complete format reference — token definitions, grammar rules, type structures, semantics, and examples. If present, it will be partitioned and fed to subagents as described below.
+1. **Check for a format specification.** Look for a `SPEC.md` file in the target package directory (e.g., `<package>/SPEC.md`). This file is produced by the `extract-text-spec` skill (in the `file-library` plugin) and contains the complete format reference — token definitions, grammar rules, type structures, semantics, and examples. If present, it will be partitioned and fed to subagents as described below.
 2. Read the target package's source files (tokenizer, parser, printer) to understand the current state and package-specific patterns
 3. Read any `CLAUDE.md` in the package or repo root for project-specific conventions
 4. Read the existing test files to match the established test style
@@ -40,7 +40,7 @@ Every file library package has three core components:
 
 ## Context Partitioning
 
-When a `SPEC.md` exists, split it into focused scratch files so each subagent only loads what it needs. Use the `## ` heading boundaries from the standard `extract-file-spec` output format:
+When a `SPEC.md` exists, split it into focused scratch files so each subagent only loads what it needs. Use the `## ` heading boundaries from the standard `extract-text-spec` output format:
 
 | Scratch file | SPEC.md sections to include | Used by |
 |---|---|---|

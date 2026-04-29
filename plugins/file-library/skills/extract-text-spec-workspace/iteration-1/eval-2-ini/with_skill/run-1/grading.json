@@ -1,0 +1,70 @@
+{
+  "expectations": [
+    {
+      "text": "SPEC.md exists at the root of the output directory",
+      "passed": true,
+      "evidence": "found at gitconfig-spec/SPEC.md"
+    },
+    {
+      "text": "SPEC.md is non-empty (at least 2500 bytes)",
+      "passed": true,
+      "evidence": "SPEC.md is 34048 bytes (threshold 2500)"
+    },
+    {
+      "text": "no leftover scratch files (_spec.txt, _spec.html, _toc.md, _spec_part_*.md, _sections_index.md) in the output directory",
+      "passed": true,
+      "evidence": "none"
+    },
+    {
+      "text": "the six top-level sections appear in this exact order: Overview, Lexical Elements (Tokens), Structure (Grammar), Semantics, Examples, Appendix",
+      "passed": true,
+      "evidence": "all six sections in correct order"
+    },
+    {
+      "text": "section headers with quoted subsections like [http \"https://example.com/\"] are documented",
+      "passed": true,
+      "evidence": "quoted subsection example present"
+    },
+    {
+      "text": "both # and ; are documented as comment introducers",
+      "passed": true,
+      "evidence": "both comment introducers present"
+    },
+    {
+      "text": "line continuation via trailing backslash is documented",
+      "passed": true,
+      "evidence": "documented"
+    },
+    {
+      "text": "value types boolean, integer (with k/M/G suffix), and at least one of color/path are documented",
+      "passed": true,
+      "evidence": "all listed"
+    },
+    {
+      "text": "case-insensitivity of section/variable names is documented (and case-sensitivity of subsection names if the doc states it)",
+      "passed": true,
+      "evidence": "case rules documented"
+    },
+    {
+      "text": "include / includeIf directive is documented under Semantics or Grammar",
+      "passed": true,
+      "evidence": "include + includeIf documented"
+    },
+    {
+      "text": "at least one `> **Ambiguity:**` callout is present, since the gitconfig doc is genuinely loose in places",
+      "passed": true,
+      "evidence": "11 ambiguity callouts"
+    },
+    {
+      "text": "the Examples section contains at least three distinct gitconfig documents",
+      "passed": true,
+      "evidence": "### subsections=3, fenced blocks=3"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 12,
+    "failed": 0,
+    "total": 12
+  }
+}
