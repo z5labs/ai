@@ -2,7 +2,7 @@
 
 The principle: **the model should never see secrets**. A credential a model has seen cannot be unseen — it lives in the conversation transcript for the rest of the session and (depending on the harness) in cached prompts beyond. The blast radius is bounded only by what the credential authorizes, which is why this gets its own objective slot rather than living as a sub-check under reproducibility or context management.
 
-Secrets must reach the tools that need them via the runtime environment (env vars, `.env` files loaded by a script, OS keychain) or out-of-band credential helpers (`1password` CLI, `vault`, `gcloud auth print-access-token`, direnv, etc.). They must not flow through arguments, prompts, or inline content the model reads.
+Secrets must reach the tools that need them via the runtime environment (env vars, `.env` files loaded by a script, OS keychain) or out-of-band credential helpers (`1Password` CLI, `vault`, `gcloud auth print-access-token`, direnv, etc.). They must not flow through arguments, prompts, or inline content the model reads.
 
 This objective checks for the four ways skills route secrets through the model anyway, plus the one pattern that does it right (so authors have a target shape).
 
@@ -122,7 +122,7 @@ This check exists so the author has a target shape, not just a list of failures.
 
 A skill handles secrets correctly when it does **all** of the following:
 
-1. **Routing components and the secret are separate inputs.** Host, port, user, database name, namespace — those are routing, can be argument or env var, and the model can see them. The password / token / key is a separate input the model never names.
+1. **Routing components and the secret are separate inputs.** Host, port, user, database name, namespace — those are routing, can be argument or env var, and the model can see them. The password / token / key is a separate input — the model may know its env-var name (so the skill can document the precondition) but never sees its value.
 2. **The secret reaches the tool via the runtime environment.** Scripts read `PGPASSWORD`, `GH_TOKEN`, `OPENAI_API_KEY`, etc. directly from the process environment. No CLI flag carries the value.
 3. **Population of the env var is the user's job, done out-of-band.** The skill documents the precondition ("`PGPASSWORD` must be exported before invoking this skill") but does not participate in setting it. Suggest credential helpers in passing — `op run --env-file=…` (1Password CLI), `vault read`, `gcloud auth print-access-token`, direnv-loaded `.env` files, `pass`, OS keychain. Do not prescribe one.
 4. **Missing-credential failure is a refuse-and-instruct.** If a required env var is unset, the skill exits with a clear error listing each missing var and tells the user to populate it before re-invoking. It does not ask, does not retry, does not fall back to prompting.

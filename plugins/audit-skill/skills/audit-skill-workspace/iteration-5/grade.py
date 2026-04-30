@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Grade iteration-4 runs against assertions defined in eval_metadata.json.
+"""Grade eval runs against assertions defined in eval_metadata.json.
 
 For each run directory (eval-N/{with_skill,old_skill}), read the audit report,
 check each assertion programmatically where feasible, and write grading.json.
