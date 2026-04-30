@@ -1,11 +1,23 @@
 ---
 name: new-go-text-file-library
-description: Scaffold a new Go text file library package with tokenizer, parser, printer, and tests
+description: Scaffold a new Go text file library package with tokenizer, parser, printer, and tests. Skip when the user wants to add features to an existing text package (use `implement-go-text-file-library` instead) or when the target format is binary, e.g. `types.go`/`decoder.go`/`encoder.go` (use `new-go-binary-file-library` instead).
 disable-model-invocation: true
 argument-hint: "[package-name]"
 ---
 
 Scaffold a new Go text file library package at `./$ARGUMENTS[0]/` following the **tokenizer / parser / printer** pipeline. The package name is `$ARGUMENTS[0]`. Read `references/architecture.md` for the patterns each generated file must implement and why — especially the action-loop state machine that the tokenizer, parser, and printer all share.
+
+## Inputs
+
+- **`$ARGUMENTS[0]`** (required) — the package name, supplied as the slash-command argument (e.g. `/new-go-text-file-library kvr`). Used both as the directory name (`./$ARGUMENTS[0]/`) and the Go `package` identifier, so it must be a valid Go identifier (lowercase, no hyphens, no leading digit). Validate by listing `./$ARGUMENTS[0]/`; if the directory already exists with any of the files in `## Outputs` present, stop and direct the user to `implement-go-text-file-library` so prior work is not clobbered.
+
+## Outputs
+
+- **Generated files** in `./$ARGUMENTS[0]/`, written via `Write`: `doc.go`, `tokenizer.go`, `tokenizer_test.go`, `parser.go`, `parser_test.go`, `printer.go`, `printer_test.go`, `CLAUDE.md`. Each is a Go source file (or, for `CLAUDE.md`, package-level guidance markdown) — see `## What to Generate` for per-file content. `Write` will overwrite an existing file at the same path, which is why the input-validation step above refuses to run against a non-empty target directory.
+- **Side effects** (run from the repo root after files are written):
+  - `go mod tidy` — refreshes the package's module dependencies; assumes a `go.mod` is already in scope (root or package-level).
+  - `go build ./$ARGUMENTS[0]/...` — verifies compilation.
+  - `go test -race ./$ARGUMENTS[0]/...` — placeholder tests must pass against the empty-input stubs before reporting success.
 
 ## Before Scaffolding
 

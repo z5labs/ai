@@ -1,6 +1,6 @@
 ---
 name: implement-go-binary-file-library
-description: Implement features for Go binary file library packages that follow a types/decoder/encoder pipeline. Use whenever the user wants to add struct types, decoder methods, encoder methods, bit-field handling, or checksum/integrity logic to a Go package built around `types.go`, `decoder.go`, and `encoder.go` — including phrases like "implement the X header", "add support for Y in the gzip package", "decode the Z field per SPEC.md", or "wire up the FLG bit field", even if the user doesn't say "binary".
+description: Implement features for Go binary file library packages that follow a types/decoder/encoder pipeline. Use whenever the user wants to add struct types, decoder methods, encoder methods, bit-field handling, or checksum/integrity logic to a Go package built around `types.go`, `decoder.go`, and `encoder.go` — including phrases like "implement the X header", "add support for Y in the gzip package", "decode the Z field per SPEC.md", or "wire up the FLG bit field", even if the user doesn't say "binary". Skip when the user wants to scaffold a brand-new package (use `new-go-binary-file-library` instead) or when the target package uses the text `tokenizer.go`/`parser.go`/`printer.go` layout (use `implement-go-text-file-library` instead).
 ---
 
 You are an orchestrator that adds features to an existing Go binary file library package. You prepare context, then delegate each pipeline phase (types → decoder → encoder) to a focused subagent. You never read the full `SPEC.md` into your own context — large specs would crowd out orchestration. Instead, grep `SPEC.md` for section line ranges and hand each subagent a `(path, offset, limit)` slice it can read directly.
@@ -8,14 +8,28 @@ You are an orchestrator that adds features to an existing Go binary file library
 Read `references/architecture.md` for the types/decoder/encoder patterns each subagent must follow (especially the `FieldError → OffsetError → leaf` chain, which all error sites funnel through).
 Read `references/testing.md` for binary-specific test conventions before launching any subagent.
 
+## Inputs
+
+- **Package path** (required) — the Go package directory the user wants changed (e.g. "implement the FLG bit field in `pkg/gzip`"). Source: user prompt. Validate by listing the directory; if `types.go`, `decoder.go`, `encoder.go`, or any of their `_test.go` siblings are missing, stop and direct the user to `new-go-binary-file-library`.
+- **`<package>/SPEC.md`** (optional) — when present, sliced by line range per phase; when absent, the user's request plus existing source files are the only context.
+- **`<package>/structures/*.md`, `<package>/encoding-tables/*.md`** (optional) — pre-chunked spec files produced by `extract-binary-spec`. Passed to subagents verbatim, no slicing.
+
+## Outputs
+
+- **Edits** to `<package>/types.go`, `<package>/types_test.go`, `<package>/decoder.go`, `<package>/decoder_test.go`, `<package>/encoder.go`, `<package>/encoder_test.go` — amended via `Edit`, never recreated wholesale, so prior implementer work is preserved.
+- **Stub-test replacement** — the decoder phase deletes/replaces any scaffold-only `TestDecodeStubReturnsErrUnimplemented`-style test; the encoder phase does the same for the `Encode` counterpart. These tests pin the unimplemented chain and start failing the moment the real public API is wired up, so removing them (rather than short-circuiting `Decode`/`Encode` to keep returning `errUnimplemented`) is the only valid resolution.
+- **Scratch files** `<package>/_context_types.md` (after Phase 1) and `<package>/_context_decoder.md` (after Phase 2) — overwritten each run, deleted in Cleanup. If a previous run was interrupted and left either file behind, delete them before launching Phase 1 so a stale partial summary cannot leak into the new run.
+- **Side effect**: runs `(cd <package> && go test -race ./...)` between phases to verify each phase before launching the next. The `cd` is required — this repo has no root `go.mod`, so each target package's tests must be run from inside that package.
+
 ## Before you start
 
 1. Read the package's `CLAUDE.md` (if present) and the repo-root `CLAUDE.md` for project conventions and license-header style.
 2. List the package: confirm `types.go`, `decoder.go`, `encoder.go`, and their `_test.go` siblings exist. If they don't, the user wants the `new-go-binary-file-library` scaffold first — say so and stop.
 3. Check for `<package>/SPEC.md`. If absent, the user's request and existing source files are the only context — pass them directly to each subagent and skip the partitioning step.
 4. Identify scope: which struct types, decoder methods, and encoder methods will change.
-5. **Note any scaffold-only stub tests** (e.g. `TestDecodeStubReturnsErrUnimplemented`, `TestEncodeStubReturnsErrUnimplemented`). These pin the unimplemented chain and will start failing the moment you wire up the real public API. The decoder phase deletes/replaces the `Decode` stub test; the encoder phase deletes/replaces the `Encode` stub test. Don't leave them green by short-circuiting `Decode`/`Encode` to keep returning `errUnimplemented`.
+5. **Note any scaffold-only stub tests** (e.g. `TestDecodeStubReturnsErrUnimplemented`, `TestEncodeStubReturnsErrUnimplemented`). See `## Outputs` for how each phase replaces them.
 6. **Check the user prompt against the spec.** If the user's request contradicts something in `SPEC.md` (e.g. the spec says reject a flag that the user wants supported), the user's prompt is the active intent — flag the conflict so they can confirm, then implement what the user asked for.
+7. **Re-run safety.** This skill is safe to re-run on the same package — see `## Outputs` for what is edited vs. overwritten vs. deleted.
 
 ## Partition SPEC.md by line range (do not read the whole file)
 
