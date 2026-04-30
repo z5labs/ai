@@ -1,0 +1,26 @@
+{
+  "run_id": "eval-2-with_skill",
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 3,
+    "failed": 0,
+    "total": 3
+  },
+  "expectations": [
+    {
+      "text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/ (proving the name-based resolver worked)",
+      "passed": true,
+      "evidence": "resolved path named in report"
+    },
+    {
+      "text": "a report file is written and its path is named in the final message",
+      "passed": true,
+      "evidence": "report at eval-2/with_skill/outputs/audit-report.md (1910 bytes)"
+    },
+    {
+      "text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture",
+      "passed": true,
+      "evidence": "byte-identical to fixture"
+    }
+  ]
+}

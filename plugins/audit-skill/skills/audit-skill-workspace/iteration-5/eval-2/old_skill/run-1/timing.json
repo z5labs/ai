@@ -1,0 +1,6 @@
+{
+  "total_tokens": 33766,
+  "duration_ms": 85459,
+  "total_duration_seconds": 85.5,
+  "notes": "Agent reported initial Bash denial; could not run setup mkdir/cp. Worked around by treating fixture source as the resolved target. Skill-name-resolution path was not actually exercised in this run."
+}

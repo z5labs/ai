@@ -1,6 +1,6 @@
 # PR-mode mechanics
 
-This file specifies the exact `gh` invocations the skill uses when a PR is open. The SKILL.md workflow points here when output mode is PR. Read this only after the four objective checks have produced a list of findings.
+This file specifies the exact `gh` invocations the skill uses when a PR is open. The SKILL.md workflow points here when output mode is PR. Read this only after the five objective checks have produced a list of findings.
 
 ## Inputs you derive once, up front
 
@@ -77,13 +77,13 @@ The body:
 <!-- audit-skill: $HEAD_SHA -->
 audit-skill: <total> findings across <N> objectives
 
-idempotency: <n>, reproducibility: <n>, context-management: <n>, strict-definitions: <n>
+idempotency: <n>, reproducibility: <n>, context-management: <n>, strict-definitions: <n>, security: <n>
 
 <for each finding NOT posted inline (path:line not in the modified-line index):>
 - `<file>:<line>` — **<objective>** — <description>
 
 <if total == 0:>
-audit clean — <total-checks-run> checks passed across all four objectives.
+audit clean — <total-checks-run> checks passed across all five objectives.
 ```
 
 Post via:

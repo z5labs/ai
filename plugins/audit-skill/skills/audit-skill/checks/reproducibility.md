@@ -9,7 +9,7 @@ Two invocations with the same inputs should produce equivalent outputs. Vague la
 Grep for hedge words that ask the model to use judgment without telling it the rubric:
 
 ```
-grep -niE '(as appropriate|as needed|when relevant|if relevant|when applicable|appropriately|reasonable|reasonably|sensible|properly|where suitable|use (your )?(best )?judgment|carefully|thoroughly|rigorously)' SKILL.md checks/ references/ 2>/dev/null
+grep -rniE '(as appropriate|as needed|when relevant|if relevant|when applicable|appropriately|reasonable|reasonably|sensible|properly|where suitable|use (your )?(best )?judgment|carefully|thoroughly|rigorously)' SKILL.md checks/ references/ 2>/dev/null
 ```
 
 The pattern omits `\b` word boundaries because BSD `grep -E` doesn't support them portably. The grep is a candidate-finder; expect substring matches (e.g. "thoroughfare" would match "thoroughly") and ignore them during triage.
@@ -25,7 +25,7 @@ Be selective. "Use the appropriate tool" with a concrete table below it is fine.
 Search for reads from the runtime environment that aren't declared as inputs:
 
 ```
-grep -nE '(date|whoami|hostname|pwd|uname|git status|git log|curl|wget|gh (api|pr view|pr list|repo view))' SKILL.md scripts/ 2>/dev/null
+grep -rnE '(date|whoami|hostname|pwd|uname|git status|git log|curl|wget|gh (api|pr view|pr list|repo view))' SKILL.md scripts/ 2>/dev/null
 ```
 
 Same caveat as above: no `\b` boundaries. Expect substring matches (e.g. "update" matches "date"); ignore them during triage.
