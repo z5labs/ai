@@ -9,11 +9,14 @@ Scaffold a new Go binary file library package at `./$ARGUMENTS[0]/` following th
 
 ## Inputs
 
-- **`$ARGUMENTS[0]`** (required) — the package name, supplied as the slash-command argument (e.g. `/new-go-binary-file-library gzip`). Used both as the directory name (`./$ARGUMENTS[0]/`) and the Go `package` identifier. Validate by listing `./$ARGUMENTS[0]/`; if the directory already exists with any of the files in `## Outputs` present, stop and direct the user to `implement-go-binary-file-library` so prior work is not clobbered. An invalid Go identifier (hyphens, leading digit, etc.) will surface as a `go build` failure in `## After Scaffolding`.
+- **`$ARGUMENTS[0]`** (required) — the package name, supplied as the slash-command argument (e.g. `/new-go-binary-file-library gzip`). Used both as the directory name (`./$ARGUMENTS[0]/`) and the Go `package` identifier, so it must satisfy both constraints at once. Run all three checks below before writing any files; on any failure, stop with a message that names the failing check and the offending value. Failing fast here avoids half-written packages and prevents `Write` from silently overwriting existing source.
+  - **Path-safe** — must not contain `/`, `\`, or `.`, and must not equal `..`. This is a single directory name, not a path.
+  - **Valid Go package identifier** — must match `^[a-z][a-z0-9]*$` and must not be a Go keyword (`break`, `case`, `chan`, `const`, `continue`, `default`, `defer`, `else`, `fallthrough`, `for`, `func`, `go`, `goto`, `if`, `import`, `interface`, `map`, `package`, `range`, `return`, `select`, `struct`, `switch`, `type`, `var`). Lowercase-only matches Go's "short, concise, lowercase, no underscores" package-name convention; trailing digits are fine (`md5`, `oauth2`). Common rejects: hyphens (`my-format`), leading digits (`2html`), camelCase (`myFormat`).
+  - **No filesystem collision** — if any entry exists at `./$ARGUMENTS[0]` (directory, regular file, or symlink), refuse before writing anything. For an existing directory, direct the user to `implement-go-binary-file-library` if they meant to add features to an in-progress package, or to remove it manually if it's stale and they want to re-scaffold. For a file or symlink, direct the user to remove the entry before re-running — there's no in-progress work to preserve. The skill never overwrites or merges because `Write` clobbers individual files silently — one check up front is the safe contract.
 
 ## Outputs
 
-- **Generated files** in `./$ARGUMENTS[0]/`, written via `Write`: `doc.go`, `types.go`, `types_test.go`, `decoder.go`, `decoder_test.go`, `encoder.go`, `encoder_test.go`, `CLAUDE.md`. Each is a Go source file (or, for `CLAUDE.md`, package-level guidance markdown) — see `## What to Generate` for per-file content. `Write` will overwrite an existing file at the same path, which is why the input-validation step above stops if any of those output paths already exist in the target directory.
+- **Generated files** in `./$ARGUMENTS[0]/`, written via `Write`: `doc.go`, `types.go`, `types_test.go`, `decoder.go`, `decoder_test.go`, `encoder.go`, `encoder_test.go`, `CLAUDE.md`. Each is a Go source file (or, for `CLAUDE.md`, package-level guidance markdown) — see `## What to Generate` for per-file content. `Write` would overwrite an existing file at the same path silently, which is why the input-validation step above refuses outright if any entry exists at `./$ARGUMENTS[0]`.
 - **Side effects** (run from `./$ARGUMENTS[0]/` after files are written; this repo has no root `go.mod`, so each new package's tests must be run from inside the package):
   - `(cd ./$ARGUMENTS[0] && go mod tidy)` — refreshes module dependencies.
   - `(cd ./$ARGUMENTS[0] && go build ./...)` — verifies compilation.
@@ -21,11 +24,14 @@ Scaffold a new Go binary file library package at `./$ARGUMENTS[0]/` following th
 
 ## Before Scaffolding
 
-1. Check the repo for any existing Go binary file library (a package with `types.go`, `decoder.go`, `encoder.go`). If one exists, read its source files and use them as the reference for structure, helpers, naming, and license-header style.
+1. Find existing Go binary file libraries in the repo — directories that contain all three of `types.go`, `decoder.go`, and `encoder.go` (use `Glob`/`Grep`; package layouts are shallow). If multiple candidates exist, pick one deterministically using this tiebreaker chain — evaluate each rule against the current candidate set in order; if a rule matches one or more current candidates, replace the set with only those matches, and if a rule matches zero current candidates, leave the set unchanged. Stop when one candidate remains:
+   1. **Sibling first** — prefer candidates whose parent directory equals the parent of `./$ARGUMENTS[0]/` (i.e. sibling packages). If one or more siblings exist in the current set, keep only those siblings; otherwise keep the set unchanged. Sibling packages almost always share license headers, helper conventions, and `CLAUDE.md` style, so the reference is most informative.
+   2. **Most recent commit** — among the current candidates, compute `git log -1 --format=%ct -- <path>` for each package directory. If `git log` returns an empty result for a path or errors (for example, the path is untracked or `.git/` metadata is unavailable), treat that path's timestamp as `0`. Keep only the candidates with the highest timestamp. Recency is a proxy for "current style"; older packages may predate convention changes.
+   3. **Lexicographic** — if multiple candidates still remain after the earlier rules (e.g. a bulk-import commit, or every candidate fell back to `0`), sort the surviving paths and take the first. This is the deterministic last-resort tiebreaker so two runs never disagree.
+
+   Read the chosen package's source files and use them as the reference for structure, helpers, naming, and license-header style. If no candidate exists, fall back to the canonical patterns in `references/architecture.md`.
 2. Read any `CLAUDE.md` files in the repo root or existing packages for project-specific conventions.
 3. Check `git log --oneline -10` for commit message style.
-
-If no existing binary file library exists, fall back to the canonical patterns in `references/architecture.md`.
 
 ## What to Generate
 
