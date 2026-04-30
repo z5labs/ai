@@ -66,14 +66,14 @@ Every typed error in `tokenizer.go` gets at least one test that asserts via `err
 
 ### Tests drive `Parse()` — never construct AST nodes by hand
 
-This is the rule the parser phase is most likely to break. The expected value comes from running `Parse()` over a known-good source string, **not** from hand-constructing a `*File` with literal `Record{Type: ..., Value: ...}` entries:
+This is the rule the parser phase is most likely to break. The expected value comes from running `Parse()` over a known-good source string, **not** from hand-constructing a `*File` with literal `Record{Type: ..., Key: ..., Value: ...}` entries:
 
 ```go
 // WRONG — hand-constructs the AST, hides parser regressions
-want := &File{Records: []Record{{Type: "string", Value: "hello"}}}
+want := &File{Records: []Record{{Type: "string", Key: "GREETING", Value: "hello"}}}
 
 // RIGHT — uses Parse on a canonical source string as the expectation source
-want, err := Parse(strings.NewReader(`record string = "hello"`))
+want, err := Parse(strings.NewReader(`record string GREETING = "hello"`))
 require.NoError(t, err)
 got, err := Parse(strings.NewReader(testInput))
 require.NoError(t, err)
@@ -87,7 +87,7 @@ For tests that actually want to assert the AST shape (not a parser equivalence),
 ### Failure path
 
 ```go
-_, err := Parse(strings.NewReader("record = }"))
+_, err := Parse(strings.NewReader("record string GREETING = }"))
 var ute *UnexpectedTokenError
 require.ErrorAs(t, err, &ute)
 require.Equal(t, TokenSymbol, ute.Got.Type)
@@ -104,9 +104,9 @@ Two test shapes are required for every printer rule.
 
 ```go
 var buf bytes.Buffer
-err := Print(&buf, &File{Records: []Record{{Type: "string", Value: "hello"}}})
+err := Print(&buf, &File{Records: []Record{{Type: "string", Key: "GREETING", Value: "hello"}}})
 require.NoError(t, err)
-require.Equal(t, `record string = "hello"`+"\n", buf.String())
+require.Equal(t, `record string GREETING = "hello"`+"\n", buf.String())
 ```
 
 This pins formatting choices — whitespace, quoting, indentation, trailing newline — that the round-trip can't see because both sides agree on them.
@@ -118,9 +118,9 @@ testCases := []struct{
     name   string
     source string
 }{
-    {"single_string_record",   `record string = "hello"`},
+    {"single_string_record",   `record string GREETING = "hello"`},
     {"empty_file",             ``},
-    {"two_records",            "record string = \"a\"\nrecord int = 1"},
+    {"two_records",            "record string A = \"a\"\nrecord number B = 1"},
 }
 
 for _, tc := range testCases {
@@ -153,7 +153,7 @@ If round-trip passes, the parser and printer agree about the format — even if 
 Many text formats carry comments that aren't grammatically meaningful but must round-trip cleanly when the printer replays them. The standard approach is to attach trivia (leading/trailing comments, blank lines) to the AST node it precedes, and the printer emits them before the node's own output. Tests for trivia are pure round-trip:
 
 ```go
-{"comment_above_record", "# leading comment\nrecord string = \"hi\""},
+{"comment_above_record", "# leading comment\nrecord string GREETING = \"hi\""},
 ```
 
 If the round-trip drops the comment, either the parser didn't capture it or the printer didn't emit it — start at the AST diff.

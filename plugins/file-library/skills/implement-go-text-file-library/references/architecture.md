@@ -45,12 +45,12 @@ func tokenize(t *tokenizer, yield func(Token, error) bool) tokenizerAction {
     if err != nil    { return yieldErr(err) }
     switch {
     case unicode.IsSpace(r):  return skipWhitespace
-    case r == '#':            return tokenizeComment(t.pos)  // closure captures start pos
-    case r == '"':            return tokenizeString(t.pos)
+    case r == '#':            return tokenizeComment(t.prevPos)  // closure captures rune's start pos (next() already advanced t.pos)
+    case r == '"':            return tokenizeString(t.prevPos)
     case unicode.IsDigit(r):  t.backup(); return tokenizeNumber
     // ...
     }
-    return yieldErr(&UnexpectedCharacterError{Pos: t.pos, Char: r})
+    return yieldErr(&UnexpectedCharacterError{Pos: t.prevPos, Char: r})
 }
 ```
 
@@ -58,11 +58,15 @@ After yielding, every specialized action returns `tokenize` to resume dispatch �
 
 ### The tokenizer struct
 
-Wraps a `*bufio.Reader` for one-rune lookahead, and tracks `Pos{Line, Column}` so every token knows where it came from. Two methods:
-- `next() (rune, error)` advances and updates position.
-- `backup()` rewinds the last rune (used when an action peeks one rune past the end of its token).
+Wraps a `*bufio.Reader` for one-rune lookahead, and tracks two positions so every token knows where it came from:
+- `pos Pos{Line, Column}` — the position of the *next* rune to be read.
+- `prevPos Pos{Line, Column}` — the position of the rune most recently returned by `next()`. `next()` snapshots `pos → prevPos` *before* advancing, so right after `r, err := t.next()` the rune `r` started at `t.prevPos` and `t.pos` already points one past it. Capture `t.prevPos` whenever a closure or error needs the start position of the rune just read; reaching for `t.pos` there shifts every reported column by one.
 
-A position-off-by-one is almost always a `next`/`backup` ordering bug — audit those two together when tokenizer tests miss by one column.
+Two methods:
+- `next() (rune, error)` snapshots `prevPos`, then advances `pos`.
+- `backup()` rewinds the last rune (used when an action peeks one rune past the end of its token); restores `pos` from `prevPos` so newline boundaries don't underflow.
+
+A position-off-by-one is almost always a `pos`/`prevPos` mix-up or a `next`/`backup` ordering bug — audit those together when tokenizer tests miss by one column.
 
 ### Helpers worth pre-wiring
 
