@@ -1,0 +1,17 @@
+{
+  "eval_id": 3,
+  "eval_name": "insecure-skill-finds-security-violations",
+  "prompt": "Audit the skill at ./skills/mongo-explorer/ — a colleague wrote it for setting up MongoDB schema context and I want a security read on it before merging. No PR open, write the report to a file.",
+  "assertions": [
+    {"id": "report-file-written", "text": "a markdown report file is written and the path is named in the assistant's final message"},
+    {"id": "target-not-modified", "text": "./skills/mongo-explorer/SKILL.md is byte-identical to the input fixture"},
+    {"id": "objective-security-section", "text": "the report has a Security section with at least 3 findings (the fixture exhibits four distinct security violations)"},
+    {"id": "finds-model-prompted-password", "text": "a finding under Security flags the instruction to prompt the user for the password (e.g. 'prompt them for the full connection string including the password' or 'prompt the user for their MongoDB password' or 'ask the user to paste their password')"},
+    {"id": "finds-url-form-credentials", "text": "a finding under Security flags the URL-form connection string carrying an embedded password — either the argument-hint `[connection-string]` whose protocol admits `user:password@`, or the example `mongodb://app_user:hunter2@...` in step 5"},
+    {"id": "finds-discard-after-read", "text": "a finding under Security flags the discard-after-read pattern (e.g. 'After parsing the connection string, discard the password' or 'discard the password from the in-memory representation') — names this as too-late, since the secret was already in context"},
+    {"id": "finds-secret-on-disk", "text": "a finding under Security flags the generated `.env` containing a concrete `MONGO_PASSWORD=<password>` value, or the hardcoded fallback `MONGO_PASSWORD=\"${MONGO_PASSWORD:-hunter2}\"` in the generated query.sh"},
+    {"id": "findings-cite-file-line", "text": "Security findings cite `SKILL.md:<line>` — the author can jump straight to the offending line"},
+    {"id": "no-severity-tiers", "text": "the report does not use severity tiers (security findings live under the Security objective heading, not under a 'Critical' or 'High' label)"},
+    {"id": "passing-pattern-not-claimed", "text": "the Passing checks section does NOT list Security as a passing check (the skill never demonstrates the env-var + refuse-and-instruct pattern)"}
+  ]
+}

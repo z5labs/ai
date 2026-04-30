@@ -1,0 +1,61 @@
+{
+  "run_id": "eval-3-with_skill",
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 10,
+    "failed": 0,
+    "total": 10
+  },
+  "expectations": [
+    {
+      "text": "a markdown report file is written and the path is named in the assistant's final message",
+      "passed": true,
+      "evidence": "report at eval-3/with_skill/outputs/audit-report.md (4871 bytes)"
+    },
+    {
+      "text": "./skills/mongo-explorer/SKILL.md is byte-identical to the input fixture",
+      "passed": true,
+      "evidence": "byte-identical to fixture"
+    },
+    {
+      "text": "the report has a Security section with at least 3 findings (the fixture exhibits four distinct security violations)",
+      "passed": true,
+      "evidence": "Security section present; 11 finding(s)"
+    },
+    {
+      "text": "a finding under Security flags the instruction to prompt the user for the password (e.g. 'prompt them for the full connection string including the password' or 'prompt the user for their MongoDB password' or 'ask the user to paste their password')",
+      "passed": true,
+      "evidence": "prompted-secret finding present"
+    },
+    {
+      "text": "a finding under Security flags the URL-form connection string carrying an embedded password \u2014 either the argument-hint `[connection-string]` whose protocol admits `user:password@`, or the example `mongodb://app_user:hunter2@...` in step 5",
+      "passed": true,
+      "evidence": "URL-form-credentials finding present"
+    },
+    {
+      "text": "a finding under Security flags the discard-after-read pattern (e.g. 'After parsing the connection string, discard the password' or 'discard the password from the in-memory representation') \u2014 names this as too-late, since the secret was already in context",
+      "passed": true,
+      "evidence": "discard-after-read finding present"
+    },
+    {
+      "text": "a finding under Security flags the generated `.env` containing a concrete `MONGO_PASSWORD=<password>` value, or the hardcoded fallback `MONGO_PASSWORD=\"${MONGO_PASSWORD:-hunter2}\"` in the generated query.sh",
+      "passed": true,
+      "evidence": "secret-on-disk finding present"
+    },
+    {
+      "text": "Security findings cite `SKILL.md:<line>` \u2014 the author can jump straight to the offending line",
+      "passed": true,
+      "evidence": "18/14 (129%) findings cite file:line"
+    },
+    {
+      "text": "the report does not use severity tiers (security findings live under the Security objective heading, not under a 'Critical' or 'High' label)",
+      "passed": true,
+      "evidence": "no severity tier words"
+    },
+    {
+      "text": "the Passing checks section does NOT list Security as a passing check (the skill never demonstrates the env-var + refuse-and-instruct pattern)",
+      "passed": true,
+      "evidence": "Security not claimed as passing"
+    }
+  ]
+}

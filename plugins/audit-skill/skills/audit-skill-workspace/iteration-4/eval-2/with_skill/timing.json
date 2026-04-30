@@ -1,0 +1,6 @@
+{
+  "total_tokens": 43486,
+  "duration_ms": 143297,
+  "total_duration_seconds": 143.3,
+  "notes": "Sandbox denied writes/mkdir under .claude/ — fixture was not physically materialized in work tree. Agent reasoned about the byte-identical source instead. Skill-name-resolution path was named verbally but not exercised end-to-end."
+}

@@ -9,7 +9,7 @@ This file defines two output formats — one for file mode, one for PR mode. Use
 
 - Target: `<resolved-path>`
 - Date: <YYYY-MM-DD>
-- Findings: <total-count>  (idempotency: <n>, reproducibility: <n>, context-management: <n>, strict-definitions: <n>)
+- Findings: <total-count>  (idempotency: <n>, reproducibility: <n>, context-management: <n>, strict-definitions: <n>, security: <n>)
 
 ## Findings
 
@@ -29,6 +29,10 @@ This file defines two output formats — one for file mode, one for PR mode. Use
 - ...
 
 ### Strict definitions
+
+- ...
+
+### Security
 
 - ...
 
@@ -67,13 +71,13 @@ A single non-blocking review (see `references/pr-mode.md` for the exact `gh api`
 <!-- audit-skill: $HEAD_SHA -->
 audit-skill: <total> findings across <N> objectives
 
-idempotency: <n>, reproducibility: <n>, context-management: <n>, strict-definitions: <n>
+idempotency: <n>, reproducibility: <n>, context-management: <n>, strict-definitions: <n>, security: <n>
 
 <for each finding NOT posted inline (because its line wasn't in the diff):>
 - `<file>:<line>` — **<objective>** — <description>
 
 <if total == 0:>
-audit clean — <total-checks-run> checks passed across all four objectives.
+audit clean — <total-checks-run> checks passed across all five objectives.
 ```
 
 `$HEAD_SHA` is the PR's `headRefOid` at the moment the audit ran. The marker is the only way to detect a prior audit on the same commit — don't omit it, and don't reformat it.
