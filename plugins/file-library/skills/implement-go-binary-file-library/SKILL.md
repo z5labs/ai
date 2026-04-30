@@ -11,8 +11,8 @@ Read `references/testing.md` for binary-specific test conventions before launchi
 ## Inputs
 
 - **Package path** (required) — the Go package directory the user wants changed (e.g. "implement the FLG bit field in `pkg/gzip`"). Source: user prompt. Validate by listing the directory; if `types.go`, `decoder.go`, `encoder.go`, or any of their `_test.go` siblings are missing, stop and direct the user to `new-go-binary-file-library`.
-- **`<package>/SPEC.md`** (optional) — when present, sliced by line range per phase; when absent, the user's request plus existing source files are the only context.
-- **`<package>/structures/*.md`, `<package>/encoding-tables/*.md`** (optional) — pre-chunked spec files produced by `extract-binary-spec`. Passed to subagents verbatim, no slicing.
+- **`<package>/SPEC.md`** (optional) — Source: filesystem. When present, sliced by line range per phase. When the path is missing, continue without it — the user's request plus existing source files are the only context. When the path exists but is unreadable (e.g. permissions error), stop and ask the user to fix the path or permissions before continuing.
+- **`<package>/structures/*.md`, `<package>/encoding-tables/*.md`** (optional) — Source: filesystem. Pre-chunked spec files produced by `extract-binary-spec`; when present, passed to subagents verbatim, no slicing. When no matching files exist, continue without them. When a matched path exists but is unreadable, stop and ask the user to fix the path or permissions before continuing.
 
 ## Outputs
 
