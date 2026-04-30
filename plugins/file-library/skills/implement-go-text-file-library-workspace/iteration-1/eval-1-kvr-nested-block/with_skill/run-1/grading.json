@@ -1,0 +1,72 @@
+{
+  "eval_id": 1,
+  "eval_name": "kvr-nested-block",
+  "config": "with_skill",
+  "summary": {
+    "passed": 11,
+    "total": 12,
+    "pass_rate": 0.9166666666666666
+  },
+  "expectations": [
+    {
+      "text": "parser.go defines a Block struct (or equivalent AST node) with a Records slice",
+      "passed": true,
+      "evidence": "Block struct with Records slice"
+    },
+    {
+      "text": "the File struct has a Blocks slice (or the top-level AST holds Block values somehow)",
+      "passed": true,
+      "evidence": "File.Blocks slice present"
+    },
+    {
+      "text": "tokenizer.go yields distinct token types for { and } (e.g. TokenLBrace and TokenRBrace, or symbol tokens with distinguishable values)",
+      "passed": true,
+      "evidence": "brace tokens distinguishable"
+    },
+    {
+      "text": "parser.go's block-parsing implementation uses an inner action loop (a for-loop driving parserAction[*Block] values), not a flat for-loop with a switch over token types \u2014 verifiable by the presence of multiple named parseBlockX functions OR a function variable typed parserAction[*Block] driven by a for-loop in parseBlock",
+      "passed": true,
+      "evidence": "inner action loop (named_actions=['parseBlockClose', 'parseBlockKeyword', 'parseBlockMember', 'parseBlockName', 'parseBlockOpen', 'parseBlockSeparator'], parserAction[*Block]=True, for-action-loop=False)"
+    },
+    {
+      "text": "parser.go uses p.expect(...) for the open-brace, separator, and close-brace tokens \u2014 no inline tok.Type == TokenLBrace comparisons",
+      "passed": false,
+      "evidence": "p.expect used; inline compares=5"
+    },
+    {
+      "text": "parser_test.go has a subtest for an empty block (no records inside the braces)",
+      "passed": true,
+      "evidence": "empty-block test present"
+    },
+    {
+      "text": "parser_test.go has a subtest for a block with at least two records",
+      "passed": true,
+      "evidence": "multi-record block test present"
+    },
+    {
+      "text": "parser_test.go drives Parse() for its expected values and does not hand-construct Block literals (the empty-input scaffold case excepted)",
+      "passed": true,
+      "evidence": "parser tests use Parse() (has_parse=True, bad_literal=False)"
+    },
+    {
+      "text": "printer_test.go has at least one round-trip test covering a block (Parse \u2192 Print \u2192 Parse \u2192 require.Equal)",
+      "passed": true,
+      "evidence": "round-trip test covering block present"
+    },
+    {
+      "text": "all new tests call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "t.Parallel at both levels"
+    },
+    {
+      "text": "go test -race ./... exits cleanly",
+      "passed": true,
+      "evidence": "go test -race ./... passes"
+    },
+    {
+      "text": "no scratch copy of SPEC.md content was written to the package",
+      "passed": true,
+      "evidence": "no _spec*.md leftovers"
+    }
+  ]
+}

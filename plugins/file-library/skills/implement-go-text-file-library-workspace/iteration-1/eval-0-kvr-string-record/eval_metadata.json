@@ -1,0 +1,23 @@
+{
+  "eval_id": 0,
+  "eval_name": "kvr-string-record",
+  "prompt": "I have a scaffolded Go package at ./kvr/ with tokenizer.go/parser.go/printer.go stubs and a SPEC.md describing the KVR format. Implement support for string-typed records of the form `record string KEY = \"value\"` end-to-end (per SPEC.md's Lexical Elements and Structure (Grammar) sections): the TokenString token type, a Record AST node with Type/Key/Value fields, parsing that turns the source into the AST, and a printer rule that turns it back. Update File to hold a slice of Records. I want tokenizer tests with exact Pos values, parser tests that drive Parse() (no hand-constructed AST), a direct printer test, and a round-trip test. Don't read the whole SPEC.md — slice it.",
+  "assertions": [
+    {"id": "token-string-defined", "text": "tokenizer.go defines a TokenString constant in the TokenType const block"},
+    {"id": "tokenizer-handles-quoted-string", "text": "tokenizer.go has an action (function or closure) that handles double-quoted string literals and yields a TokenString"},
+    {"id": "record-ast-node", "text": "parser.go defines a Record struct (or equivalent AST node) with at least a Type, Key, and Value field"},
+    {"id": "file-holds-records", "text": "the File struct in parser.go has a Records slice (or equivalent collection field)"},
+    {"id": "parse-record-action", "text": "parser.go defines a parseRecord (or equivalent) action consumed by the parser's action loop"},
+    {"id": "expect-used", "text": "parser.go uses p.expect(...) at sites that require a specific token type — no inline TokenType comparisons in the new code"},
+    {"id": "print-record-rule", "text": "printer.go has a function or action that emits a Record back to source text"},
+    {"id": "tokenizer-test-exact-pos", "text": "tokenizer_test.go has a test for a string literal that asserts an exact Pos{Line, Column} value (not a zero/placeholder Pos)"},
+    {"id": "parser-test-via-parse", "text": "parser_test.go uses Parse(strings.NewReader(...)) for the test inputs and does not hand-construct Record literals as expected values (the empty-input scaffold case is the only allowed exception)"},
+    {"id": "printer-direct-test", "text": "printer_test.go has a direct test that calls Print on a *File and asserts the output string matches an expected literal"},
+    {"id": "printer-round-trip-test", "text": "printer_test.go has a round-trip test that runs Parse → Print → Parse and asserts require.Equal on the two *File values"},
+    {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
+    {"id": "tests-testify-require", "text": "tests use github.com/stretchr/testify/require"},
+    {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
+    {"id": "no-scratch-files-left", "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory"},
+    {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package (e.g. _spec_tokens.md should not exist)"}
+  ]
+}

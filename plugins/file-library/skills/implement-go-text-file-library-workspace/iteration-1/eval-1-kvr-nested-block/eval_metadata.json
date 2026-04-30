@@ -1,0 +1,19 @@
+{
+  "eval_id": 1,
+  "eval_name": "kvr-nested-block",
+  "prompt": "Extend the KVR package at ./kvr/ to support nested blocks of the form `block NAME { record string KEY = \"v\"; record string KEY2 = \"v2\"; }` — see SPEC.md's Structure (Grammar) section. Add a Block AST node containing a Records slice; update File to hold both top-level Records and a slice of Blocks. The parser MUST use the inner action loop pattern for parseBlock (separate parserAction[*Block] functions for the open brace, each member, the separator, and the close brace) — no flat for-with-switch. Add tokenizer tests for the brace and semicolon tokens, parser tests covering an empty block, a block with one record, and a block with two records, and a printer round-trip for each. Don't read the whole SPEC.md.",
+  "assertions": [
+    {"id": "block-ast-node", "text": "parser.go defines a Block struct (or equivalent AST node) with a Records slice"},
+    {"id": "file-holds-blocks", "text": "the File struct has a Blocks slice (or the top-level AST holds Block values somehow)"},
+    {"id": "brace-tokens", "text": "tokenizer.go yields distinct token types for { and } (e.g. TokenLBrace and TokenRBrace, or symbol tokens with distinguishable values)"},
+    {"id": "inner-action-loop-used", "text": "parser.go's block-parsing implementation uses an inner action loop (a for-loop driving parserAction[*Block] values), not a flat for-loop with a switch over token types — verifiable by the presence of multiple named parseBlockX functions OR a function variable typed parserAction[*Block] driven by a for-loop in parseBlock"},
+    {"id": "expect-used", "text": "parser.go uses p.expect(...) for the open-brace, separator, and close-brace tokens — no inline tok.Type == TokenLBrace comparisons"},
+    {"id": "parser-test-empty-block", "text": "parser_test.go has a subtest for an empty block (no records inside the braces)"},
+    {"id": "parser-test-multi-record-block", "text": "parser_test.go has a subtest for a block with at least two records"},
+    {"id": "parser-test-via-parse", "text": "parser_test.go drives Parse() for its expected values and does not hand-construct Block literals (the empty-input scaffold case excepted)"},
+    {"id": "printer-round-trip-test", "text": "printer_test.go has at least one round-trip test covering a block (Parse → Print → Parse → require.Equal)"},
+    {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
+    {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
+    {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"}
+  ]
+}
