@@ -15,6 +15,7 @@ Read `references/testing.md` for text-specific test conventions before launching
 3. Check for `<package>/SPEC.md`. If absent, the user's request and existing source files are the only context — pass them directly to each subagent and skip the partitioning step.
 4. Identify scope: which token types, AST nodes, parser rules, and printer rules will change.
 5. **Check the user prompt against the spec.** If the user's request contradicts something in `SPEC.md` (e.g. the spec rejects a syntax the user wants supported), the user's prompt is the active intent — flag the conflict so they can confirm, then implement what the user asked for.
+6. **Re-run safety.** This skill is safe to re-run on the same package. Source files (`tokenizer.go`, `parser.go`, `printer.go`, and `_test.go` siblings) are amended via `Edit`, never recreated wholesale, so prior implementer work is preserved. The only files this skill writes from scratch are the two scratch summaries `_context_tokens.md` and `_context_ast.md`, which are overwritten each phase and deleted in cleanup. If a previous run was interrupted and left either file behind, delete them before launching Phase 1 so a stale partial summary cannot leak into the new run.
 
 ## Partition SPEC.md by line range (do not read the whole file)
 
@@ -39,9 +40,9 @@ Before launching subagents, grep the slices for `> **Ambiguity:**` callouts and 
 
 ## Phase order
 
-Run phases in order. Do not skip ahead. Each phase passes a small `_context_<phase>.md` summary forward.
+Run phases in order. Do not skip ahead. Phase 1 writes `_context_tokens.md` (the `TokenType` constants and `Token` struct the next phases need); Phase 2 writes `_context_ast.md` (the `File` struct, `Type` interface, concrete AST nodes, and the `Parse()` signature). Phase 3 reads both and writes nothing forward.
 
-**If you have an `Agent` / `Task` tool available, spawn a subagent per phase** — it keeps the orchestrator's context lean. **If you don't, run each phase inline yourself**, in the same order, with the same slicing and the same `_context_<phase>.md` summaries between phases. The discipline (test-first, exact `Pos` values, inner action loop for complex types, round-trip tests) matters more than who executes the work.
+**If you have an `Agent` / `Task` tool available, spawn a subagent per phase** — it keeps the orchestrator's context lean. **If you don't, run each phase inline yourself**, in the same order, with the same slicing and the same `_context_tokens.md` / `_context_ast.md` summaries between phases. The discipline (test-first, exact `Pos` values, inner action loop for complex types, round-trip tests) matters more than who executes the work.
 
 ### Phase 1 — tokenizer
 

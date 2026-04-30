@@ -66,18 +66,27 @@ func (e *UnexpectedCharacterError) Error() string {
 	return fmt.Sprintf("unexpected character %q at %d:%d", e.Char, e.Pos.Line, e.Pos.Column)
 }
 
-// tokenizer holds the reader and current position.
+// tokenizer holds the reader and current position. prevPos snapshots the
+// position before the most recent next() so backup() can restore it
+// (including across newline boundaries) — never reconstruct via column
+// arithmetic, since that underflows when the previous next() reset Column
+// to 1 after consuming '\n'.
 type tokenizer struct {
-	r   *bufio.Reader
-	pos Pos
+	r       *bufio.Reader
+	pos     Pos
+	prevPos Pos
+	hasPrev bool
 }
 
-// next advances the cursor by one rune and updates pos.
+// next advances the cursor by one rune and updates pos. It snapshots pos
+// into prevPos before mutating so backup() can restore it.
 func (t *tokenizer) next() (rune, error) {
 	r, _, err := t.r.ReadRune()
 	if err != nil {
 		return 0, err
 	}
+	t.prevPos = t.pos
+	t.hasPrev = true
 	if r == '\n' {
 		t.pos.Line++
 		t.pos.Column = 1
@@ -87,10 +96,16 @@ func (t *tokenizer) next() (rune, error) {
 	return r, nil
 }
 
-// backup rewinds the last rune read by next.
+// backup rewinds the last rune read by next, restoring pos. backup may only
+// be called once per next.
 func (t *tokenizer) backup() {
-	_ = t.r.UnreadRune()
-	t.pos.Column--
+	if err := t.r.UnreadRune(); err != nil {
+		return
+	}
+	if t.hasPrev {
+		t.pos = t.prevPos
+		t.hasPrev = false
+	}
 }
 
 // tokenizerAction is a step in the tokenizer state machine.
