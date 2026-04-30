@@ -1,12 +1,24 @@
 ---
 name: implement-go-text-file-library
-description: Implement features for Go text file library packages that follow a tokenizer/parser/printer pipeline. Use whenever the user wants to add token types, parser rules, AST nodes, or printer logic to a Go package built around `tokenizer.go`, `parser.go`, and `printer.go` — including phrases like "tokenize the X keyword", "parse the Y block", "format the Z node", "add support for comments", or "implement the spec section on records", even if the user doesn't say "text".
+description: Implement features for Go text file library packages that follow a tokenizer/parser/printer pipeline. Use whenever the user wants to add token types, parser rules, AST nodes, or printer logic to a Go package built around `tokenizer.go`, `parser.go`, and `printer.go` — including phrases like "tokenize the X keyword", "parse the Y block", "format the Z node", "add support for comments", or "implement the spec section on records", even if the user doesn't say "text". Skip when the user wants to scaffold a brand-new package (use `new-go-text-file-library` instead) or when the target package uses the binary `types.go`/`decoder.go`/`encoder.go` layout (use `implement-go-binary-file-library` instead).
 ---
 
 You are an orchestrator that adds features to an existing Go text file library package. You prepare context, then delegate each pipeline phase (tokenizer → parser → printer) to a focused subagent. You never read the full `SPEC.md` into your own context — large specs would crowd out orchestration. Instead, grep `SPEC.md` for section line ranges and hand each subagent a `(path, offset, limit)` slice it can read directly.
 
 Read `references/architecture.md` for the tokenizer/parser/printer patterns each subagent must follow (especially the **inner action loop** rule for complex types — flat for-loops with switches do not scale and must be rejected in review).
 Read `references/testing.md` for text-specific test conventions before launching any subagent.
+
+## Inputs
+
+- **Package path** (required) — the Go package directory the user wants changed (e.g. "implement comments in `pkg/kvr`"). Source: user prompt. Validate by listing the directory; if `tokenizer.go`, `parser.go`, `printer.go`, or any of their `_test.go` siblings are missing, stop and direct the user to `new-go-text-file-library`.
+- **`<package>/SPEC.md`** (optional) — when present, sliced by line range per phase; when absent, the user's request plus existing source files are the only context.
+- **`<package>/tokens/*.md`, `<package>/grammar/*.md`** (optional) — pre-chunked spec files produced by `extract-text-spec`. Passed to subagents verbatim, no slicing.
+
+## Outputs
+
+- **Edits** to `<package>/tokenizer.go`, `<package>/tokenizer_test.go`, `<package>/parser.go`, `<package>/parser_test.go`, `<package>/printer.go`, `<package>/printer_test.go` — amended via `Edit`, never recreated wholesale, so prior implementer work is preserved.
+- **Scratch files** `<package>/_context_tokens.md` (after Phase 1) and `<package>/_context_ast.md` (after Phase 2) — overwritten each run, deleted in Cleanup. If a previous run was interrupted and left either file behind, delete them before launching Phase 1 so a stale partial summary cannot leak into the new run.
+- **Side effect**: runs `go test -race ./...` between phases to verify each phase before launching the next.
 
 ## Before you start
 
@@ -15,7 +27,7 @@ Read `references/testing.md` for text-specific test conventions before launching
 3. Check for `<package>/SPEC.md`. If absent, the user's request and existing source files are the only context — pass them directly to each subagent and skip the partitioning step.
 4. Identify scope: which token types, AST nodes, parser rules, and printer rules will change.
 5. **Check the user prompt against the spec.** If the user's request contradicts something in `SPEC.md` (e.g. the spec rejects a syntax the user wants supported), the user's prompt is the active intent — flag the conflict so they can confirm, then implement what the user asked for.
-6. **Re-run safety.** This skill is safe to re-run on the same package. Source files (`tokenizer.go`, `parser.go`, `printer.go`, and `_test.go` siblings) are amended via `Edit`, never recreated wholesale, so prior implementer work is preserved. The only files this skill writes from scratch are the two scratch summaries `_context_tokens.md` and `_context_ast.md`, which are overwritten each phase and deleted in cleanup. If a previous run was interrupted and left either file behind, delete them before launching Phase 1 so a stale partial summary cannot leak into the new run.
+6. **Re-run safety.** This skill is safe to re-run on the same package — see `## Outputs` for what is edited vs. overwritten vs. deleted.
 
 ## Partition SPEC.md by line range (do not read the whole file)
 
