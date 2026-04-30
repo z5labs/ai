@@ -17,13 +17,13 @@ Any instruction telling the model to ask the user for a credential lands the cre
 Grep for prompting verbs:
 
 ```
-grep -niE '(prompt|ask) [a-z ]*(for|to (provide|enter|supply|give|paste))' SKILL.md references/ 2>/dev/null
+grep -rniE '(prompt|ask) [a-z ]*(for|to (provide|enter|supply|give|paste))' SKILL.md references/ 2>/dev/null
 ```
 
 Then grep for secret-shaped nouns:
 
 ```
-grep -niE '(password|passwd|token|secret|credential|api[_ -]?key|access[_ -]?key|private[_ -]?key|bearer|PGPASSWORD|GH_TOKEN|GITHUB_TOKEN|AWS_SECRET|OPENAI_API_KEY|ANTHROPIC_API_KEY)' SKILL.md references/ 2>/dev/null
+grep -rniE '(password|passwd|token|secret|credential|api[_ -]?key|access[_ -]?key|private[_ -]?key|bearer|PGPASSWORD|GH_TOKEN|GITHUB_TOKEN|AWS_SECRET|OPENAI_API_KEY|ANTHROPIC_API_KEY)' SKILL.md references/ 2>/dev/null
 ```
 
 The pattern omits `\b` word boundaries because BSD `grep -E` doesn't support them portably. Both greps are candidate-finders; expect substring matches and ignore them during triage.
@@ -54,7 +54,7 @@ grep -niE 'argument-hint:.*(password|passwd|token|secret|credential|api[_ -]?key
 Then look in the body of `SKILL.md` and any examples for URL-form credentials:
 
 ```
-grep -nE '(postgres(ql)?|mysql|mongodb|redis|amqp|https?|ssh|ftp)://[^/[:space:]]*:[^/[:space:]@]+@' SKILL.md scripts/ references/ 2>/dev/null
+grep -rnE '(postgres(ql)?|mysql|mongodb|redis|amqp|https?|ssh|ftp)://[^/[:space:]]*:[^/[:space:]@]+@' SKILL.md scripts/ references/ 2>/dev/null
 ```
 
 Findings:
@@ -77,7 +77,7 @@ This pattern usually appears in retrofit comments around inputs that already vio
 Grep for the verbs:
 
 ```
-grep -niE '(discard|drop|strip|remove|forget|erase|wipe|clear) [^.]{0,80}(password|passwd|token|secret|credential|api[_ -]?key|access[_ -]?key|private[_ -]?key|PGPASSWORD|GH_TOKEN)' SKILL.md references/ scripts/ 2>/dev/null
+grep -rniE '(discard|drop|strip|remove|forget|erase|wipe|clear) [^.]{0,80}(password|passwd|token|secret|credential|api[_ -]?key|access[_ -]?key|private[_ -]?key|PGPASSWORD|GH_TOKEN)' SKILL.md references/ scripts/ 2>/dev/null
 ```
 
 For each hit, decide whether the surrounding sentence is:
@@ -96,14 +96,14 @@ Templates with placeholders are fine — what matters is whether the value at wr
 Look for write-out patterns near credential-shaped tokens. Heredocs and redirected echoes are the common shapes:
 
 ```
-grep -nE '(cat <<-?EOF|cat <<-?[A-Z]+|tee|>) [^|]*\.env([^.]|$)' SKILL.md scripts/ references/ 2>/dev/null
-grep -niE '(write|generate|emit|create) [a-z ]*\.env([^.]|$)' SKILL.md references/ 2>/dev/null
+grep -rnE '(cat <<-?EOF|cat <<-?[A-Z]+|tee|>) [^|]*\.env([^.]|$)' SKILL.md scripts/ references/ 2>/dev/null
+grep -rniE '(write|generate|emit|create) [a-z ]*\.env([^.]|$)' SKILL.md references/ 2>/dev/null
 ```
 
 Then look for files generated with Write/redirect that contain `KEY=value` lines where `value` looks like a real credential (not `<placeholder>`, `${VAR}`, or `""`):
 
 ```
-grep -nE '(PGPASSWORD|GH_TOKEN|API_KEY|SECRET|TOKEN|PASSWORD)=[^<$"[:space:]\\]' SKILL.md scripts/ references/ 2>/dev/null
+grep -rnE '(PGPASSWORD|GH_TOKEN|API_KEY|SECRET|TOKEN|PASSWORD)=[^<$"[:space:]\\]' SKILL.md scripts/ references/ 2>/dev/null
 ```
 
 For each hit, check whether the value is:
