@@ -8,7 +8,7 @@ This objective checks for the four ways skills route secrets through the model a
 
 ## Checks
 
-Run each grep against the resolved skill directory. For each hit, decide whether the surrounding context already routes the secret out-of-band. Only raise a finding if it doesn't.
+Run each grep against the resolved skill directory. The greps are candidate-finders — they hit narrative prose and substring false positives, so triage every match. Raise a finding whenever the skill routes a secret through a model-visible channel (a prompt the model issues, an argument the model reads, a file the model writes with a concrete value), regardless of any later out-of-band move or discard instruction; once the credential has entered the model's context, the leak has happened. Each check below lists its own finding / not-a-finding examples — defer to those for the specific bar.
 
 ### 1. Model-prompted secrets
 
