@@ -1,11 +1,23 @@
 ---
 name: new-go-binary-file-library
-description: Scaffold a new Go binary file library package with types, decoder, encoder, and tests
+description: Scaffold a new Go binary file library package with types, decoder, encoder, and tests. Use when the user asks to "scaffold a new binary decoder/encoder package" or "start a new binary format library". Skip when the user wants to add features to an existing binary package (use `implement-go-binary-file-library` instead) or when the target format is text, e.g. `tokenizer.go`/`parser.go`/`printer.go` (use `new-go-text-file-library` instead).
 disable-model-invocation: true
 argument-hint: "[package-name]"
 ---
 
 Scaffold a new Go binary file library package at `./$ARGUMENTS[0]/` following the **types / decoder / encoder** pipeline. The package name is `$ARGUMENTS[0]`. Read `references/architecture.md` for the patterns each generated file must implement and why — especially the section on the decode/encode error chain, which the scaffold pre-wires.
+
+## Inputs
+
+- **`$ARGUMENTS[0]`** (required) — the package name, supplied as the slash-command argument (e.g. `/new-go-binary-file-library gzip`). Used both as the directory name (`./$ARGUMENTS[0]/`) and the Go `package` identifier. Validate by listing `./$ARGUMENTS[0]/`; if the directory already exists with any of the files in `## Outputs` present, stop and direct the user to `implement-go-binary-file-library` so prior work is not clobbered. An invalid Go identifier (hyphens, leading digit, etc.) will surface as a `go build` failure in `## After Scaffolding`.
+
+## Outputs
+
+- **Generated files** in `./$ARGUMENTS[0]/`, written via `Write`: `doc.go`, `types.go`, `types_test.go`, `decoder.go`, `decoder_test.go`, `encoder.go`, `encoder_test.go`, `CLAUDE.md`. Each is a Go source file (or, for `CLAUDE.md`, package-level guidance markdown) — see `## What to Generate` for per-file content. `Write` will overwrite an existing file at the same path, which is why the input-validation step above stops if any of those output paths already exist in the target directory.
+- **Side effects** (run from `./$ARGUMENTS[0]/` after files are written; this repo has no root `go.mod`, so each new package's tests must be run from inside the package):
+  - `(cd ./$ARGUMENTS[0] && go mod tidy)` — refreshes module dependencies.
+  - `(cd ./$ARGUMENTS[0] && go build ./...)` — verifies compilation.
+  - `(cd ./$ARGUMENTS[0] && go test -race ./...)` — placeholder tests must pass against the unimplemented stubs (the `FieldError → OffsetError → errUnimplemented` chain is real even though the bytes aren't) before reporting success.
 
 ## Before Scaffolding
 
@@ -79,7 +91,7 @@ Base the structure on any existing package-level `CLAUDE.md` in the repo, or wri
 
 ## After Scaffolding
 
-1. `go mod tidy`.
-2. `go build ./$ARGUMENTS[0]/...` to verify compilation.
-3. `go test ./$ARGUMENTS[0]/...` — placeholder tests should pass against the unimplemented stubs (the chain is real even though the bytes aren't).
+1. `(cd ./$ARGUMENTS[0] && go mod tidy)`.
+2. `(cd ./$ARGUMENTS[0] && go build ./...)` to verify compilation.
+3. `(cd ./$ARGUMENTS[0] && go test -race ./...)` — placeholder tests should pass against the unimplemented stubs (the chain is real even though the bytes aren't).
 4. Report what was created, the byte order chosen, and what the user should implement next (typically: define the real types from `SPEC.md`, then run the `implement-go-binary-file-library` agent).
