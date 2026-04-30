@@ -7,7 +7,7 @@ Tests are how you know the pipeline is honest. These conventions apply to every 
 - `t.Parallel()` at both the test function and each subtest. Action functions are pure; parallel tests catch hidden global state if any sneaks in.
 - Table-driven with a `testCases` slice and `t.Run(tc.name, ...)`. Names are lowercase, descriptive: `"comment_at_start_of_line"`, `"empty_record"`, `"string_with_escaped_quote"`.
 - Assertions via `github.com/stretchr/testify/require` — never `assert`. A pipeline test that keeps running after the first failure produces noise, not signal.
-- Run `go test -race ./...` after each step. The race flag catches concurrent reuse of the tokenizer/parser/printer structs and is cheap.
+- Run `(cd <package> && go test -race ./...)` after each step. The race flag catches concurrent reuse of the tokenizer/parser/printer structs and is cheap. The `cd` is required because each target package owns its own `go.mod` — there is no module root above it.
 
 ## Phase 1 — tokenizer tests (`tokenizer_test.go`)
 

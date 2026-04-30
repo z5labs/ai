@@ -18,7 +18,7 @@ Read `references/testing.md` for text-specific test conventions before launching
 
 - **Edits** to `<package>/tokenizer.go`, `<package>/tokenizer_test.go`, `<package>/parser.go`, `<package>/parser_test.go`, `<package>/printer.go`, `<package>/printer_test.go` — amended via `Edit`, never recreated wholesale, so prior implementer work is preserved.
 - **Scratch files** `<package>/_context_tokens.md` (after Phase 1) and `<package>/_context_ast.md` (after Phase 2) — overwritten each run, deleted in Cleanup. If a previous run was interrupted and left either file behind, delete them before launching Phase 1 so a stale partial summary cannot leak into the new run.
-- **Side effect**: runs `go test -race ./...` between phases to verify each phase before launching the next.
+- **Side effect**: runs `(cd <package> && go test -race ./...)` between phases to verify each phase before launching the next. The `cd` is required — this repo has no root `go.mod`, so each target package's tests must be run from inside that package.
 
 ## Before you start
 
@@ -64,9 +64,9 @@ Spawn a subagent with:
 - Inline pointers to the **Tokenizer** section of `references/architecture.md` and `references/testing.md`.
 - A clear description of what token types and tokenizing rules to add or change.
 
-Subagent must read its slices via `Read(path, offset, limit)`, write tokenizer tests first (table-driven, exact `Pos{Line, Column}` values, `collect` helper drains the `iter.Seq2`), confirm tests fail for the right reason, implement tokenizer changes following the closure pattern (capture state in returned action functions; never accumulate on the tokenizer struct), then confirm `go test -race ./...` passes.
+Subagent must read its slices via `Read(path, offset, limit)`, write tokenizer tests first (table-driven, exact `Pos{Line, Column}` values, `collect` helper drains the `iter.Seq2`), confirm tests fail for the right reason, implement tokenizer changes following the closure pattern (capture state in returned action functions; never accumulate on the tokenizer struct), then confirm `(cd <package> && go test -race ./...)` passes.
 
-When the subagent returns, run `go test -race ./...` yourself and write `_context_tokens.md` listing the `TokenType` constants and `Token` struct definition the next phases will need.
+When the subagent returns, run `(cd <package> && go test -race ./...)` yourself and write `_context_tokens.md` listing the `TokenType` constants and `Token` struct definition the next phases will need.
 
 ### Phase 2 — parser
 
@@ -90,7 +90,7 @@ Spawn a subagent with:
 - Pointers to the **Printer** section of `references/architecture.md` and `references/testing.md`.
 - A description of what printer rules to add or change.
 
-Subagent must write printer tests first — both **direct** tests (AST in, expected string out) **and a round-trip test** (`Parse → Print → Parse → require.Equal`) for every new printer method. Round-trip is the cheapest end-to-end correctness check; direct tests pin the formatting choices round-trip can't see. Confirm tests fail, implement printer changes (closure pattern for slice iteration; every write goes through `pr.write` so `pr.err` short-circuits), then run `go test -race ./...` yourself for final verification.
+Subagent must write printer tests first — both **direct** tests (AST in, expected string out) **and a round-trip test** (`Parse → Print → Parse → require.Equal`) for every new printer method. Round-trip is the cheapest end-to-end correctness check; direct tests pin the formatting choices round-trip can't see. Confirm tests fail, implement printer changes (closure pattern for slice iteration; every write goes through `pr.write` so `pr.err` short-circuits), then run `(cd <package> && go test -race ./...)` yourself for final verification.
 
 ### Cleanup
 
