@@ -100,7 +100,7 @@
         {"id": "finds-summary-line-cap-missing", "text": "a Context management finding flags the absence of a hard line cap on the inter-phase summary files (the finding may be combined with the format finding above as long as the cap concern is explicitly named)"},
         {"id": "finds-reread-mutated-source", "text": "a Context management finding flags that a later phase Reads a source file an earlier phase mutated — either Phase 2 reading `src/schema.ts` in full after Phase 1 edited it, or Phase 3 reading `src/resolvers.ts` in full after Phase 2 edited it. At least one of the two must be cited."},
         {"id": "findings-cite-file-line", "text": "Context management findings cite `SKILL.md:<line>` — the author can jump to the offending phase description"},
-        {"id": "idempotency-not-flagged-as-missing", "text": "the report does NOT raise a finding for missing idempotency declaration (the skill declares it explicitly on line 9: 'This skill is idempotent')"},
+        {"id": "idempotency-not-flagged-as-missing", "text": "the report does NOT raise a finding for missing idempotency declaration (the skill declares it explicitly on line 12: 'This skill is idempotent')"},
         {"id": "when-to-skip-not-flagged", "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants schema-only changes...')"},
         {"id": "security-section-clean", "text": "the Security section reports no findings (the skill handles no credentials — the audit must not manufacture security findings out of unrelated text)"},
         {"id": "no-severity-tiers", "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)"},

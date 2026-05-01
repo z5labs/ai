@@ -19,7 +19,7 @@ This skill is idempotent — re-running on the same `SPEC.md` and service tree a
 ## Outputs
 
 - **Edits** to `<service>/src/schema.ts` and `<service>/src/resolvers.ts` — appended via `Edit`, never recreated wholesale.
-- **Tests** at `<service>/src/resolvers.test.ts` — created or appended.
+- **Tests** at `<service>/src/resolvers.test.ts` — created on first run, appended on subsequent runs.
 - **Scratch files** `<service>/_context_schema.md` (after Phase 1) and `<service>/_context_resolvers.md` (after Phase 2) — overwritten each run, deleted in Cleanup.
 
 ## Workflow
