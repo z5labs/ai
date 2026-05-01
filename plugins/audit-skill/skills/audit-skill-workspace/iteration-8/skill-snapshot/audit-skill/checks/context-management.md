@@ -92,7 +92,7 @@ Concretely, look for phase descriptions where:
 - An earlier phase's outputs include `Edit`s to a file, AND
 - A later phase's subagent inputs name that same file with an unsliced `Read` (no `(path, offset, limit)` form, no "use `_context_X.md` instead").
 
-Raise: `<file>:<line> — phase <X> instructs subagent to Read <mutated-file> in full; rely on <summary-file> from the phase that edited <mutated-file> as the cross-reference of record, or pass a sliced (path, offset, limit) range`.
+Raise: `<file>:<line> — phase <X> instructs subagent to Read <mutated-file> in full; rely on <summary-file> from phase <X-1> as the cross-reference of record, or pass a sliced (path, offset, limit) range`.
 
 ## What is NOT a finding
 
