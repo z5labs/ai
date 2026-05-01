@@ -1,0 +1,19 @@
+{
+  "eval_id": 2,
+  "eval_name": "name-resolution-from-claude-skills",
+  "prompt": "Audit the word-count skill \u2014 it's installed under ./.claude/skills/ in this project. I'm not in a PR, write the report to a file.",
+  "assertions": [
+    {
+      "id": "skill-resolved-by-name",
+      "text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/ (proving the name-based resolver worked)"
+    },
+    {
+      "id": "report-file-written",
+      "text": "a report file is written and its path is named in the final message"
+    },
+    {
+      "id": "target-not-modified",
+      "text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture"
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "run_id": "eval-0-with_skill",
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 17,
+    "failed": 0,
+    "total": 17
+  },
+  "expectations": [
+    {
+      "text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)",
+      "passed": true,
+      "evidence": "report at eval-0/with_skill/outputs/audit-report.md (5156 bytes)"
+    },
+    {
+      "text": "the report file is non-empty (at least 800 bytes)",
+      "passed": true,
+      "evidence": "5156 bytes (\u2265800 required)"
+    },
+    {
+      "text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)",
+      "passed": true,
+      "evidence": "byte-identical to fixture"
+    },
+    {
+      "text": "the report has an Idempotency section (heading or labeled findings list)",
+      "passed": true,
+      "evidence": "section present"
+    },
+    {
+      "text": "the report has a Reproducibility section",
+      "passed": true,
+      "evidence": "section present"
+    },
+    {
+      "text": "the report has a Context management section",
+      "passed": true,
+      "evidence": "section present"
+    },
+    {
+      "text": "the report has a Strict definitions section",
+      "passed": true,
+      "evidence": "section present"
+    },
+    {
+      "text": "the report has a Security section (heading or labeled findings list); for this fixture it is expected to contain 'No findings.' since the bad-skill does not handle credentials",
+      "passed": true,
+      "evidence": "Security section present and empty as expected"
+    },
+    {
+      "text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)",
+      "passed": true,
+      "evidence": "phrase found"
+    },
+    {
+      "text": "at least one finding cites a specific vague phrase from the bad skill ('as needed', 'appropriately', 'reasonably', or 'use your judgment')",
+      "passed": true,
+      "evidence": "vague phrase referenced"
+    },
+    {
+      "text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)",
+      "passed": true,
+      "evidence": "date+input cited"
+    },
+    {
+      "text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration",
+      "passed": true,
+      "evidence": "gh pr create + precondition cited"
+    },
+    {
+      "text": "a finding flags the long inline output template as content that should move to references/ (under context-management)",
+      "passed": true,
+      "evidence": "inline-template\u2192references/ finding present"
+    },
+    {
+      "text": "a finding notes that the description ('Generate release notes from git history.') does not mention the workflow's side effects \u2014 pushing a tag and creating a PR \u2014 under strict-definitions",
+      "passed": true,
+      "evidence": "description-vs-side-effects finding present"
+    },
+    {
+      "text": "at least 80% of findings cite a `file:line` reference",
+      "passed": true,
+      "evidence": "23/23 (100%) findings cite file:line"
+    },
+    {
+      "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)",
+      "passed": true,
+      "evidence": "no severity tier words"
+    },
+    {
+      "text": "findings are grouped by objective (the five objective names appear as headings or list-section labels), not by severity",
+      "passed": true,
+      "evidence": "objective sections present: Idempotency, Reproducibility, Context management, Strict definitions, Security"
+    }
+  ]
+}

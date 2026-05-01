@@ -1,0 +1,76 @@
+{
+  "run_id": "eval-4-old_skill",
+  "summary": {
+    "pass_rate": 0.6923,
+    "passed": 9,
+    "failed": 4,
+    "total": 13
+  },
+  "expectations": [
+    {
+      "text": "a markdown report file is written and the path is named in the assistant's final message",
+      "passed": true,
+      "evidence": "report at eval-4/old_skill/outputs/audit-report.md (2440 bytes)"
+    },
+    {
+      "text": "./skills/implement-graphql-resolver/SKILL.md is byte-identical to the input fixture (read-only audit)",
+      "passed": true,
+      "evidence": "byte-identical to fixture"
+    },
+    {
+      "text": "the report has a Context management section",
+      "passed": true,
+      "evidence": "section present"
+    },
+    {
+      "text": "a Context management finding flags that at least one phase spawns a subagent regardless of input size \u2014 i.e. there's no partitioning rule (per-section, per-N-items, or up-front scope gate). Wording will vary but should reference unbounded scope, missing partitioning, or per-call output growing with input.",
+      "passed": false,
+      "evidence": "no per-phase unbounded-scope finding"
+    },
+    {
+      "text": "a Context management finding flags that `_context_schema.md` and/or `_context_resolvers.md` is described in open-ended prose \u2014 no strict format (one symbol per line, fixed schema, etc.) is specified",
+      "passed": false,
+      "evidence": "no open-ended-format finding"
+    },
+    {
+      "text": "a Context management finding flags the absence of a hard line cap on the inter-phase summary files (the finding may be combined with the format finding above as long as the cap concern is explicitly named)",
+      "passed": false,
+      "evidence": "no line-cap finding"
+    },
+    {
+      "text": "a Context management finding flags that a later phase Reads a source file an earlier phase mutated \u2014 either Phase 2 reading `src/schema.ts` in full after Phase 1 edited it, or Phase 3 reading `src/resolvers.ts` in full after Phase 2 edited it. At least one of the two must be cited.",
+      "passed": false,
+      "evidence": "no re-read-mutated-source finding"
+    },
+    {
+      "text": "Context management findings cite `SKILL.md:<line>` \u2014 the author can jump to the offending phase description",
+      "passed": true,
+      "evidence": "11/3 (367%) findings cite file:line"
+    },
+    {
+      "text": "the report does NOT raise a finding for missing idempotency declaration (the skill declares it explicitly on line 9: 'This skill is idempotent')",
+      "passed": true,
+      "evidence": "no missing-idempotency finding"
+    },
+    {
+      "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants schema-only changes...')",
+      "passed": true,
+      "evidence": "no missing when-to-skip finding"
+    },
+    {
+      "text": "the Security section reports no findings (the skill handles no credentials \u2014 the audit must not manufacture security findings out of unrelated text)",
+      "passed": true,
+      "evidence": "0 security findings (0 expected)"
+    },
+    {
+      "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)",
+      "passed": true,
+      "evidence": "no severity tier words"
+    },
+    {
+      "text": "findings are grouped by objective, not by severity",
+      "passed": true,
+      "evidence": "objective sections present: Idempotency, Reproducibility, Context management, Strict definitions, Security"
+    }
+  ]
+}

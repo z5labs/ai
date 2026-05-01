@@ -2,6 +2,8 @@
 
 A skill ships with a fixed budget: every line of `SKILL.md` is loaded into the model's context whenever the skill triggers. Anything that bloats that load — oversized SKILL.md, inline reference content, default-verbose output, heavy work done in the main thread — taxes every invocation. The fix is almost always progressive disclosure: keep `SKILL.md` thin, push detail into sibling files loaded on demand, delegate heavy reads to subagents.
 
+Multi-phase orchestrator skills also have a per-subagent *output* budget — a phase that produces unbounded edits, hands off open-ended summaries, or forces the next phase to re-read mutated source defeats the same discipline from the output side. The fix is symmetric: bound each phase's scope relative to input, give inter-phase artifacts a strict format and line cap, and rely on those artifacts instead of re-reading what earlier phases just grew.
+
 ## Checks
 
 ### 1. SKILL.md size
@@ -56,8 +58,44 @@ for f in references/*.md; do lines=$(wc -l < "$f"); [ "$lines" -gt 300 ] && head
 
 Raise: `references/<file>:1 — file is <N> lines without a TOC at the top; readers must scan the whole file to find a section`.
 
+### 6. Per-subagent scope unbounded relative to input
+
+Applies only when SKILL.md describes a multi-phase / delegated workflow (look for "Phase", "subagent", "spawn", "Agent", "Task", "delegate"). For each phase, check whether per-call scope is bounded relative to input size:
+
+- Does the phase state a partitioning rule? (e.g. "one sub-call per spec section", "one subagent per N items", "if section count > N, split into sub-units").
+- Is there an up-front scope gate that counts input units and decides whether to partition *before* launching anything?
+
+A phase that spawns one subagent covering all targeted input regardless of size is a finding — for a large input, the subagent's per-invocation output (edits, generated lines) grows unboundedly even when the orchestrator's input context is well-managed.
+
+Raise: `<file>:<line> — phase <X> spawns one subagent regardless of input size; document a partitioning rule (e.g. one sub-call per spec section, split when count > N) so per-call output stays bounded`.
+
+### 7. Inter-phase artifact files lack strict format and size cap
+
+Look for scratch files written by one phase and consumed by another — names like `_context_*.md`, `_state_*.json`, running summaries, handoff notes. For each such file referenced in SKILL.md:
+
+- Is its format strictly specified? Concrete row/line shape (e.g. "one symbol per line, signature only, no prose"; "fixed JSON schema with fields X, Y, Z"; "table with columns A, B, C") passes. Open-ended prose instructions like "capture the X", "list every Y", "describe the Z" do not.
+- Is a hard line cap stated? (e.g. "≤400 lines"; "exceeding the cap is the signal the work-unit was sized too large and must be chunked").
+
+The format must be deterministic enough that a later-phase subagent can rely on it as a substitute for re-reading the upstream source file.
+
+Raise: `<file>:<line> — inter-phase artifact <name> is described in open-ended prose; specify a strict format (e.g. one signature per line) and a hard line cap so later phases can rely on it without re-reading source`.
+
+### 8. Later phases re-read source files earlier phases mutated
+
+In multi-phase workflows where each phase writes to a shared source file (`parser.go`, `decoder.go`, etc.) via `Edit`/append, check whether later phases instruct their subagents to `Read` that same file in full. The inter-phase summary from check 7 is meant to be the cross-reference of record for downstream phases — if SKILL.md still tells the next phase's subagent to read the mutated file whole, the summary is doing no work and the summary's growth compounds with the source file's growth.
+
+Concretely, look for phase descriptions where:
+- An earlier phase's outputs include `Edit`s to a file, AND
+- A later phase's subagent inputs name that same file with an unsliced `Read` (no `(path, offset, limit)` form, no "use `_context_X.md` instead").
+
+Raise: ``<file>:<line> — phase <X> instructs subagent to Read <mutated-file> in full; rely on <summary-file> from phase <X-1> as the cross-reference of record, or pass a sliced `(path, offset, limit)` range``.
+
 ## What is NOT a finding
 
 - A SKILL.md slightly over 500 lines if the content is genuinely workflow-heavy and there's no obvious thing to move out. Soft target.
 - Long fenced blocks that are showing "do exactly this" templates the model must literally copy — those NEED to be inline.
 - Sequential reads when each read informs the next (true dependency chain) — can't be parallelized.
+- Single-phase skills, or multi-phase skills where each phase is O(1) by construction (one call, fixed-size output) — check 6 doesn't apply.
+- Files that are themselves the deliverable of a phase (the phase's only job is to produce them, e.g. a final report) — check 7 doesn't apply; these are outputs, not inter-phase context.
+- A later phase that re-runs tests or re-builds the mutated file rather than `Read`-ing it — check 8 doesn't apply; the file is being executed, not loaded into context.
+- Phases operating on disjoint files (no shared mutated source across phases) — check 8 doesn't apply.
