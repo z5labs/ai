@@ -1,0 +1,22 @@
+[
+  {"query": "I'm starting a Go library for parsing PNG image headers. Scaffold a new binary decoder/encoder package called `png` so I can fill in chunk handling later.", "should_trigger": true},
+  {"query": "scaffold a new go package called `gob2` for our custom binary serialization format - want the types/decoder/encoder layout with tests", "should_trigger": true},
+  {"query": "set up a fresh go pkg called `bson` for BSON. Standard binary format library layout please.", "should_trigger": true},
+  {"query": "kick off a new go binary format library called `flac` so I can fill in the FLAC frame format from the spec", "should_trigger": true},
+  {"query": "I need a starter go package for parsing zstd-compressed streams. call it `zstd`. just the boilerplate (types.go, decoder.go, encoder.go) and placeholder tests", "should_trigger": true},
+  {"query": "create a new go package for the Apache Parquet binary format - call it parquet. I'll implement the actual decode/encode logic later", "should_trigger": true},
+  {"query": "spin up a new binary format pkg in go for tiff files - i'll fill the actual decoder logic later. name it tiff", "should_trigger": true},
+  {"query": "bootstrap a new binary decoder/encoder go package called `cbor` with the standard scaffolding", "should_trigger": true},
+  {"query": "start fresh on a go pkg called `protobufwire` for the protobuf wire format - need the binary decode/encode skeleton", "should_trigger": true},
+  {"query": "make me a skeleton go package for parsing ELF binaries. name it elf. types/decoder/encoder pipeline.", "should_trigger": true},
+  {"query": "in my existing png package, add support for tRNS chunks to the decoder. encoder already handles them.", "should_trigger": false},
+  {"query": "scaffold a new go package called `yaml` for parsing yaml — it's a text format, tokenizer/parser/printer layout", "should_trigger": false},
+  {"query": "build me a go cli tool that reads PNG files and prints the metadata to stdout", "should_trigger": false},
+  {"query": "scaffold a python protobuf decoder library", "should_trigger": false},
+  {"query": "create a new go package for serializing my User struct to a binary cache - just gob encode/decode", "should_trigger": false},
+  {"query": "decode this base64 string in go and write the bytes to disk", "should_trigger": false},
+  {"query": "open binary.dat in go and check if the first 4 bytes are the magic number 0x89504E47", "should_trigger": false},
+  {"query": "implement a tcp server in go that accepts framed binary messages with a 4-byte length prefix", "should_trigger": false},
+  {"query": "use gzip to compress this slice of bytes in go and write to a file", "should_trigger": false},
+  {"query": "in my existing parquet package the encoder writes the wrong byte order for int64 columns. fix it.", "should_trigger": false}
+]

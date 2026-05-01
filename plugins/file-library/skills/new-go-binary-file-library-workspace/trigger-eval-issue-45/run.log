@@ -1,0 +1,22 @@
+Evaluating: Scaffold a new Go binary file library package with types, decoder, encoder, and tests. Use when the user asks to "scaffold a new binary decoder/encoder package" or "start a new binary format library". Skip when the user wants to add features to an existing binary package (use `implement-go-binary-file-library` instead) or when the target format is text, e.g. `tokenizer.go`/`parser.go`/`printer.go` (use `new-go-text-file-library` instead).
+Results: 20/20 passed
+  [PASS] rate=3/3 expected=True: I'm starting a Go library for parsing PNG image headers. Scaffold a ne
+  [PASS] rate=3/3 expected=True: scaffold a new go package called `gob2` for our custom binary serializ
+  [PASS] rate=3/3 expected=True: set up a fresh go pkg called `bson` for BSON. Standard binary format l
+  [PASS] rate=3/3 expected=True: kick off a new go binary format library called `flac` so I can fill in
+  [PASS] rate=3/3 expected=True: I need a starter go package for parsing zstd-compressed streams. call 
+  [PASS] rate=3/3 expected=True: create a new go package for the Apache Parquet binary format - call it
+  [PASS] rate=3/3 expected=True: spin up a new binary format pkg in go for tiff files - i'll fill the a
+  [PASS] rate=3/3 expected=True: bootstrap a new binary decoder/encoder go package called `cbor` with t
+  [PASS] rate=3/3 expected=True: start fresh on a go pkg called `protobufwire` for the protobuf wire fo
+  [PASS] rate=3/3 expected=True: make me a skeleton go package for parsing ELF binaries. name it elf. t
+  [PASS] rate=0/3 expected=False: in my existing png package, add support for tRNS chunks to the decoder
+  [PASS] rate=0/3 expected=False: scaffold a new go package called `yaml` for parsing yaml — it's a text
+  [PASS] rate=0/3 expected=False: build me a go cli tool that reads PNG files and prints the metadata to
+  [PASS] rate=0/3 expected=False: scaffold a python protobuf decoder library
+  [PASS] rate=0/3 expected=False: create a new go package for serializing my User struct to a binary cac
+  [PASS] rate=0/3 expected=False: decode this base64 string in go and write the bytes to disk
+  [PASS] rate=0/3 expected=False: open binary.dat in go and check if the first 4 bytes are the magic num
+  [PASS] rate=0/3 expected=False: implement a tcp server in go that accepts framed binary messages with 
+  [PASS] rate=0/3 expected=False: use gzip to compress this slice of bytes in go and write to a file
+  [PASS] rate=0/3 expected=False: in my existing parquet package the encoder writes the wrong byte order

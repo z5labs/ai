@@ -1,0 +1,22 @@
+Evaluating: Scaffold a new Go text file library package with tokenizer, parser, printer, and tests. Use when the user asks to "start a new <format> library" or "scaffold a new <format> parser". Skip when the user wants to add features to an existing text package (use `implement-go-text-file-library` instead) or when the target format is binary, e.g. `types.go`/`decoder.go`/`encoder.go` (use `new-go-binary-file-library` instead).
+Results: 20/20 passed
+  [PASS] rate=3/3 expected=True: I'm starting a small Go library for parsing and formatting TOML files.
+  [PASS] rate=3/3 expected=True: scaffold a new go text file library package for the ini format. call i
+  [PASS] rate=3/3 expected=True: kick off a new go package called `ldif` that I'll fill in later to par
+  [PASS] rate=3/3 expected=True: i need to write a yaml parser in go from scratch. bootstrap a new pkg 
+  [PASS] rate=3/3 expected=True: spin up a fresh go pkg for parsing graphql schema documents. name it `
+  [PASS] rate=3/3 expected=True: create a new go package called `css` for a CSS parser - I want the sta
+  [PASS] rate=3/3 expected=True: start a new format library in Go for hcl (HashiCorp config language). 
+  [PASS] rate=3/3 expected=True: Could you scaffold a new go package called `sql` so I can start implem
+  [PASS] rate=3/3 expected=True: new go package for csv parsing pls. call it csv. just the boilerplate,
+  [PASS] rate=3/3 expected=True: set up a new tokenizer/parser/printer package in go called `protobufte
+  [PASS] rate=0/3 expected=False: in my existing toml package, please add support for inline tables to t
+  [PASS] rate=0/3 expected=False: scaffold a new go package called `png` for parsing PNG files - it's a 
+  [PASS] rate=0/3 expected=False: create a new go web service called userapi with handlers for user CRUD
+  [PASS] rate=0/3 expected=False: scaffold a new Python library for parsing our internal log format
+  [PASS] rate=0/3 expected=False: in my existing yaml package, fix the parser bug where multi-line strin
+  [PASS] rate=0/3 expected=False: set up a new go package for a redis client wrapper called redisx with 
+  [PASS] rate=0/3 expected=False: make a go CLI tool that converts toml files to json on stdout. just a 
+  [PASS] rate=0/3 expected=False: read my config.toml and print the database section as a Go map[string]
+  [PASS] rate=0/3 expected=False: explain the difference between a tokenizer and a lexer in compiler des
+  [PASS] rate=0/3 expected=False: write a small go function that strips html tags from a string using re
