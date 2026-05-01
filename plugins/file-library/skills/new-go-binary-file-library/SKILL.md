@@ -1,7 +1,6 @@
 ---
 name: new-go-binary-file-library
 description: Scaffold a new Go binary file library package with types, decoder, encoder, and tests. Use when the user asks to "scaffold a new binary decoder/encoder package" or "start a new binary format library". Skip when the user wants to add features to an existing binary package (use `implement-go-binary-file-library` instead) or when the target format is text, e.g. `tokenizer.go`/`parser.go`/`printer.go` (use `new-go-text-file-library` instead).
-disable-model-invocation: true
 argument-hint: "[package-name]"
 ---
 

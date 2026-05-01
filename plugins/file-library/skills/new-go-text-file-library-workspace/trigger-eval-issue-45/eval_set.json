@@ -1,0 +1,22 @@
+[
+  {"query": "I'm starting a small Go library for parsing and formatting TOML files. Scaffold a new package called `toml` so I can start filling in the format details.", "should_trigger": true},
+  {"query": "scaffold a new go text file library package for the ini format. call it ini.", "should_trigger": true},
+  {"query": "kick off a new go package called `ldif` that I'll fill in later to parse LDAP LDIF files - tokenizer/parser/printer layout please", "should_trigger": true},
+  {"query": "i need to write a yaml parser in go from scratch. bootstrap a new pkg called yaml with the basic boilerplate (tokenizer, parser, printer, tests)", "should_trigger": true},
+  {"query": "spin up a fresh go pkg for parsing graphql schema documents. name it `graphql`. I'll fill in the real grammar from the spec afterward", "should_trigger": true},
+  {"query": "create a new go package called `css` for a CSS parser - I want the standard tokenizer/parser/printer skeleton with placeholder tests that pass", "should_trigger": true},
+  {"query": "start a new format library in Go for hcl (HashiCorp config language). I want to scaffold the package now and fill in the grammar over the next few days. call it hcl.", "should_trigger": true},
+  {"query": "Could you scaffold a new go package called `sql` so I can start implementing a SQL dialect parser? Want the empty tokenizer.go/parser.go/printer.go and tests in place.", "should_trigger": true},
+  {"query": "new go package for csv parsing pls. call it csv. just the boilerplate, i'll do the real parser logic", "should_trigger": true},
+  {"query": "set up a new tokenizer/parser/printer package in go called `protobuftext` for the protobuf text format", "should_trigger": true},
+  {"query": "in my existing toml package, please add support for inline tables to the parser. tokenizer already handles them.", "should_trigger": false},
+  {"query": "scaffold a new go package called `png` for parsing PNG files - it's a binary format, types/decoder/encoder", "should_trigger": false},
+  {"query": "create a new go web service called userapi with handlers for user CRUD endpoints", "should_trigger": false},
+  {"query": "scaffold a new Python library for parsing our internal log format", "should_trigger": false},
+  {"query": "in my existing yaml package, fix the parser bug where multi-line strings break when they contain colons", "should_trigger": false},
+  {"query": "set up a new go package for a redis client wrapper called redisx with a Get/Set API", "should_trigger": false},
+  {"query": "make a go CLI tool that converts toml files to json on stdout. just a single main.go is fine.", "should_trigger": false},
+  {"query": "read my config.toml and print the database section as a Go map[string]string", "should_trigger": false},
+  {"query": "explain the difference between a tokenizer and a lexer in compiler design", "should_trigger": false},
+  {"query": "write a small go function that strips html tags from a string using regexp", "should_trigger": false}
+]

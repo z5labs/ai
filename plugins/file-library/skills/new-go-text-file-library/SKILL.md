@@ -1,7 +1,6 @@
 ---
 name: new-go-text-file-library
 description: Scaffold a new Go text file library package with tokenizer, parser, printer, and tests. Use when the user asks to "start a new <format> library" or "scaffold a new <format> parser". Skip when the user wants to add features to an existing text package (use `implement-go-text-file-library` instead) or when the target format is binary, e.g. `types.go`/`decoder.go`/`encoder.go` (use `new-go-binary-file-library` instead).
-disable-model-invocation: true
 argument-hint: "[package-name]"
 ---
 
