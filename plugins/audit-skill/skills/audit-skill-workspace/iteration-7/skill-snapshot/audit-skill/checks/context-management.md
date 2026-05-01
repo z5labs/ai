@@ -60,7 +60,7 @@ Raise: `references/<file>:1 — file is <N> lines without a TOC at the top; read
 
 ### 6. Per-subagent scope unbounded relative to input
 
-Applies only when SKILL.md describes a workflow that delegates work to subagents (look for at least one of: "subagent", "spawn", "Agent tool", "delegate to a subagent"). Phased workflows that run entirely in the main thread are out of scope — they have no per-subagent output to bound. For each phase, check whether per-call scope is bounded relative to input size:
+Applies only when SKILL.md describes a multi-phase / delegated workflow (look for "Phase", "subagent", "spawn", "Agent tool", "delegate"). For each phase, check whether per-call scope is bounded relative to input size:
 
 - Does the phase state a partitioning rule? (e.g. "one sub-call per spec section", "one subagent per N items", "if section count > N, split into sub-units").
 - Is there an up-front scope gate that counts input units and decides whether to partition *before* launching anything?
@@ -78,11 +78,7 @@ Look for scratch files written by one phase and consumed by another — names li
 
 The format must be deterministic enough that a later-phase subagent can rely on it as a substitute for re-reading the upstream source file.
 
-Raise (format missing): `<file>:<line> — inter-phase artifact <name> is described in open-ended prose; specify a strict format (e.g. one signature per line) so later phases can rely on it without re-reading source`.
-
-Raise (line cap missing): `<file>:<line> — inter-phase artifact <name> has no line cap; specify a hard cap (e.g. ≤400 lines) so growth above the cap signals the work-unit was sized too large and must be chunked`.
-
-When both are missing, raise both findings.
+Raise: `<file>:<line> — inter-phase artifact <name> is described in open-ended prose; specify a strict format (e.g. one signature per line) and a hard line cap so later phases can rely on it without re-reading source`.
 
 ### 8. Later phases re-read source files earlier phases mutated
 
@@ -92,7 +88,7 @@ Concretely, look for phase descriptions where:
 - An earlier phase's outputs include `Edit`s to a file, AND
 - A later phase's subagent inputs name that same file with an unsliced `Read` (no `(path, offset, limit)` form, no "use `_context_X.md` instead").
 
-Raise: `<file>:<line> — phase <X> instructs subagent to Read <mutated-file> in full; rely on <summary-file> from the phase that edited <mutated-file> as the cross-reference of record, or pass a sliced (path, offset, limit) range`.
+Raise: `<file>:<line> — phase <X> instructs subagent to Read <mutated-file> in full; rely on <summary-file> from phase <X-1> as the cross-reference of record, or pass a sliced (path, offset, limit) range`.
 
 ## What is NOT a finding
 

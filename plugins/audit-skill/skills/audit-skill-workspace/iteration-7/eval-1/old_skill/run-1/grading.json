@@ -1,0 +1,56 @@
+{
+  "run_id": "eval-1-old_skill",
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 9,
+    "failed": 0,
+    "total": 9
+  },
+  "expectations": [
+    {
+      "text": "a markdown report file is written and the path is named in the assistant's final message",
+      "passed": true,
+      "evidence": "report at eval-1/old_skill/outputs/audit-report.md (2341 bytes)"
+    },
+    {
+      "text": "./skills/word-count/SKILL.md is byte-identical to the input fixture",
+      "passed": true,
+      "evidence": "byte-identical to fixture"
+    },
+    {
+      "text": "total finding count across all five objectives is \u2264 4 (the skill is genuinely clean \u2014 over-flagging it would mean the audit is noisy)",
+      "passed": true,
+      "evidence": "1 findings (\u22644 required)"
+    },
+    {
+      "text": "a finding catches the description \u2194 workflow scope mismatch: description says 'or set of files' but argument-hint and workflow are single-file (under strict-definitions)",
+      "passed": true,
+      "evidence": "scope mismatch finding present"
+    },
+    {
+      "text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right",
+      "passed": true,
+      "evidence": "Passing checks section has 6 bullets"
+    },
+    {
+      "text": "the report does NOT raise a finding for missing idempotency declaration (because the skill declares it on line 11: 'This skill is idempotent')",
+      "passed": true,
+      "evidence": "no missing-idempotency finding"
+    },
+    {
+      "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants more sophisticated text analysis...')",
+      "passed": true,
+      "evidence": "no missing when-to-skip finding"
+    },
+    {
+      "text": "the Security section reports no findings (the skill handles only file paths, not credentials \u2014 the audit must not manufacture security findings out of unrelated text)",
+      "passed": true,
+      "evidence": "0 security findings (0 expected)"
+    },
+    {
+      "text": "the report does not use severity tiers",
+      "passed": true,
+      "evidence": "no severity tier words"
+    }
+  ]
+}

@@ -60,7 +60,7 @@ Raise: `references/<file>:1 — file is <N> lines without a TOC at the top; read
 
 ### 6. Per-subagent scope unbounded relative to input
 
-Applies only when SKILL.md describes a workflow that delegates work to subagents (look for at least one of: "subagent", "spawn", "Agent tool", "delegate to a subagent"). Phased workflows that run entirely in the main thread are out of scope — they have no per-subagent output to bound. For each phase, check whether per-call scope is bounded relative to input size:
+Applies only when SKILL.md describes a workflow that delegates work to subagents (look for at least one of: "subagent", "spawn", "Agent tool", "delegate"). Phased workflows that run entirely in the main thread are out of scope — they have no per-subagent output to bound. For each phase, check whether per-call scope is bounded relative to input size:
 
 - Does the phase state a partitioning rule? (e.g. "one sub-call per spec section", "one subagent per N items", "if section count > N, split into sub-units").
 - Is there an up-front scope gate that counts input units and decides whether to partition *before* launching anything?
@@ -92,7 +92,7 @@ Concretely, look for phase descriptions where:
 - An earlier phase's outputs include `Edit`s to a file, AND
 - A later phase's subagent inputs name that same file with an unsliced `Read` (no `(path, offset, limit)` form, no "use `_context_X.md` instead").
 
-Raise: `<file>:<line> — phase <X> instructs subagent to Read <mutated-file> in full; rely on <summary-file> from the phase that edited <mutated-file> as the cross-reference of record, or pass a sliced (path, offset, limit) range`.
+Raise: `<file>:<line> — phase <X> instructs subagent to Read <mutated-file> in full; rely on <summary-file> from phase <X-1> as the cross-reference of record, or pass a sliced (path, offset, limit) range`.
 
 ## What is NOT a finding
 

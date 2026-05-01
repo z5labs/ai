@@ -1,0 +1,914 @@
+{
+  "metadata": {
+    "skill_name": "audit-skill",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-05-01T01:28:49Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 17,
+        "failed": 0,
+        "total": 17,
+        "time_seconds": 118.7,
+        "tokens": 45792,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)",
+          "passed": true,
+          "evidence": "report at eval-0/old_skill/outputs/audit-report.md (5927 bytes)"
+        },
+        {
+          "text": "the report file is non-empty (at least 800 bytes)",
+          "passed": true,
+          "evidence": "5927 bytes (\u2265800 required)"
+        },
+        {
+          "text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        },
+        {
+          "text": "the report has an Idempotency section (heading or labeled findings list)",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "the report has a Reproducibility section",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "the report has a Context management section",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "the report has a Strict definitions section",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "the report has a Security section (heading or labeled findings list); for this fixture it is expected to contain 'No findings.' since the bad-skill does not handle credentials",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)",
+          "passed": true,
+          "evidence": "phrase found"
+        },
+        {
+          "text": "at least one finding cites a specific vague phrase from the bad skill ('as needed', 'appropriately', 'reasonably', or 'use your judgment')",
+          "passed": true,
+          "evidence": "vague phrase referenced"
+        },
+        {
+          "text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)",
+          "passed": true,
+          "evidence": "date+input cited"
+        },
+        {
+          "text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration",
+          "passed": true,
+          "evidence": "gh pr create + precondition cited"
+        },
+        {
+          "text": "a finding flags the long inline output template as content that should move to references/ (under context-management)",
+          "passed": true,
+          "evidence": "inline-template\u2192references/ finding present"
+        },
+        {
+          "text": "a finding notes that the description ('Generate release notes from git history.') does not mention the workflow's side effects \u2014 pushing a tag and creating a PR \u2014 under strict-definitions",
+          "passed": true,
+          "evidence": "description-vs-side-effects finding present"
+        },
+        {
+          "text": "at least 80% of findings cite a `file:line` reference",
+          "passed": true,
+          "evidence": "23/22 (105%) findings cite file:line"
+        },
+        {
+          "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)",
+          "passed": true,
+          "evidence": "no severity tier words"
+        },
+        {
+          "text": "findings are grouped by objective (the five objective names appear as headings or list-section labels), not by severity",
+          "passed": true,
+          "evidence": "objective sections present: Idempotency, Reproducibility, Context management, Strict definitions, Security"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 71.1,
+        "tokens": 40538,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written and the path is named in the assistant's final message",
+          "passed": true,
+          "evidence": "report at eval-1/old_skill/outputs/audit-report.md (2341 bytes)"
+        },
+        {
+          "text": "./skills/word-count/SKILL.md is byte-identical to the input fixture",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        },
+        {
+          "text": "total finding count across all five objectives is \u2264 4 (the skill is genuinely clean \u2014 over-flagging it would mean the audit is noisy)",
+          "passed": true,
+          "evidence": "1 findings (\u22644 required)"
+        },
+        {
+          "text": "a finding catches the description \u2194 workflow scope mismatch: description says 'or set of files' but argument-hint and workflow are single-file (under strict-definitions)",
+          "passed": true,
+          "evidence": "scope mismatch finding present"
+        },
+        {
+          "text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right",
+          "passed": true,
+          "evidence": "Passing checks section has 6 bullets"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing idempotency declaration (because the skill declares it on line 11: 'This skill is idempotent')",
+          "passed": true,
+          "evidence": "no missing-idempotency finding"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants more sophisticated text analysis...')",
+          "passed": true,
+          "evidence": "no missing when-to-skip finding"
+        },
+        {
+          "text": "the Security section reports no findings (the skill handles only file paths, not credentials \u2014 the audit must not manufacture security findings out of unrelated text)",
+          "passed": true,
+          "evidence": "0 security findings (0 expected)"
+        },
+        {
+          "text": "the report does not use severity tiers",
+          "passed": true,
+          "evidence": "no severity tier words"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 99.5,
+        "tokens": 43342,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/ (proving the name-based resolver worked)",
+          "passed": true,
+          "evidence": "resolved path named in report"
+        },
+        {
+          "text": "a report file is written and its path is named in the final message",
+          "passed": true,
+          "evidence": "report at eval-2/old_skill/outputs/audit-report.md (1957 bytes)"
+        },
+        {
+          "text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9091,
+        "passed": 10,
+        "failed": 1,
+        "total": 11,
+        "time_seconds": 72.0,
+        "tokens": 40822,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written and the path is named in the assistant's final message",
+          "passed": true,
+          "evidence": "report at eval-3/old_skill/outputs/audit-report.md (4748 bytes)"
+        },
+        {
+          "text": "./skills/mongo-explorer/SKILL.md and ./skills/mongo-explorer/references/database.md are byte-identical to the input fixtures",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        },
+        {
+          "text": "the report has a Security section with at least 3 findings (the fixture exhibits four distinct security violations)",
+          "passed": true,
+          "evidence": "Security section present; 7 finding(s)"
+        },
+        {
+          "text": "a finding under Security flags the instruction to prompt the user for the password (e.g. 'prompt them for the full connection string including the password' or 'prompt the user for their MongoDB password' or 'ask the user to paste their password')",
+          "passed": true,
+          "evidence": "prompted-secret finding present"
+        },
+        {
+          "text": "a finding under Security flags the URL-form connection string carrying an embedded password \u2014 either the argument-hint `[connection-string]` whose protocol admits `user:password@`, or the example `mongodb://app_user:hunter2@...` in step 5",
+          "passed": true,
+          "evidence": "URL-form-credentials finding present"
+        },
+        {
+          "text": "a finding under Security flags the discard-after-read pattern (e.g. 'After parsing the connection string, discard the password' or 'discard the password from the in-memory representation') \u2014 names this as too-late, since the secret was already in context",
+          "passed": true,
+          "evidence": "discard-after-read finding present"
+        },
+        {
+          "text": "a finding under Security flags the generated `.env` containing a concrete `MONGO_PASSWORD=<password>` value, or the hardcoded fallback `MONGO_PASSWORD=\"${MONGO_PASSWORD:-hunter2}\"` in the generated query.sh",
+          "passed": true,
+          "evidence": "secret-on-disk finding present"
+        },
+        {
+          "text": "Security findings cite `SKILL.md:<line>` or `references/database.md:<line>` \u2014 the author can jump straight to the offending line",
+          "passed": true,
+          "evidence": "18/16 (112%) findings cite file:line"
+        },
+        {
+          "text": "a Security finding cites `references/database.md:<line>` and flags the prompting violation in that file (proves the audit recursed into the references/ directory rather than only scanning SKILL.md)",
+          "passed": false,
+          "evidence": "unknown assertion id: finds-references-side-violation"
+        },
+        {
+          "text": "the report does not use severity tiers (security findings live under the Security objective heading, not under a 'Critical' or 'High' label)",
+          "passed": true,
+          "evidence": "no severity tier words"
+        },
+        {
+          "text": "the Passing checks section does NOT list Security as a passing check (the skill never demonstrates the env-var + refuse-and-instruct pattern)",
+          "passed": true,
+          "evidence": "Security not claimed as passing"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 13,
+        "failed": 0,
+        "total": 13,
+        "time_seconds": 102.2,
+        "tokens": 42775,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written and the path is named in the assistant's final message",
+          "passed": true,
+          "evidence": "report at eval-4/old_skill/outputs/audit-report.md (3965 bytes)"
+        },
+        {
+          "text": "./skills/implement-graphql-resolver/SKILL.md is byte-identical to the input fixture (read-only audit)",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        },
+        {
+          "text": "the report has a Context management section",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "a Context management finding flags that at least one phase spawns a subagent regardless of input size \u2014 i.e. there's no partitioning rule (per-section, per-N-items, or up-front scope gate). Wording will vary but should reference unbounded scope, missing partitioning, or per-call output growing with input.",
+          "passed": true,
+          "evidence": "context-mgmt finding mentions partitioning / unbounded scope"
+        },
+        {
+          "text": "a Context management finding flags that `_context_schema.md` and/or `_context_resolvers.md` is described in open-ended prose \u2014 no strict format (one symbol per line, fixed schema, etc.) is specified",
+          "passed": true,
+          "evidence": "context-mgmt finding flags open-ended summary format"
+        },
+        {
+          "text": "a Context management finding flags the absence of a hard line cap on the inter-phase summary files (the finding may be combined with the format finding above as long as the cap concern is explicitly named)",
+          "passed": true,
+          "evidence": "context-mgmt finding mentions line/size cap"
+        },
+        {
+          "text": "a Context management finding flags that a later phase Reads a source file an earlier phase mutated \u2014 either Phase 2 reading `src/schema.ts` in full after Phase 1 edited it, or Phase 3 reading `src/resolvers.ts` in full after Phase 2 edited it. At least one of the two must be cited.",
+          "passed": true,
+          "evidence": "context-mgmt finding flags re-read of mutated source"
+        },
+        {
+          "text": "Context management findings cite `SKILL.md:<line>` \u2014 the author can jump to the offending phase description",
+          "passed": true,
+          "evidence": "12/7 (171%) findings cite file:line"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing idempotency declaration (the skill declares it explicitly on line 12: 'This skill is idempotent')",
+          "passed": true,
+          "evidence": "no missing-idempotency finding"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants schema-only changes...')",
+          "passed": true,
+          "evidence": "no missing when-to-skip finding"
+        },
+        {
+          "text": "the Security section reports no findings (the skill handles no credentials \u2014 the audit must not manufacture security findings out of unrelated text)",
+          "passed": true,
+          "evidence": "0 security findings (0 expected)"
+        },
+        {
+          "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)",
+          "passed": true,
+          "evidence": "no severity tier words"
+        },
+        {
+          "text": "findings are grouped by objective, not by severity",
+          "passed": true,
+          "evidence": "objective sections present: Idempotency, Reproducibility, Context management, Strict definitions, Security"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9,
+        "passed": 9,
+        "failed": 1,
+        "total": 10,
+        "time_seconds": 156.2,
+        "tokens": 48387,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written and the path is named in the assistant's final message",
+          "passed": true,
+          "evidence": "report at eval-5/old_skill/outputs/audit-report.md (4094 bytes)"
+        },
+        {
+          "text": "./skills/code-review-checklist/SKILL.md is byte-identical to the input fixture (read-only audit)",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        },
+        {
+          "text": "the report has a Context management section",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "the report does NOT raise a Check 6 / per-subagent unbounded scope finding \u2014 the skill is phased main-thread with no delegation, and Check 6 is scoped to delegated workflows. Findings about main-thread phasing (e.g. 'phase X spawns one subagent regardless of input size', 'no partitioning rule', 'per-call output growing with input') would be false positives",
+          "passed": true,
+          "evidence": "no Check 6 finding patterns matched in Context management section"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing idempotency declaration (the fixture declares it explicitly on line 12: 'This skill is idempotent')",
+          "passed": true,
+          "evidence": "no missing-idempotency finding"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants a security audit, a performance review, or feedback on more than one PR at a time')",
+          "passed": true,
+          "evidence": "no missing when-to-skip finding"
+        },
+        {
+          "text": "the Security section reports no findings \u2014 the skill handles only file paths and diff content, not credentials",
+          "passed": true,
+          "evidence": "0 security findings (0 expected)"
+        },
+        {
+          "text": "total finding count across all five objectives is \u2264 4 (the skill is genuinely clean \u2014 over-flagging would mean the audit is noisy)",
+          "passed": false,
+          "evidence": "5 findings (\u22644 required)"
+        },
+        {
+          "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)",
+          "passed": true,
+          "evidence": "no severity tier words"
+        },
+        {
+          "text": "findings are grouped by objective, not by severity",
+          "passed": true,
+          "evidence": "objective sections present: Idempotency, Reproducibility, Context management, Strict definitions, Security"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 17,
+        "failed": 0,
+        "total": 17,
+        "time_seconds": 89.6,
+        "tokens": 42761,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written somewhere the user can read (the assistant's final message names the path)",
+          "passed": true,
+          "evidence": "report at eval-0/with_skill/outputs/audit-report.md (5439 bytes)"
+        },
+        {
+          "text": "the report file is non-empty (at least 800 bytes)",
+          "passed": true,
+          "evidence": "5439 bytes (\u2265800 required)"
+        },
+        {
+          "text": "./skills/bad-skill/SKILL.md is byte-identical to the input fixture (read-only audit)",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        },
+        {
+          "text": "the report has an Idempotency section (heading or labeled findings list)",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "the report has a Reproducibility section",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "the report has a Context management section",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "the report has a Strict definitions section",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "the report has a Security section (heading or labeled findings list); for this fixture it is expected to contain 'No findings.' since the bad-skill does not handle credentials",
+          "passed": true,
+          "evidence": "Security section present and empty as expected"
+        },
+        {
+          "text": "a finding mentions that the description has no 'when to skip' / negative case (under strict-definitions)",
+          "passed": true,
+          "evidence": "phrase found"
+        },
+        {
+          "text": "at least one finding cites a specific vague phrase from the bad skill ('as needed', 'appropriately', 'reasonably', or 'use your judgment')",
+          "passed": true,
+          "evidence": "vague phrase referenced"
+        },
+        {
+          "text": "a finding mentions that `date` is used without being declared as an input (under reproducibility)",
+          "passed": true,
+          "evidence": "date+input cited"
+        },
+        {
+          "text": "a finding flags `gh pr create` for missing a precondition or idempotency declaration",
+          "passed": true,
+          "evidence": "gh pr create + precondition cited"
+        },
+        {
+          "text": "a finding flags the long inline output template as content that should move to references/ (under context-management)",
+          "passed": true,
+          "evidence": "inline-template\u2192references/ finding present"
+        },
+        {
+          "text": "a finding notes that the description ('Generate release notes from git history.') does not mention the workflow's side effects \u2014 pushing a tag and creating a PR \u2014 under strict-definitions",
+          "passed": true,
+          "evidence": "description-vs-side-effects finding present"
+        },
+        {
+          "text": "at least 80% of findings cite a `file:line` reference",
+          "passed": true,
+          "evidence": "19/18 (106%) findings cite file:line"
+        },
+        {
+          "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)",
+          "passed": true,
+          "evidence": "no severity tier words"
+        },
+        {
+          "text": "findings are grouped by objective (the five objective names appear as headings or list-section labels), not by severity",
+          "passed": true,
+          "evidence": "objective sections present: Idempotency, Reproducibility, Context management, Strict definitions, Security"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 87.6,
+        "tokens": 41146,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written and the path is named in the assistant's final message",
+          "passed": true,
+          "evidence": "report at eval-1/with_skill/outputs/audit-report.md (2149 bytes)"
+        },
+        {
+          "text": "./skills/word-count/SKILL.md is byte-identical to the input fixture",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        },
+        {
+          "text": "total finding count across all five objectives is \u2264 4 (the skill is genuinely clean \u2014 over-flagging it would mean the audit is noisy)",
+          "passed": true,
+          "evidence": "1 findings (\u22644 required)"
+        },
+        {
+          "text": "a finding catches the description \u2194 workflow scope mismatch: description says 'or set of files' but argument-hint and workflow are single-file (under strict-definitions)",
+          "passed": true,
+          "evidence": "scope mismatch finding present"
+        },
+        {
+          "text": "the report has a 'Passing checks' / 'Passed' section that lists at least 3 things the skill got right",
+          "passed": true,
+          "evidence": "Passing checks section has 6 bullets"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing idempotency declaration (because the skill declares it on line 11: 'This skill is idempotent')",
+          "passed": true,
+          "evidence": "no missing-idempotency finding"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants more sophisticated text analysis...')",
+          "passed": true,
+          "evidence": "no missing when-to-skip finding"
+        },
+        {
+          "text": "the Security section reports no findings (the skill handles only file paths, not credentials \u2014 the audit must not manufacture security findings out of unrelated text)",
+          "passed": true,
+          "evidence": "0 security findings (0 expected)"
+        },
+        {
+          "text": "the report does not use severity tiers",
+          "passed": true,
+          "evidence": "no severity tier words"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 109.2,
+        "tokens": 45017,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant's transcript / final message indicates the skill was resolved at ./.claude/skills/word-count/ (proving the name-based resolver worked)",
+          "passed": true,
+          "evidence": "resolved path named in report"
+        },
+        {
+          "text": "a report file is written and its path is named in the final message",
+          "passed": true,
+          "evidence": "report at eval-2/with_skill/outputs/audit-report.md (1834 bytes)"
+        },
+        {
+          "text": "./.claude/skills/word-count/SKILL.md is byte-identical to the input fixture",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9091,
+        "passed": 10,
+        "failed": 1,
+        "total": 11,
+        "time_seconds": 84.4,
+        "tokens": 41590,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written and the path is named in the assistant's final message",
+          "passed": true,
+          "evidence": "report at eval-3/with_skill/outputs/audit-report.md (6859 bytes)"
+        },
+        {
+          "text": "./skills/mongo-explorer/SKILL.md and ./skills/mongo-explorer/references/database.md are byte-identical to the input fixtures",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        },
+        {
+          "text": "the report has a Security section with at least 3 findings (the fixture exhibits four distinct security violations)",
+          "passed": true,
+          "evidence": "Security section present; 10 finding(s)"
+        },
+        {
+          "text": "a finding under Security flags the instruction to prompt the user for the password (e.g. 'prompt them for the full connection string including the password' or 'prompt the user for their MongoDB password' or 'ask the user to paste their password')",
+          "passed": true,
+          "evidence": "prompted-secret finding present"
+        },
+        {
+          "text": "a finding under Security flags the URL-form connection string carrying an embedded password \u2014 either the argument-hint `[connection-string]` whose protocol admits `user:password@`, or the example `mongodb://app_user:hunter2@...` in step 5",
+          "passed": true,
+          "evidence": "URL-form-credentials finding present"
+        },
+        {
+          "text": "a finding under Security flags the discard-after-read pattern (e.g. 'After parsing the connection string, discard the password' or 'discard the password from the in-memory representation') \u2014 names this as too-late, since the secret was already in context",
+          "passed": true,
+          "evidence": "discard-after-read finding present"
+        },
+        {
+          "text": "a finding under Security flags the generated `.env` containing a concrete `MONGO_PASSWORD=<password>` value, or the hardcoded fallback `MONGO_PASSWORD=\"${MONGO_PASSWORD:-hunter2}\"` in the generated query.sh",
+          "passed": true,
+          "evidence": "secret-on-disk finding present"
+        },
+        {
+          "text": "Security findings cite `SKILL.md:<line>` or `references/database.md:<line>` \u2014 the author can jump straight to the offending line",
+          "passed": true,
+          "evidence": "22/20 (110%) findings cite file:line"
+        },
+        {
+          "text": "a Security finding cites `references/database.md:<line>` and flags the prompting violation in that file (proves the audit recursed into the references/ directory rather than only scanning SKILL.md)",
+          "passed": false,
+          "evidence": "unknown assertion id: finds-references-side-violation"
+        },
+        {
+          "text": "the report does not use severity tiers (security findings live under the Security objective heading, not under a 'Critical' or 'High' label)",
+          "passed": true,
+          "evidence": "no severity tier words"
+        },
+        {
+          "text": "the Passing checks section does NOT list Security as a passing check (the skill never demonstrates the env-var + refuse-and-instruct pattern)",
+          "passed": true,
+          "evidence": "Security not claimed as passing"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 13,
+        "failed": 0,
+        "total": 13,
+        "time_seconds": 81.9,
+        "tokens": 41807,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written and the path is named in the assistant's final message",
+          "passed": true,
+          "evidence": "report at eval-4/with_skill/outputs/audit-report.md (4056 bytes)"
+        },
+        {
+          "text": "./skills/implement-graphql-resolver/SKILL.md is byte-identical to the input fixture (read-only audit)",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        },
+        {
+          "text": "the report has a Context management section",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "a Context management finding flags that at least one phase spawns a subagent regardless of input size \u2014 i.e. there's no partitioning rule (per-section, per-N-items, or up-front scope gate). Wording will vary but should reference unbounded scope, missing partitioning, or per-call output growing with input.",
+          "passed": true,
+          "evidence": "context-mgmt finding mentions partitioning / unbounded scope"
+        },
+        {
+          "text": "a Context management finding flags that `_context_schema.md` and/or `_context_resolvers.md` is described in open-ended prose \u2014 no strict format (one symbol per line, fixed schema, etc.) is specified",
+          "passed": true,
+          "evidence": "context-mgmt finding flags open-ended summary format"
+        },
+        {
+          "text": "a Context management finding flags the absence of a hard line cap on the inter-phase summary files (the finding may be combined with the format finding above as long as the cap concern is explicitly named)",
+          "passed": true,
+          "evidence": "context-mgmt finding mentions line/size cap"
+        },
+        {
+          "text": "a Context management finding flags that a later phase Reads a source file an earlier phase mutated \u2014 either Phase 2 reading `src/schema.ts` in full after Phase 1 edited it, or Phase 3 reading `src/resolvers.ts` in full after Phase 2 edited it. At least one of the two must be cited.",
+          "passed": true,
+          "evidence": "context-mgmt finding flags re-read of mutated source"
+        },
+        {
+          "text": "Context management findings cite `SKILL.md:<line>` \u2014 the author can jump to the offending phase description",
+          "passed": true,
+          "evidence": "16/7 (229%) findings cite file:line"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing idempotency declaration (the skill declares it explicitly on line 12: 'This skill is idempotent')",
+          "passed": true,
+          "evidence": "no missing-idempotency finding"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants schema-only changes...')",
+          "passed": true,
+          "evidence": "no missing when-to-skip finding"
+        },
+        {
+          "text": "the Security section reports no findings (the skill handles no credentials \u2014 the audit must not manufacture security findings out of unrelated text)",
+          "passed": true,
+          "evidence": "0 security findings (0 expected)"
+        },
+        {
+          "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)",
+          "passed": true,
+          "evidence": "no severity tier words"
+        },
+        {
+          "text": "findings are grouped by objective, not by severity",
+          "passed": true,
+          "evidence": "objective sections present: Idempotency, Reproducibility, Context management, Strict definitions, Security"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "time_seconds": 176.9,
+        "tokens": 51442,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "a markdown report file is written and the path is named in the assistant's final message",
+          "passed": true,
+          "evidence": "report at eval-5/with_skill/outputs/audit-report.md (3210 bytes)"
+        },
+        {
+          "text": "./skills/code-review-checklist/SKILL.md is byte-identical to the input fixture (read-only audit)",
+          "passed": true,
+          "evidence": "byte-identical to fixture"
+        },
+        {
+          "text": "the report has a Context management section",
+          "passed": true,
+          "evidence": "section present"
+        },
+        {
+          "text": "the report does NOT raise a Check 6 / per-subagent unbounded scope finding \u2014 the skill is phased main-thread with no delegation, and Check 6 is scoped to delegated workflows. Findings about main-thread phasing (e.g. 'phase X spawns one subagent regardless of input size', 'no partitioning rule', 'per-call output growing with input') would be false positives",
+          "passed": true,
+          "evidence": "no Check 6 finding patterns matched in Context management section"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing idempotency declaration (the fixture declares it explicitly on line 12: 'This skill is idempotent')",
+          "passed": true,
+          "evidence": "no missing-idempotency finding"
+        },
+        {
+          "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants a security audit, a performance review, or feedback on more than one PR at a time')",
+          "passed": true,
+          "evidence": "no missing when-to-skip finding"
+        },
+        {
+          "text": "the Security section reports no findings \u2014 the skill handles only file paths and diff content, not credentials",
+          "passed": true,
+          "evidence": "0 security findings (0 expected)"
+        },
+        {
+          "text": "total finding count across all five objectives is \u2264 4 (the skill is genuinely clean \u2014 over-flagging would mean the audit is noisy)",
+          "passed": true,
+          "evidence": "2 findings (\u22644 required)"
+        },
+        {
+          "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)",
+          "passed": true,
+          "evidence": "no severity tier words"
+        },
+        {
+          "text": "findings are grouped by objective, not by severity",
+          "passed": true,
+          "evidence": "objective sections present: Idempotency, Reproducibility, Context management, Strict definitions, Security"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "old_skill": {
+      "pass_rate": {
+        "mean": 0.9682,
+        "stddev": 0.0494,
+        "min": 0.9,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 103.2833,
+        "stddev": 31.8363,
+        "min": 71.1,
+        "max": 156.2
+      },
+      "tokens": {
+        "mean": 43609.3333,
+        "stddev": 3018.6099,
+        "min": 40538,
+        "max": 48387
+      }
+    },
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.9849,
+        "stddev": 0.0371,
+        "min": 0.9091,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 104.9333,
+        "stddev": 36.5653,
+        "min": 81.9,
+        "max": 176.9
+      },
+      "tokens": {
+        "mean": 43960.5,
+        "stddev": 3916.7864,
+        "min": 41146,
+        "max": 51442
+      }
+    },
+    "delta": {
+      "pass_rate": "-0.02",
+      "time_seconds": "-1.7",
+      "tokens": "-351"
+    }
+  },
+  "notes": []
+}

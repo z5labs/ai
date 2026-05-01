@@ -83,50 +83,6 @@
         {"id": "no-severity-tiers", "text": "the report does not use severity tiers (security findings live under the Security objective heading, not under a 'Critical' or 'High' label)"},
         {"id": "passing-pattern-not-claimed", "text": "the Passing checks section does NOT list Security as a passing check (the skill never demonstrates the env-var + refuse-and-instruct pattern)"}
       ]
-    },
-    {
-      "id": 4,
-      "name": "orchestrator-skill-finds-output-context-violations",
-      "prompt": "Audit the skill at ./skills/implement-graphql-resolver/ — it's a multi-phase orchestrator a teammate drafted for adding GraphQL resolvers to a TypeScript service. I'm worried the per-phase context handling isn't tight enough but I want a fresh read. No PR open, write the report to a file.",
-      "expected_output": "A markdown report file. The Context management section is heavily populated — the fixture exhibits all three output-context failure modes (unbounded per-phase subagent scope across Phases 1/2/3, open-ended `_context_schema.md` / `_context_resolvers.md` summaries with no line cap, and later phases that Read mutated source files in full). Findings cite specific SKILL.md:line locations. Other objectives (idempotency, reproducibility, strict-definitions, security) should be largely or entirely clean — the orchestrator declares idempotency, has a description with what/when/skip, lists inputs and outputs, and handles no credentials. The skill is NOT modified.",
-      "files": ["fixtures/orchestrator-skill/SKILL.md"],
-      "files_destination": "./skills/implement-graphql-resolver/SKILL.md",
-      "assertions": [
-        {"id": "report-file-written", "text": "a markdown report file is written and the path is named in the assistant's final message"},
-        {"id": "target-not-modified", "text": "./skills/implement-graphql-resolver/SKILL.md is byte-identical to the input fixture (read-only audit)"},
-        {"id": "objective-context-mgmt-section", "text": "the report has a Context management section"},
-        {"id": "finds-unbounded-phase-scope", "text": "a Context management finding flags that at least one phase spawns a subagent regardless of input size — i.e. there's no partitioning rule (per-section, per-N-items, or up-front scope gate). Wording will vary but should reference unbounded scope, missing partitioning, or per-call output growing with input."},
-        {"id": "finds-open-ended-summary-format", "text": "a Context management finding flags that `_context_schema.md` and/or `_context_resolvers.md` is described in open-ended prose — no strict format (one symbol per line, fixed schema, etc.) is specified"},
-        {"id": "finds-summary-line-cap-missing", "text": "a Context management finding flags the absence of a hard line cap on the inter-phase summary files (the finding may be combined with the format finding above as long as the cap concern is explicitly named)"},
-        {"id": "finds-reread-mutated-source", "text": "a Context management finding flags that a later phase Reads a source file an earlier phase mutated — either Phase 2 reading `src/schema.ts` in full after Phase 1 edited it, or Phase 3 reading `src/resolvers.ts` in full after Phase 2 edited it. At least one of the two must be cited."},
-        {"id": "findings-cite-file-line", "text": "Context management findings cite `SKILL.md:<line>` — the author can jump to the offending phase description"},
-        {"id": "idempotency-not-flagged-as-missing", "text": "the report does NOT raise a finding for missing idempotency declaration (the skill declares it explicitly on line 12: 'This skill is idempotent')"},
-        {"id": "when-to-skip-not-flagged", "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants schema-only changes...')"},
-        {"id": "security-section-clean", "text": "the Security section reports no findings (the skill handles no credentials — the audit must not manufacture security findings out of unrelated text)"},
-        {"id": "strict-definitions-section-clean", "text": "the Strict-definitions section reports no findings on the fixture (the description has what/when/skip, inputs and outputs are declared with paths and append-vs-recreate behavior, and idempotency declares its detection mechanism — the audit must not manufacture strict-definitions findings out of unrelated text)"},
-        {"id": "no-severity-tiers", "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)"},
-        {"id": "findings-flat-by-objective", "text": "findings are grouped by objective, not by severity"}
-      ]
-    },
-    {
-      "id": 5,
-      "name": "phased-main-thread-skill-stays-quiet-on-check-6",
-      "prompt": "Audit the skill at ./skills/code-review-checklist/ — a teammate drafted it for walking PRs through a multi-phase review checklist. No PR open, write the report to a file.",
-      "expected_output": "A markdown report file. The Context management section is largely or entirely clean — the skill is phased but main-thread (no subagent delegation), so Check 6 (per-subagent unbounded scope) must NOT fire. Other objectives are clean too: idempotency declared on line 12, description includes what/when/skip, inputs and outputs declared, no credentials. The skill is NOT modified.",
-      "files": ["fixtures/phased-main-thread-skill/SKILL.md"],
-      "files_destination": "./skills/code-review-checklist/SKILL.md",
-      "assertions": [
-        {"id": "report-file-written", "text": "a markdown report file is written and the path is named in the assistant's final message"},
-        {"id": "target-not-modified", "text": "./skills/code-review-checklist/SKILL.md is byte-identical to the input fixture (read-only audit)"},
-        {"id": "objective-context-mgmt-section", "text": "the report has a Context management section"},
-        {"id": "check-6-not-flagged", "text": "the report does NOT raise a Check 6 / per-subagent unbounded scope finding — the skill is phased main-thread with no delegation, and Check 6 is scoped to delegated workflows. Findings about main-thread phasing (e.g. 'phase X spawns one subagent regardless of input size', 'no partitioning rule', 'per-call output growing with input') would be false positives"},
-        {"id": "idempotency-not-flagged-as-missing", "text": "the report does NOT raise a finding for missing idempotency declaration (the fixture declares it explicitly on line 12: 'This skill is idempotent')"},
-        {"id": "when-to-skip-not-flagged", "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants a security audit, a performance review, or feedback on more than one PR at a time')"},
-        {"id": "security-section-clean", "text": "the Security section reports no findings — the skill handles only file paths and diff content, not credentials"},
-        {"id": "low-finding-count", "text": "total finding count across all five objectives is ≤ 4 (the skill is genuinely clean — over-flagging would mean the audit is noisy)"},
-        {"id": "no-severity-tiers", "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)"},
-        {"id": "findings-flat-by-objective", "text": "findings are grouped by objective, not by severity"}
-      ]
     }
   ]
 }

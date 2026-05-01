@@ -1,0 +1,301 @@
+{
+  "metadata": {
+    "skill_name": "audit-skill",
+    "skill_path": "plugins/audit-skill/skills/audit-skill",
+    "executor_model": "claude-opus-4-7",
+    "timestamp": "2026-05-01T00:34:39Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "runs_per_configuration": 1
+  },
+  "summary": {
+    "with_skill": {
+      "pass_rate_mean": 0.9455,
+      "pass_rate_stddev": 0.122,
+      "time_mean_seconds": 121.9,
+      "time_stddev_seconds": 30.6,
+      "tokens_mean": 42900,
+      "tokens_stddev": 2564
+    },
+    "old_skill": {
+      "pass_rate_mean": 0.9021,
+      "pass_rate_stddev": 0.1413,
+      "time_mean_seconds": 116.6,
+      "time_stddev_seconds": 23.2,
+      "tokens_mean": 40934,
+      "tokens_stddev": 2376
+    },
+    "pass_rate_delta": 0.0434,
+    "time_delta_seconds": 5.3,
+    "tokens_delta": 1966
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 17,
+        "failed": 0,
+        "total": 17,
+        "time_seconds": 124.7,
+        "tokens": 43473,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    {
+      "eval_id": 0,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 17,
+        "failed": 0,
+        "total": 17,
+        "time_seconds": 109.7,
+        "tokens": 40694,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 96.8,
+        "tokens": 40595,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    {
+      "eval_id": 1,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 92.0,
+        "tokens": 38685,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 97.6,
+        "tokens": 40894,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    {
+      "eval_id": 2,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 105.5,
+        "tokens": 40331,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.7273,
+        "passed": 8,
+        "failed": 3,
+        "total": 11,
+        "time_seconds": 171.9,
+        "tokens": 46965,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    {
+      "eval_id": 3,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8182,
+        "passed": 9,
+        "failed": 2,
+        "total": 11,
+        "time_seconds": 153.3,
+        "tokens": 44962,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 13,
+        "failed": 0,
+        "total": 13,
+        "time_seconds": 118.7,
+        "tokens": 42572,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    {
+      "eval_id": 4,
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6923,
+        "passed": 9,
+        "failed": 4,
+        "total": 13,
+        "time_seconds": 122.5,
+        "tokens": 39996,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    }
+  ],
+  "per_eval": {
+    "0": {
+      "with_skill": {
+        "pass_rate": 1.0,
+        "passed": 17,
+        "failed": 0,
+        "total": 17,
+        "time_seconds": 124.7,
+        "tokens": 43473,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "old_skill": {
+        "pass_rate": 1.0,
+        "passed": 17,
+        "failed": 0,
+        "total": 17,
+        "time_seconds": 109.7,
+        "tokens": 40694,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    "1": {
+      "with_skill": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 96.8,
+        "tokens": 40595,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "old_skill": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 92.0,
+        "tokens": 38685,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    "2": {
+      "with_skill": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 97.6,
+        "tokens": 40894,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "old_skill": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 105.5,
+        "tokens": 40331,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    "3": {
+      "with_skill": {
+        "pass_rate": 0.7273,
+        "passed": 8,
+        "failed": 3,
+        "total": 11,
+        "time_seconds": 171.9,
+        "tokens": 46965,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "old_skill": {
+        "pass_rate": 0.8182,
+        "passed": 9,
+        "failed": 2,
+        "total": 11,
+        "time_seconds": 153.3,
+        "tokens": 44962,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    },
+    "4": {
+      "with_skill": {
+        "pass_rate": 1.0,
+        "passed": 13,
+        "failed": 0,
+        "total": 13,
+        "time_seconds": 118.7,
+        "tokens": 42572,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "old_skill": {
+        "pass_rate": 0.6923,
+        "passed": 9,
+        "failed": 4,
+        "total": 13,
+        "time_seconds": 122.5,
+        "tokens": 39996,
+        "tool_calls": 0,
+        "errors": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "eval_id": 5,
+  "eval_name": "phased-main-thread-skill-stays-quiet-on-check-6",
+  "prompt": "Audit the skill at ./skills/code-review-checklist/ \u2014 a teammate drafted it for walking PRs through a multi-phase review checklist. No PR open, write the report to a file.",
+  "assertions": [
+    {
+      "id": "report-file-written",
+      "text": "a markdown report file is written and the path is named in the assistant's final message"
+    },
+    {
+      "id": "target-not-modified",
+      "text": "./skills/code-review-checklist/SKILL.md is byte-identical to the input fixture (read-only audit)"
+    },
+    {
+      "id": "objective-context-mgmt-section",
+      "text": "the report has a Context management section"
+    },
+    {
+      "id": "check-6-not-flagged",
+      "text": "the report does NOT raise a Check 6 / per-subagent unbounded scope finding \u2014 the skill is phased main-thread with no delegation, and Check 6 is scoped to delegated workflows. Findings about main-thread phasing (e.g. 'phase X spawns one subagent regardless of input size', 'no partitioning rule', 'per-call output growing with input') would be false positives"
+    },
+    {
+      "id": "idempotency-not-flagged-as-missing",
+      "text": "the report does NOT raise a finding for missing idempotency declaration (the fixture declares it explicitly on line 12: 'This skill is idempotent')"
+    },
+    {
+      "id": "when-to-skip-not-flagged",
+      "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants a security audit, a performance review, or feedback on more than one PR at a time')"
+    },
+    {
+      "id": "security-section-clean",
+      "text": "the Security section reports no findings \u2014 the skill handles only file paths and diff content, not credentials"
+    },
+    {
+      "id": "low-finding-count",
+      "text": "total finding count across all five objectives is \u2264 4 (the skill is genuinely clean \u2014 over-flagging would mean the audit is noisy)"
+    },
+    {
+      "id": "no-severity-tiers",
+      "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)"
+    },
+    {
+      "id": "findings-flat-by-objective",
+      "text": "findings are grouped by objective, not by severity"
+    }
+  ]
+}

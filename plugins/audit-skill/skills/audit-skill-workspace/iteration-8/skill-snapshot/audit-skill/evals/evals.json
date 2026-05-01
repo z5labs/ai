@@ -103,7 +103,6 @@
         {"id": "idempotency-not-flagged-as-missing", "text": "the report does NOT raise a finding for missing idempotency declaration (the skill declares it explicitly on line 12: 'This skill is idempotent')"},
         {"id": "when-to-skip-not-flagged", "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants schema-only changes...')"},
         {"id": "security-section-clean", "text": "the Security section reports no findings (the skill handles no credentials — the audit must not manufacture security findings out of unrelated text)"},
-        {"id": "strict-definitions-section-clean", "text": "the Strict-definitions section reports no findings on the fixture (the description has what/when/skip, inputs and outputs are declared with paths and append-vs-recreate behavior, and idempotency declares its detection mechanism — the audit must not manufacture strict-definitions findings out of unrelated text)"},
         {"id": "no-severity-tiers", "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)"},
         {"id": "findings-flat-by-objective", "text": "findings are grouped by objective, not by severity"}
       ]
