@@ -1,0 +1,59 @@
+{
+  "eval_id": 4,
+  "eval_name": "orchestrator-skill-finds-output-context-violations",
+  "prompt": "Audit the skill at ./skills/implement-graphql-resolver/ \u2014 it's a multi-phase orchestrator a teammate drafted for adding GraphQL resolvers to a TypeScript service. I'm worried the per-phase context handling isn't tight enough but I want a fresh read. No PR open, write the report to a file.",
+  "assertions": [
+    {
+      "id": "report-file-written",
+      "text": "a markdown report file is written and the path is named in the assistant's final message"
+    },
+    {
+      "id": "target-not-modified",
+      "text": "./skills/implement-graphql-resolver/SKILL.md is byte-identical to the input fixture (read-only audit)"
+    },
+    {
+      "id": "objective-context-mgmt-section",
+      "text": "the report has a Context management section"
+    },
+    {
+      "id": "finds-unbounded-phase-scope",
+      "text": "a Context management finding flags that at least one phase spawns a subagent regardless of input size \u2014 i.e. there's no partitioning rule (per-section, per-N-items, or up-front scope gate). Wording will vary but should reference unbounded scope, missing partitioning, or per-call output growing with input."
+    },
+    {
+      "id": "finds-open-ended-summary-format",
+      "text": "a Context management finding flags that `_context_schema.md` and/or `_context_resolvers.md` is described in open-ended prose \u2014 no strict format (one symbol per line, fixed schema, etc.) is specified"
+    },
+    {
+      "id": "finds-summary-line-cap-missing",
+      "text": "a Context management finding flags the absence of a hard line cap on the inter-phase summary files (the finding may be combined with the format finding above as long as the cap concern is explicitly named)"
+    },
+    {
+      "id": "finds-reread-mutated-source",
+      "text": "a Context management finding flags that a later phase Reads a source file an earlier phase mutated \u2014 either Phase 2 reading `src/schema.ts` in full after Phase 1 edited it, or Phase 3 reading `src/resolvers.ts` in full after Phase 2 edited it. At least one of the two must be cited."
+    },
+    {
+      "id": "findings-cite-file-line",
+      "text": "Context management findings cite `SKILL.md:<line>` \u2014 the author can jump to the offending phase description"
+    },
+    {
+      "id": "idempotency-not-flagged-as-missing",
+      "text": "the report does NOT raise a finding for missing idempotency declaration (the skill declares it explicitly on line 12: 'This skill is idempotent')"
+    },
+    {
+      "id": "when-to-skip-not-flagged",
+      "text": "the report does NOT raise a finding for missing 'when to skip' (the description includes 'Skip when the user wants schema-only changes...')"
+    },
+    {
+      "id": "security-section-clean",
+      "text": "the Security section reports no findings (the skill handles no credentials \u2014 the audit must not manufacture security findings out of unrelated text)"
+    },
+    {
+      "id": "no-severity-tiers",
+      "text": "the report does not use severity tiers (no Critical/High/Medium/Low/P0/P1 labels)"
+    },
+    {
+      "id": "findings-flat-by-objective",
+      "text": "findings are grouped by objective, not by severity"
+    }
+  ]
+}
