@@ -50,6 +50,46 @@ If `SPEC.md` is paired with already-chunked `tokens/<name>.md` or `grammar/<name
 
 Before launching subagents, grep the slices for `> **Ambiguity:**` callouts and surface them to the user.
 
+## Context summary format
+
+`_context_tokens.md` and `_context_ast.md` exist so the next phase's subagent can rely on a small, deterministic snapshot in place of re-reading the upstream source files. Treat them as machine-readable, not narrative — a later subagent must be able to scan the file top-to-bottom and pick out symbols without parsing prose.
+
+**Strict format.** One symbol per line, signature only. No rationale, no examples, no commentary, no code bodies. The only structure permitted is the `## Section` headings shown below. Inside a struct or interface body, one field/method per line is still "one symbol per line"; that is fine. List items in the same order they appear in the source.
+
+**Hard cap: 400 lines per file.** If the summary you would write exceeds 400 lines, the phase's work-unit was sized too large — that is the whole point of the cap. Do not write a longer summary, do not abbreviate to fit, and do not split the summary across files. Stop, tell the user the request needs to be chunked (e.g., "tokenize comments and identifiers first, then come back for literals"), and re-launch the phase with the smaller scope.
+
+### `_context_tokens.md` shape
+
+```
+## TokenType
+<every constant from the TokenType const block, one per line, in declaration order>
+
+## Token
+type Token struct {
+    <one field per line, signature only>
+}
+```
+
+### `_context_ast.md` shape
+
+```
+## Parse
+func Parse(r io.Reader) (*File, error)
+
+## File
+type File struct {
+    <one field per line>
+}
+
+## Type
+type Type interface {
+    <one method signature per line>
+}
+
+## AST nodes
+<every concrete type that implements Type, in declaration order; one type per block; struct fields one per line>
+```
+
 ## Phase order
 
 Run phases in order. Do not skip ahead. Phase 1 writes `_context_tokens.md` (the `TokenType` constants and `Token` struct the next phases need); Phase 2 writes `_context_ast.md` (the `File` struct, `Type` interface, concrete AST nodes, and the `Parse()` signature). Phase 3 reads both and writes nothing forward.
@@ -66,7 +106,7 @@ Spawn a subagent with:
 
 Subagent must read its slices via `Read(path, offset, limit)`, write tokenizer tests first (table-driven, exact `Pos{Line, Column}` values, `collect` helper drains the `iter.Seq2`), confirm tests fail for the right reason, implement tokenizer changes following the closure pattern (capture state in returned action functions; never accumulate on the tokenizer struct), then confirm `(cd <package> && go test -race ./...)` passes.
 
-When the subagent returns, run `(cd <package> && go test -race ./...)` yourself and write `_context_tokens.md` listing the `TokenType` constants and `Token` struct definition the next phases will need.
+When the subagent returns, run `(cd <package> && go test -race ./...)` yourself, then write `_context_tokens.md` in the strict format from the [Context summary format](#context-summary-format) section. Honor the 400-line cap; if the summary would exceed it, stop and ask the user to chunk the request before relaunching this phase.
 
 ### Phase 2 — parser
 
@@ -79,7 +119,7 @@ Spawn a subagent with:
 
 Subagent must write parser tests first using the public `Parse()` function with real source strings — never construct AST nodes by hand for expectations (the empty-`File` scaffold case is the only exception). Confirm tests fail for the right reason. Implement parser changes; for any complex type (nested members, repetition, alternation), use the **inner action loop pattern** with one `parserAction[*T]` per state — flat for-loops with switches accrete and become unmaintainable, so this is a hard rule. Use `p.expect(types...)` everywhere the grammar requires a specific token; never inline the type check.
 
-When the subagent returns, run tests yourself and write `_context_ast.md` capturing the `File` struct, the `Type` interface, every concrete AST type that implements it, and the `Parse()` signature.
+When the subagent returns, run tests yourself, then write `_context_ast.md` in the strict format from the [Context summary format](#context-summary-format) section. Honor the 400-line cap; if the summary would exceed it, stop and ask the user to chunk the request before relaunching this phase.
 
 ### Phase 3 — printer
 

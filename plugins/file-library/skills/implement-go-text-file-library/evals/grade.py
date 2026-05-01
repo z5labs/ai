@@ -35,6 +35,43 @@ def has_t_parallel_at_both_levels(text: str) -> bool:
     return text.count("t.Parallel()") >= 2
 
 
+def skill_md_text() -> str:
+    """Read SKILL.md from the parent directory of this grade.py."""
+    skill_md_path = Path(__file__).resolve().parent.parent / "SKILL.md"
+    return skill_md_path.read_text() if skill_md_path.exists() else ""
+
+
+def assertion_context_summary_spec_tightened() -> tuple[bool, str]:
+    """Verify SKILL.md specifies the tightened _context_*.md format and cap.
+
+    Acceptance from issue #46: the SKILL.md must specify, for each
+    _context_*.md, (a) a strict signature-only format with no rationale or
+    examples, (b) a hard 400-line cap, and (c) that exceeding the cap signals
+    the work-unit was sized too large and should be chunked.
+    """
+    text = skill_md_text().lower()
+    findings = []
+
+    # (a) Strict signature-only format, no rationale, no examples.
+    strict_format = (
+        "signature only" in text
+        and "no rationale" in text
+        and "no examples" in text
+    )
+    findings.append(f"strict_format={strict_format}")
+
+    # (b) Hard 400-line cap.
+    line_cap = "400" in text and ("hard cap" in text or "400 lines" in text)
+    findings.append(f"400_line_cap={line_cap}")
+
+    # (c) Cap overflow → chunk-and-relaunch protocol.
+    chunk_protocol = "sized too large" in text and "chunk" in text
+    findings.append(f"chunk_on_overflow={chunk_protocol}")
+
+    ok = strict_format and line_cap and chunk_protocol
+    return ok, "; ".join(findings)
+
+
 def assertion_eval0_string_record(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, str]:
     tokenizer = read(pkg / "tokenizer.go")
     parser = read(pkg / "parser.go")
@@ -142,6 +179,9 @@ def assertion_eval0_string_record(asid: str, pkg: Path, run_dir: Path) -> tuple[
         leftovers = [p.name for p in pkg.glob("_spec*.md")]
         return len(leftovers) == 0, "no _spec*.md scratch copies" if not leftovers else f"spec copy leftover: {leftovers}"
 
+    if asid == "context-summary-spec-tightened":
+        return assertion_context_summary_spec_tightened()
+
     return False, f"unknown assertion id: {asid}"
 
 
@@ -231,6 +271,9 @@ def assertion_eval1_block(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, st
         leftovers = [p.name for p in pkg.glob("_spec*.md")]
         return len(leftovers) == 0, "no _spec*.md leftovers" if not leftovers else f"leftover: {leftovers}"
 
+    if asid == "context-summary-spec-tightened":
+        return assertion_context_summary_spec_tightened()
+
     return False, f"unknown assertion id: {asid}"
 
 
@@ -309,6 +352,9 @@ def assertion_eval2_comments(asid: str, pkg: Path, run_dir: Path) -> tuple[bool,
     if asid == "no-full-spec-copy":
         leftovers = [p.name for p in pkg.glob("_spec*.md")]
         return len(leftovers) == 0, "no _spec*.md leftovers" if not leftovers else f"leftover: {leftovers}"
+
+    if asid == "context-summary-spec-tightened":
+        return assertion_context_summary_spec_tightened()
 
     return False, f"unknown assertion id: {asid}"
 
