@@ -24,7 +24,8 @@
         {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
         {"id": "no-scratch-files-left", "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory"},
         {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package (e.g. _spec_tokens.md should not exist)"},
-        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"}
+        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"},
+        {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_tokens.md / _context_ast.md, and do not full-read the growing tokenizer.go / parser.go / printer.go source file (issue #47 acceptance)"}
       ]
     },
     {
@@ -46,7 +47,8 @@
         {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
         {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
         {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"},
-        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"}
+        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"},
+        {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_tokens.md / _context_ast.md, and do not full-read the growing tokenizer.go / parser.go / printer.go source file (issue #47 acceptance)"}
       ]
     },
     {
@@ -67,7 +69,8 @@
         {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
         {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
         {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"},
-        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"}
+        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"},
+        {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_tokens.md / _context_ast.md, and do not full-read the growing tokenizer.go / parser.go / printer.go source file (issue #47 acceptance)"}
       ]
     }
   ]
