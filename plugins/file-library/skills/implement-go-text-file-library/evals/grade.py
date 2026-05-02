@@ -36,6 +36,7 @@ def has_t_parallel_at_both_levels(text: str) -> bool:
 
 
 CONTEXT_FILENAMES = ("_context_tokens.md", "_context_ast.md")
+SOURCE_FILENAMES = ("tokenizer.go", "parser.go", "printer.go")
 
 
 def skill_md_text() -> str:
@@ -123,6 +124,114 @@ def assertion_context_summary_spec_tightened() -> tuple[bool, str]:
     )
 
     ok = strict_format and line_cap and chunk_protocol and files_documented
+    return ok, "; ".join(findings)
+
+
+def assertion_phase_chunking_spec() -> tuple[bool, str]:
+    """Verify SKILL.md specifies the issue #47 phase-chunking protocol.
+
+    Acceptance from issue #47: SKILL.md must specify (a) an up-front scope
+    gate in `## Before you start` — with a numeric threshold, partitioning
+    into sub-units, and an instruction to announce the plan to the user
+    before any subagent launches — and (b) a `## Phase chunking` section
+    saying sub-calls run serially, append to the running `_context_*.md`,
+    and do not full-read the growing source file.
+
+    Anchored to those two sections so wording elsewhere in the SKILL.md
+    cannot cause a false positive (the words "partition" and "serial"
+    already appear in the unrelated tokenizer/parser discussion).
+    """
+    text = skill_md_text()
+    findings = []
+
+    # Part 1: scope gate in `## Before you start`.
+    before_start = extract_section(text, "Before you start")
+    before_lower = before_start.lower()
+
+    bs_present = bool(before_start.strip())
+    findings.append(f"before_start_present={bs_present}")
+    if not bs_present:
+        return False, "; ".join(findings) + " (no `## Before you start` section)"
+
+    has_scope_gate = "scope gate" in before_lower
+    findings.append(f"scope_gate={has_scope_gate}")
+
+    # Numeric threshold: at least one >=3-digit number — the threshold
+    # itself (e.g. "600", "300") is what we want, not the existing
+    # "400-line cap" which only appears in `## Context summary format`.
+    has_threshold = bool(re.search(r"\b\d{3,}\b", before_start))
+    findings.append(f"numeric_threshold={has_threshold}")
+
+    has_partition_subunits = (
+        "partition" in before_lower
+        and ("sub-unit" in before_lower or "sub-units" in before_lower)
+    )
+    findings.append(f"partition_subunits={has_partition_subunits}")
+
+    has_announce = (
+        "tell the user" in before_lower
+        or "announce" in before_lower
+        or "up front" in before_lower
+    )
+    findings.append(f"announce={has_announce}")
+
+    gate_ok = (
+        has_scope_gate
+        and has_threshold
+        and has_partition_subunits
+        and has_announce
+    )
+
+    # Part 2: `## Phase chunking` section.
+    chunking = extract_section(text, "Phase chunking")
+    chunking_lower = chunking.lower()
+
+    chunking_present = bool(chunking.strip())
+    findings.append(f"chunking_section_present={chunking_present}")
+    if not chunking_present:
+        return False, "; ".join(findings) + " (no `## Phase chunking` section)"
+
+    has_serial = "serial" in chunking_lower  # matches "serial" and "serially"
+    findings.append(f"serial={has_serial}")
+
+    has_append = "append" in chunking_lower
+    findings.append(f"append={has_append}")
+
+    # No full-Read of the growing source file: a forbidding phrase plus a
+    # source filename plus the word "read" must all appear inside the
+    # `## Phase chunking` section. The forbidding-phrase set covers the
+    # current "no full-`Read`" / "without a fresh whole-file read" /
+    # "never the whole file" wordings without pinning the exact phrase.
+    forbid_phrase = any(
+        p in chunking_lower for p in ("no full", "whole file", "whole-file")
+    )
+    has_source_filename = any(name in chunking for name in SOURCE_FILENAMES)
+    forbids_full_read = (
+        forbid_phrase and has_source_filename and "read" in chunking_lower
+    )
+    findings.append(
+        f"forbids_full_read={forbids_full_read}"
+        f" (forbid_phrase={forbid_phrase}, has_source={has_source_filename})"
+    )
+
+    # Both running-summary filenames present in the chunking section, so
+    # the spec cannot silently regress to covering only one of them.
+    missing = [name for name in CONTEXT_FILENAMES if name not in chunking]
+    files_documented = not missing
+    findings.append(
+        f"summary_filenames={files_documented}"
+        + (f" (missing: {missing})" if missing else "")
+    )
+
+    chunk_ok = (
+        chunking_present
+        and has_serial
+        and has_append
+        and forbids_full_read
+        and files_documented
+    )
+
+    ok = gate_ok and chunk_ok
     return ok, "; ".join(findings)
 
 
@@ -236,6 +345,9 @@ def assertion_eval0_string_record(asid: str, pkg: Path, run_dir: Path) -> tuple[
     if asid == "context-summary-spec-tightened":
         return assertion_context_summary_spec_tightened()
 
+    if asid == "phase-chunking-spec-tightened":
+        return assertion_phase_chunking_spec()
+
     return False, f"unknown assertion id: {asid}"
 
 
@@ -328,6 +440,9 @@ def assertion_eval1_block(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, st
     if asid == "context-summary-spec-tightened":
         return assertion_context_summary_spec_tightened()
 
+    if asid == "phase-chunking-spec-tightened":
+        return assertion_phase_chunking_spec()
+
     return False, f"unknown assertion id: {asid}"
 
 
@@ -409,6 +524,9 @@ def assertion_eval2_comments(asid: str, pkg: Path, run_dir: Path) -> tuple[bool,
 
     if asid == "context-summary-spec-tightened":
         return assertion_context_summary_spec_tightened()
+
+    if asid == "phase-chunking-spec-tightened":
+        return assertion_phase_chunking_spec()
 
     return False, f"unknown assertion id: {asid}"
 

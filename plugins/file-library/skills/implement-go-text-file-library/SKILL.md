@@ -26,8 +26,9 @@ Read `references/testing.md` for text-specific test conventions before launching
 2. List the package: confirm `tokenizer.go`, `parser.go`, `printer.go`, and their `_test.go` siblings exist. If they don't, the user wants the `new-go-text-file-library` scaffold first — say so and stop.
 3. Check for `<package>/SPEC.md`. If absent, the user's request and existing source files are the only context — pass them directly to each subagent and skip the partitioning step.
 4. Identify scope: which token types, AST nodes, parser rules, and printer rules will change.
-5. **Check the user prompt against the spec.** If the user's request contradicts something in `SPEC.md` (e.g. the spec rejects a syntax the user wants supported), the user's prompt is the active intent — flag the conflict so they can confirm, then implement what the user asked for.
-6. **Re-run safety.** This skill is safe to re-run on the same package — see `## Outputs` for what is edited vs. overwritten vs. deleted.
+5. **Scope gate.** For each phase, sum the line counts of its slice ranges (use the partition table below; for the chunked-input layout, count files under `tokens/` and `grammar/` for the relevant phase). If any phase's slices total **more than 600 lines** OR pull **more than 8 chunked files**, partition that phase into sub-units of **≤ 300 sliced lines or ≤ 4 chunked files each**, always carrying `Overview` and `Examples` in every sub-unit. Tell the user the partition plan up front — e.g., "Phase 2's slices total 920 lines; running it as 3 sub-units of ~3 sections each" — so they can re-scope before any subagent launches. Sub-units run serially per `## Phase chunking` below; if no phase trips the threshold, run each phase as a single subagent call as described in `## Phase order`.
+6. **Check the user prompt against the spec.** If the user's request contradicts something in `SPEC.md` (e.g. the spec rejects a syntax the user wants supported), the user's prompt is the active intent — flag the conflict so they can confirm, then implement what the user asked for.
+7. **Re-run safety.** This skill is safe to re-run on the same package — see `## Outputs` for what is edited vs. overwritten vs. deleted.
 
 ## Partition SPEC.md by line range (do not read the whole file)
 
@@ -94,7 +95,7 @@ type Type interface {
 
 Run phases in order. Do not skip ahead. Phase 1 writes `_context_tokens.md` (the `TokenType` constants and `Token` struct the next phases need); Phase 2 writes `_context_ast.md` (the `File` struct, `Type` interface, concrete AST nodes, and the `Parse()` signature). Phase 3 reads both and writes nothing forward.
 
-**If you have an `Agent` / `Task` tool available, spawn a subagent per phase** — it keeps the orchestrator's context lean. **If you don't, run each phase inline yourself**, in the same order, with the same slicing and the same `_context_tokens.md` / `_context_ast.md` summaries between phases. The discipline (test-first, exact `Pos` values, inner action loop for complex types, round-trip tests) matters more than who executes the work.
+**If you have an `Agent` / `Task` tool available, spawn a subagent per phase** — it keeps the orchestrator's context lean. **If you don't, run each phase inline yourself**, in the same order, with the same slicing and the same `_context_tokens.md` / `_context_ast.md` summaries between phases. **When the scope gate (step 5 of `## Before you start`) has partitioned a phase, run that phase's sub-units serially per `## Phase chunking` instead of as a single call** — the per-phase descriptions below describe the unpartitioned shape, and `## Phase chunking` explains how a sub-unit varies from it. The discipline (test-first, exact `Pos` values, inner action loop for complex types, round-trip tests) matters more than who executes the work.
 
 ### Phase 1 — tokenizer
 
@@ -135,6 +136,18 @@ Subagent must write printer tests first — both **direct** tests (AST in, expec
 ### Cleanup
 
 Delete `_context_tokens.md` and `_context_ast.md`. Don't leave scratch files in the package.
+
+## Phase chunking
+
+When the scope gate (step 5 of `## Before you start`) has partitioned a phase into N sub-units, run those sub-units **serially** — they all `Edit` the same `tokenizer.go` / `parser.go` / `printer.go` file, and parallel sub-calls would race each other's edits. The 600-line / 8-chunk threshold is sized so each sub-unit's incremental output stays under the existing 400-line `_context_tokens.md` / `_context_ast.md` cap; partitioning is the up-front move that prevents the cap from being hit mid-phase.
+
+Sub-call `i` in a partitioned phase is briefed exactly like the un-partitioned phase (per `### Phase N` above), with three differences:
+
+1. **Narrower slice list.** Only the `(path, offset, limit)` rows for sections this sub-unit covers — plus `Overview` and `Examples` (always carried) so the high-level shape and user-facing behavior stay in view.
+2. **Append, don't overwrite, the running summary.** When `i == 1`, `_context_tokens.md` / `_context_ast.md` does not yet exist; the sub-call writes it under the strict format from `## Context summary format`. When `i > 1`, the file already holds symbols added by sub-calls 1..i-1; the sub-call **reads** it (capped at 400 lines, so cheap) and **appends** its own new symbols at the end of the relevant `## Section`, in source declaration order. Don't duplicate headings; don't reorder existing entries.
+3. **No full-`Read` of the growing source file.** Sub-calls `i > 1` treat the running `_context_*.md` as the cross-reference of record for what symbols already exist in `tokenizer.go` / `parser.go` / `printer.go`. `Edit` adds new symbols without a fresh whole-file read; if a specific helper needs inspection (e.g. to mirror an existing pattern), `Read` it with `offset` / `limit`, never the whole file. This is the whole point of the gate — once a phase has appended hundreds of lines to its source, re-reading that source in the next sub-call would crowd out the spec slice the sub-call is here for.
+
+After all sub-units complete, the merged `_context_tokens.md` / `_context_ast.md` is what the next phase consumes. The 400-line cap still applies to the merged file; if hitting it looks likely, the sub-unit cap was sized too generously — re-partition with smaller sub-units, or stop and ask the user to chunk the request further.
 
 ## Why this shape
 
