@@ -1,0 +1,32 @@
+# Skill-creator iteration workspaces are committed for the audit trail
+# (per the skill-creator convention that iteration trees are evidence,
+# not throwaways), but the contents are autonomous-agent output and
+# generated reports — not subject to ordinary code review. Mark them
+# `linguist-generated` so GitHub's diff viewer collapses them by
+# default, language stats ignore them, and PR-review bots (Copilot et
+# al.) skip them.
+#
+# What is NOT marked here (so it stays reviewable):
+# - the SKILL.md, evals/evals.json, and evals/grade.py source files
+# - evals/fixtures/* (the gate-tripping spec designs and scaffold
+#   templates — these are authored, reviewed artifacts)
+#
+# What IS marked here:
+# - per-run outputs (the agent-implemented Go package + verify.log)
+# - per-run grading.json / timing.json
+# - eval_metadata.json (duplicates evals.json content)
+# - aggregated benchmark.json / benchmark.md
+# - the static review.html viewer
+# - feedback.json from the review viewer
+# - skill snapshots taken at the start of each iteration
+
+**/iteration-*/eval-*/*/run-1/outputs/**             linguist-generated=true
+**/iteration-*/eval-*/*/run-1/grading.json           linguist-generated=true
+**/iteration-*/eval-*/*/run-1/timing.json            linguist-generated=true
+**/iteration-*/eval-*/eval_metadata.json             linguist-generated=true
+**/iteration-*/benchmark.json                        linguist-generated=true
+**/iteration-*/benchmark.md                          linguist-generated=true
+**/iteration-*/review.html                           linguist-generated=true
+**/iteration-*/feedback.json                         linguist-generated=true
+**/iteration-*/skill-snapshot/**                     linguist-generated=true
+**/skill-snapshot-iteration-*/**                     linguist-generated=true
