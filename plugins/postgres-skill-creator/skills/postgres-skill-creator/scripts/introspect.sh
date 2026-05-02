@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 # Introspect a Postgres database and write TSV files describing its schema.
 #
-# Usage: introspect.sh <connection-string> <output-dir>
+# Usage: introspect.sh <output-dir>
 #
-# Reads PGPASSWORD from the environment. Requires `docker` or `podman` on PATH.
-# Uses the alpine/psql container image for portability — the host need not have
-# psql installed.
+# Reads connection details from the libpq environment variables PGHOST, PGPORT,
+# PGUSER, PGDATABASE, PGPASSWORD — all five are required. Requires `docker` or
+# `podman` on PATH. Uses the alpine/psql container image for portability — the
+# host need not have psql installed.
 #
-# Networking note: the connection string is interpreted *inside* the container,
-# so `localhost` / `127.0.0.1` refers to the container, not the host. On Linux,
-# either point the connection string at a routable host (e.g. `host.docker.internal`
-# with `--add-host`) or set `PG_DOCKER_ARGS=--network=host` so the container
-# shares the host network namespace.
+# Networking note: PGHOST is interpreted *inside* the container, so
+# `localhost` / `127.0.0.1` refers to the container, not the host. On Linux,
+# either set PGHOST to a routable host (e.g. `host.docker.internal` with
+# `--add-host`) or set `PG_DOCKER_ARGS=--network=host` so the container shares
+# the host network namespace.
 #
 # Environment overrides:
 #   PSQL_IMAGE           — container image to run psql from (default: docker.io/alpine/psql:17).
@@ -21,20 +22,47 @@
 
 set -euo pipefail
 
-if [ $# -ne 2 ]; then
-  echo "usage: $0 <connection-string> <output-dir>" >&2
+if [ $# -ne 1 ]; then
+  echo "usage: $0 <output-dir>" >&2
   exit 2
 fi
 
-CONN="$1"
-OUT="$2"
+OUT="$1"
 
-: "${PGPASSWORD:?PGPASSWORD must be exported}"
+# Validate every connection variable up front so the user gets a single,
+# complete list of what's missing rather than discovering them one psql failure
+# at a time. Credentials must reach this script via the environment, never
+# through arguments — that keeps secrets out of process listings and out of any
+# upstream model context that invoked this script.
+missing=()
+for var in PGHOST PGPORT PGUSER PGDATABASE PGPASSWORD; do
+  if [ -z "${!var:-}" ]; then
+    missing+=("$var")
+  fi
+done
+if [ ${#missing[@]} -gt 0 ]; then
+  echo "error: missing required environment variables: ${missing[*]}" >&2
+  echo "export them (or load them from a credential helper like 'op run --env-file=...', vault, direnv) before re-running." >&2
+  exit 2
+fi
 
 PSQL_IMAGE="${PSQL_IMAGE:-docker.io/alpine/psql:17.7}"
 
 # Word-split PG_DOCKER_ARGS into an array so users can pass multiple flags.
 read -r -a EXTRA_ARGS <<< "${PG_DOCKER_ARGS:-}"
+
+# Forward every libpq env var (PGHOST, PGPORT, PGUSER, PGDATABASE, PGPASSWORD,
+# plus PGSSLMODE, PGSSLROOTCERT, PGSERVICE, PGOPTIONS, PGTARGETSESSIONATTRS,
+# PGAPPNAME, PGCONNECT_TIMEOUT, …) into the container. Filter `^PG[A-Z]` so
+# libpq-style names (PGFOO) pass while our internal config (PG_DOCKER_ARGS,
+# PG_CONTAINER_RUNTIME, PG_ENV_FILE) does not — those start with PG_ and would
+# confuse psql if forwarded. This restores the connection-surface coverage that
+# users previously got via the connection-string querystring.
+LIBPQ_ENV_ARGS=()
+while IFS= read -r var; do
+  [ -z "$var" ] && continue
+  LIBPQ_ENV_ARGS+=(-e "$var")
+done < <(compgen -e | grep -E '^PG[A-Z]' || true)
 
 if [ -n "${PG_CONTAINER_RUNTIME:-}" ]; then
   RUNTIME="$PG_CONTAINER_RUNTIME"
@@ -52,9 +80,13 @@ mkdir -p "$OUT"
 run_query() {
   local name="$1" sql="$2"
   local outfile="$OUT/$name.tsv"
-  # -A unaligned, -t tuples-only, -F $'\t' tab separator, -X no .psqlrc
-  if "$RUNTIME" run --rm -i -e PGPASSWORD "${EXTRA_ARGS[@]}" \
-    "$PSQL_IMAGE" "$CONN" -X -A -t -F $'\t' -c "$sql" \
+  # -A unaligned, -t tuples-only, -F $'\t' tab separator, -X no .psqlrc.
+  # libpq inside the container reads its connection settings from the forwarded
+  # PG* environment variables — no connection string on the command line.
+  if "$RUNTIME" run --rm -i \
+    "${LIBPQ_ENV_ARGS[@]}" \
+    "${EXTRA_ARGS[@]}" \
+    "$PSQL_IMAGE" -X -A -t -F $'\t' -c "$sql" \
     > "$outfile"; then
     return 0
   fi
@@ -152,8 +184,10 @@ while IFS=$'\t' read -r vschema vname; do
   [ -z "$vschema" ] && continue
   safe_schema="$(sanitize_filename "$vschema")"
   safe_name="$(sanitize_filename "$vname")"
-  "$RUNTIME" run --rm -i -e PGPASSWORD "${EXTRA_ARGS[@]}" \
-    "$PSQL_IMAGE" "$CONN" -X -A -t \
+  "$RUNTIME" run --rm -i \
+    "${LIBPQ_ENV_ARGS[@]}" \
+    "${EXTRA_ARGS[@]}" \
+    "$PSQL_IMAGE" -X -A -t \
     -v vschema="$vschema" -v vname="$vname" \
     -f - <<<"SELECT pg_get_viewdef(format('%I.%I', :'vschema', :'vname')::regclass, true);" \
     > "$OUT/views/${safe_schema}.${safe_name}.sql"
