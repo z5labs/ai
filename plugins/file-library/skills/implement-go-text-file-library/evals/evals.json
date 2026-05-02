@@ -23,7 +23,8 @@
         {"id": "tests-testify-require", "text": "tests use github.com/stretchr/testify/require"},
         {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
         {"id": "no-scratch-files-left", "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory"},
-        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package (e.g. _spec_tokens.md should not exist)"}
+        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package (e.g. _spec_tokens.md should not exist)"},
+        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"}
       ]
     },
     {
@@ -44,7 +45,8 @@
         {"id": "printer-round-trip-test", "text": "printer_test.go has at least one round-trip test covering a block (Parse → Print → Parse → require.Equal)"},
         {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
         {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
-        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"}
+        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"},
+        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"}
       ]
     },
     {
@@ -64,7 +66,8 @@
         {"id": "tokenizer-test-comment-pos", "text": "tokenizer_test.go has a test for a comment token that asserts an exact Pos value for the comment"},
         {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
         {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
-        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"}
+        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"},
+        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"}
       ]
     }
   ]

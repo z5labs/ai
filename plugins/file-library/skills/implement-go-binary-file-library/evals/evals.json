@@ -22,7 +22,8 @@
         {"id": "tests-testify-require", "text": "tests use github.com/stretchr/testify/require"},
         {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
         {"id": "no-scratch-files-left", "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory"},
-        {"id": "no-full-spec-copy", "text": "no copy of SPEC.md content was written to a scratch file in the package (e.g. _spec_structures.md should not exist)"}
+        {"id": "no-full-spec-copy", "text": "no copy of SPEC.md content was written to a scratch file in the package (e.g. _spec_structures.md should not exist)"},
+        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_types.md and _context_decoder.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"}
       ]
     },
     {
@@ -45,7 +46,8 @@
         {"id": "errors-funnel-through-wrapErr", "text": "every new error site uses d.wrapErr / e.wrapErr"},
         {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
         {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
-        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content (e.g. _spec_structures.md) was written to the package"}
+        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content (e.g. _spec_structures.md) was written to the package"},
+        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_types.md and _context_decoder.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"}
       ]
     },
     {
@@ -67,7 +69,8 @@
         {"id": "errors-funnel-through-wrapErr", "text": "the CRC mismatch error funnels through d.wrapErr (FieldError → OffsetError → ErrChecksumMismatch)"},
         {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
         {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
-        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"}
+        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"},
+        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_types.md and _context_decoder.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"}
       ]
     }
   ]

@@ -35,6 +35,97 @@ def has_t_parallel_at_both_levels(text: str) -> bool:
     return text.count("t.Parallel()") >= 2
 
 
+CONTEXT_FILENAMES = ("_context_tokens.md", "_context_ast.md")
+
+
+def skill_md_text() -> str:
+    """Read SKILL.md from the parent directory of this grade.py."""
+    skill_md_path = Path(__file__).resolve().parent.parent / "SKILL.md"
+    return skill_md_path.read_text() if skill_md_path.exists() else ""
+
+
+def extract_section(text: str, heading: str) -> str:
+    """Return the body of a top-level `## heading` section.
+
+    Walks lines and tracks fenced code blocks so that `## ...` markers inside
+    fenced templates (e.g. the literal `## TokenType` line shown in the
+    context-summary shape templates) are not mistaken for the next section's
+    heading. Returns "" if the heading is not found.
+    """
+    lines = text.splitlines()
+    in_fence = False
+    start = -1
+    end = len(lines)
+    for i, line in enumerate(lines):
+        if line.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if start == -1:
+            if line.strip() == f"## {heading}":
+                start = i + 1
+        elif line.startswith("## "):
+            end = i
+            break
+    if start == -1:
+        return ""
+    return "\n".join(lines[start:end])
+
+
+def assertion_context_summary_spec_tightened() -> tuple[bool, str]:
+    """Verify SKILL.md specifies the tightened _context_*.md format and cap.
+
+    Acceptance from issue #46: the SKILL.md must specify, for each
+    _context_*.md, (a) a strict signature-only format with no rationale or
+    examples, (b) a hard 400-line cap, and (c) that exceeding the cap signals
+    the work-unit was sized too large and should be chunked.
+
+    The check is anchored to the `## Context summary format` section so that
+    stray phrases elsewhere in the SKILL.md (e.g. an unrelated paragraph that
+    happens to contain "no examples") cannot cause a false positive. Both
+    per-file filenames must also appear inside that section, so the spec
+    cannot silently regress to covering only one of them.
+    """
+    text = skill_md_text()
+    section = extract_section(text, "Context summary format")
+    findings = []
+
+    section_present = bool(section.strip())
+    findings.append(f"section_present={section_present}")
+    if not section_present:
+        return False, "; ".join(findings) + " (no `## Context summary format` section in SKILL.md)"
+
+    section_lower = section.lower()
+
+    # (a) Strict signature-only format, no rationale, no examples.
+    strict_format = (
+        "signature only" in section_lower
+        and "no rationale" in section_lower
+        and "no examples" in section_lower
+    )
+    findings.append(f"strict_format={strict_format}")
+
+    # (b) Hard 400-line cap.
+    line_cap = "400" in section and ("hard cap" in section_lower or "400 lines" in section_lower)
+    findings.append(f"400_line_cap={line_cap}")
+
+    # (c) Cap overflow → chunk-and-relaunch protocol.
+    chunk_protocol = "sized too large" in section_lower and "chunk" in section_lower
+    findings.append(f"chunk_on_overflow={chunk_protocol}")
+
+    # (d) Both per-file shapes are documented inside this section.
+    missing = [name for name in CONTEXT_FILENAMES if name not in section]
+    files_documented = not missing
+    findings.append(
+        f"files_documented={files_documented}"
+        + (f" (missing: {missing})" if missing else "")
+    )
+
+    ok = strict_format and line_cap and chunk_protocol and files_documented
+    return ok, "; ".join(findings)
+
+
 def assertion_eval0_string_record(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, str]:
     tokenizer = read(pkg / "tokenizer.go")
     parser = read(pkg / "parser.go")
@@ -142,6 +233,9 @@ def assertion_eval0_string_record(asid: str, pkg: Path, run_dir: Path) -> tuple[
         leftovers = [p.name for p in pkg.glob("_spec*.md")]
         return len(leftovers) == 0, "no _spec*.md scratch copies" if not leftovers else f"spec copy leftover: {leftovers}"
 
+    if asid == "context-summary-spec-tightened":
+        return assertion_context_summary_spec_tightened()
+
     return False, f"unknown assertion id: {asid}"
 
 
@@ -231,6 +325,9 @@ def assertion_eval1_block(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, st
         leftovers = [p.name for p in pkg.glob("_spec*.md")]
         return len(leftovers) == 0, "no _spec*.md leftovers" if not leftovers else f"leftover: {leftovers}"
 
+    if asid == "context-summary-spec-tightened":
+        return assertion_context_summary_spec_tightened()
+
     return False, f"unknown assertion id: {asid}"
 
 
@@ -309,6 +406,9 @@ def assertion_eval2_comments(asid: str, pkg: Path, run_dir: Path) -> tuple[bool,
     if asid == "no-full-spec-copy":
         leftovers = [p.name for p in pkg.glob("_spec*.md")]
         return len(leftovers) == 0, "no _spec*.md leftovers" if not leftovers else f"leftover: {leftovers}"
+
+    if asid == "context-summary-spec-tightened":
+        return assertion_context_summary_spec_tightened()
 
     return False, f"unknown assertion id: {asid}"
 

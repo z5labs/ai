@@ -52,6 +52,45 @@ If `SPEC.md` is paired with `structures/<name>.md` or `encoding-tables/<name>.md
 
 Before launching subagents, grep the slices for `> **Ambiguity:**` callouts and surface them to the user.
 
+## Context summary format
+
+`_context_types.md` and `_context_decoder.md` exist so the next phase's subagent can rely on a small, deterministic snapshot in place of re-reading the upstream source files. Treat them as machine-readable, not narrative — a later subagent must be able to scan the file top-to-bottom and pick out symbols without parsing prose.
+
+**Strict format.** One symbol per line, signature only. No rationale, no examples, no commentary, no code bodies. The only structure permitted is the `## Section` headings shown below. Inside a struct or interface body, one field/method per line is still "one symbol per line"; that is fine. List items in the same order they appear in the source.
+
+**Hard cap: 400 lines per file.** If the summary you would write exceeds 400 lines, the phase's work-unit was sized too large — that is the whole point of the cap. Do not write a longer summary, do not abbreviate to fit, and do not split the summary across files. Stop, tell the user the request needs to be chunked (e.g., "implement the Header struct first, then come back for Records"), and re-launch the phase with the smaller scope.
+
+### `_context_types.md` shape
+
+```
+## Structs
+<every exported struct, in declaration order; one struct per block; fields one per line, signature only>
+
+## Enums
+<for each enum: the type declaration on its own line, then constants one per line, in declaration order>
+
+## Bit-field constants
+<for each flag type: the type declaration on its own line, then mask constants one per line>
+
+## Errors
+<every exported sentinel/typed error, one per line>
+```
+
+Omit any section that has no entries — do not write empty headings.
+
+### `_context_decoder.md` shape
+
+```
+## Decode
+func Decode(r io.Reader) (*File, error)
+
+## Byte order
+<big-endian | little-endian>
+
+## Exported decode helpers
+<every new exported decode method/function, one signature per line, in declaration order>
+```
+
 ## Phase order
 
 Run phases in order. Do not skip ahead. Each phase passes a small `_context_<phase>.md` summary forward.
@@ -68,7 +107,7 @@ Spawn a subagent with:
 
 Subagent must read its slices via `Read(path, offset, limit)`, write tests first (size checks via `binary.Size()`, `String()` round-trip for enums, error-chain assertions), confirm tests fail, implement types (every enum gets a `String()` method — non-negotiable; the first hex-dump test failure pays for it), then confirm `go test -race ./...` passes.
 
-When the subagent returns, run `go test -race ./...` yourself and write `_context_types.md` listing every exported type, enum value, and bit-field constant the next phases will need.
+When the subagent returns, run `go test -race ./...` yourself, then write `_context_types.md` in the strict format from the [Context summary format](#context-summary-format) section. Honor the 400-line cap; if the summary would exceed it, stop and ask the user to chunk the request before relaunching this phase.
 
 ### Phase 2 — decoder
 
@@ -81,7 +120,7 @@ Spawn a subagent with:
 
 Subagent must write decode tests first using hex byte literals + `bytes.NewReader`, including failure-path tests that assert the `FieldError → OffsetError → leaf` chain via `errors.Is`/`errors.As`. Every error site funnels through `d.wrapErr`. Each new structure gets its own `readX` method — don't inline record/header reading inside `readFile` even when it would compile, since it makes per-structure failure tests harder to target.
 
-When the subagent returns, run tests yourself and write `_context_decoder.md` capturing the public `Decode` signature, the byte order, and the names of any new exported decode helpers.
+When the subagent returns, run tests yourself, then write `_context_decoder.md` in the strict format from the [Context summary format](#context-summary-format) section. Honor the 400-line cap; if the summary would exceed it, stop and ask the user to chunk the request before relaunching this phase.
 
 ### Phase 3 — encoder
 
