@@ -1,0 +1,34 @@
+=== RUN   TestDecode_HappyPath_NoRecords
+=== PAUSE TestDecode_HappyPath_NoRecords
+=== RUN   TestDecode_HappyPath_OneStringRecord
+=== PAUSE TestDecode_HappyPath_OneStringRecord
+=== RUN   TestDecode_ChecksumMismatch
+=== PAUSE TestDecode_ChecksumMismatch
+=== RUN   TestDecode_ChecksumMismatch_CorruptBody
+=== PAUSE TestDecode_ChecksumMismatch_CorruptBody
+=== RUN   TestEncode_HappyPath_NoRecords
+=== PAUSE TestEncode_HappyPath_NoRecords
+=== RUN   TestEncode_HappyPath_OneStringRecord
+=== PAUSE TestEncode_HappyPath_OneStringRecord
+=== RUN   TestEncodeDecode_RoundTrip
+=== PAUSE TestEncodeDecode_RoundTrip
+=== RUN   TestErrorChain
+=== PAUSE TestErrorChain
+=== CONT  TestDecode_HappyPath_NoRecords
+=== CONT  TestDecode_ChecksumMismatch_CorruptBody
+=== CONT  TestEncodeDecode_RoundTrip
+=== CONT  TestDecode_HappyPath_OneStringRecord
+=== CONT  TestEncode_HappyPath_OneStringRecord
+--- PASS: TestDecode_HappyPath_OneStringRecord (0.00s)
+--- PASS: TestEncode_HappyPath_OneStringRecord (0.00s)
+=== CONT  TestEncode_HappyPath_NoRecords
+--- PASS: TestDecode_ChecksumMismatch_CorruptBody (0.00s)
+--- PASS: TestDecode_HappyPath_NoRecords (0.00s)
+=== CONT  TestDecode_ChecksumMismatch
+--- PASS: TestEncode_HappyPath_NoRecords (0.00s)
+=== CONT  TestErrorChain
+--- PASS: TestEncodeDecode_RoundTrip (0.00s)
+--- PASS: TestDecode_ChecksumMismatch (0.00s)
+--- PASS: TestErrorChain (0.00s)
+PASS
+ok  	tlv	1.013s

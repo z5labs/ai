@@ -1,0 +1,122 @@
+{
+  "eval_id": 3,
+  "eval_name": "tlvx-header-with-extended-flags",
+  "config": "without_skill",
+  "summary": {
+    "passed": 15,
+    "total": 22,
+    "pass_rate": 0.6818181818181818
+  },
+  "expectations": [
+    {
+      "text": "types.go defines a Header struct with all eight fields: Magic, Version, Flags, ChecksumAlg, Reserved1, IndexCount, ExtCount, TrailerOffset",
+      "passed": true,
+      "evidence": "Header struct present with all eight TLVX fields"
+    },
+    {
+      "text": "types.go defines bit-field mask constants for at least the seven defined flags: COMPRESSED, ENCRYPTED, SIGNED, INDEXED, EXTENDED, STRICT, SEALED",
+      "passed": false,
+      "evidence": "Flags constants missing: ['COMPRESSED', 'ENCRYPTED', 'SIGNED', 'INDEXED', 'EXTENDED', 'STRICT', 'SEALED']"
+    },
+    {
+      "text": "types.go defines a ChecksumAlg enum (or named type with constants) covering at least three of the five defined algorithms (CRC32_IEEE, CRC64_ECMA, SHA256_T32, XXH64, BLAKE3_T32)",
+      "passed": false,
+      "evidence": "only 0 ChecksumAlg constants found ([]); need >= 3"
+    },
+    {
+      "text": "types.go defines a String() method on the ChecksumAlg type (per the binary-skill convention that every enum gets a String() method)",
+      "passed": false,
+      "evidence": "no String() method on ChecksumAlg"
+    },
+    {
+      "text": "the File struct in types.go references Header",
+      "passed": true,
+      "evidence": "File struct references Header"
+    },
+    {
+      "text": "decoder.go defines a readHeader method on the decoder type",
+      "passed": true,
+      "evidence": "readHeader method on decoder"
+    },
+    {
+      "text": "encoder.go defines a writeHeader method on the encoder type",
+      "passed": true,
+      "evidence": "writeHeader method on encoder"
+    },
+    {
+      "text": "every new error site in decoder.go and encoder.go uses d.wrapErr / e.wrapErr (no direct construction of FieldError or OffsetError outside the helpers)",
+      "passed": false,
+      "evidence": "direct error construction: ['decoder.go: &FieldError{', 'decoder.go: &OffsetError{', 'encoder.go: &FieldError{']"
+    },
+    {
+      "text": "decoder_test.go has a happy-path test that decodes a hex byte literal containing the TLVX magic and asserts Header field values",
+      "passed": true,
+      "evidence": "decode test with TLVX magic (has_magic=True, has_decode=True)"
+    },
+    {
+      "text": "decoder_test.go has a failure-path test asserting errors.Is on a leaf sentinel AND errors.As on FieldError with a header-related Field path (e.g. magic-mismatch)",
+      "passed": true,
+      "evidence": "failure-path chain test (Is=True, As=True, FieldError=True)"
+    },
+    {
+      "text": "encoder_test.go has a happy-path test that encodes a Header and asserts the output bytes match a hex literal",
+      "passed": true,
+      "evidence": "encode happy-path test (has_encode=True, has_hex=True)"
+    },
+    {
+      "text": "encoder_test.go has a round-trip test that runs Encode \u2192 Decode and asserts require.Equal on the original",
+      "passed": false,
+      "evidence": "no round-trip test"
+    },
+    {
+      "text": "all new tests call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "t.Parallel at both levels in all test files"
+    },
+    {
+      "text": "tests use github.com/stretchr/testify/require",
+      "passed": true,
+      "evidence": "tests use testify/require"
+    },
+    {
+      "text": "go test -race ./... exits cleanly",
+      "passed": true,
+      "evidence": "go test -race ./... passes"
+    },
+    {
+      "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory (partition_plan.md is preserved per SKILL.md and is NOT a scratch file)",
+      "passed": true,
+      "evidence": "no _*.md scratch files"
+    },
+    {
+      "text": "no copy of SPEC.md content was written to a scratch file in the package (e.g. _spec_structures.md should not exist)",
+      "passed": true,
+      "evidence": "no _spec*.md scratch copies"
+    },
+    {
+      "text": "partition_plan.md exists in the package directory after the run (per the SKILL.md ## Outputs and ## Cleanup instructions)",
+      "passed": true,
+      "evidence": "partition_plan.md exists (2497 bytes)"
+    },
+    {
+      "text": "partition_plan.md reports that at least one phase was partitioned into 2+ sub-units (tlvx's decoder-phase slices total over 600 lines, so the gate must trip)",
+      "passed": false,
+      "evidence": "no phase reported as partitioned in partition_plan.md"
+    },
+    {
+      "text": "partition_plan.md's per-sub-unit start/done log shows non-overlapping timestamps within each partitioned phase (sub-unit i's `done` precedes sub-unit i+1's `starting`) \u2014 proof that sub-calls ran serially, not in parallel",
+      "passed": false,
+      "evidence": "no partitioned phase had its serial-order log validated"
+    },
+    {
+      "text": "SKILL.md specifies, for both _context_types.md and _context_decoder.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)",
+      "passed": true,
+      "evidence": "section_present=True; strict_format=True; 400_line_cap=True; chunk_on_overflow=True; files_documented=True"
+    },
+    {
+      "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_types.md / _context_decoder.md, and do not full-read the growing types.go / decoder.go / encoder.go source file (issue #47 acceptance)",
+      "passed": true,
+      "evidence": "before_start_present=True; scope_gate=True; line_threshold=True; chunked_threshold=True; partition_subunits=True; section_boundary=True; announce=True; chunking_section_present=True; serial=True; append=True; forbids_full_read=True (forbid_phrase=True, all_sources_present=True); summary_filenames=True"
+    }
+  ]
+}

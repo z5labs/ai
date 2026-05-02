@@ -1,0 +1,126 @@
+=== RUN   TestParser
+=== PAUSE TestParser
+=== RUN   TestParserTopLevelRecord
+=== PAUSE TestParserTopLevelRecord
+=== RUN   TestParserBlocks
+=== PAUSE TestParserBlocks
+=== RUN   TestPrinter
+=== PAUSE TestPrinter
+=== RUN   TestPrinterRoundTrip
+=== PAUSE TestPrinterRoundTrip
+=== RUN   TestTokenizer
+=== PAUSE TestTokenizer
+=== CONT  TestParserTopLevelRecord
+=== CONT  TestParserBlocks
+--- PASS: TestParserTopLevelRecord (0.00s)
+=== CONT  TestPrinter
+=== RUN   TestPrinter/empty_file_prints_empty_string
+=== CONT  TestPrinterRoundTrip
+=== CONT  TestParser
+=== CONT  TestTokenizer
+=== RUN   TestTokenizer/empty_input_yields_no_tokens
+=== RUN   TestParserBlocks/empty_block
+=== PAUSE TestParserBlocks/empty_block
+=== RUN   TestPrinterRoundTrip/empty_source_round_trips
+=== PAUSE TestPrinter/empty_file_prints_empty_string
+=== PAUSE TestTokenizer/empty_input_yields_no_tokens
+=== RUN   TestPrinter/top_level_string_record
+=== PAUSE TestPrinter/top_level_string_record
+=== RUN   TestParserBlocks/block_with_one_record
+=== RUN   TestParser/empty_input_yields_zero_file
+=== PAUSE TestPrinterRoundTrip/empty_source_round_trips
+=== PAUSE TestParserBlocks/block_with_one_record
+=== RUN   TestPrinterRoundTrip/single_top_level_string_record
+=== RUN   TestParserBlocks/block_with_two_records
+=== PAUSE TestPrinterRoundTrip/single_top_level_string_record
+=== PAUSE TestParser/empty_input_yields_zero_file
+=== RUN   TestPrinterRoundTrip/empty_block
+=== RUN   TestTokenizer/single_identifier
+=== RUN   TestPrinter/empty_block
+=== PAUSE TestPrinter/empty_block
+=== PAUSE TestParserBlocks/block_with_two_records
+=== RUN   TestPrinter/block_with_one_record
+=== RUN   TestParserBlocks/block_followed_by_top_level_record
+=== PAUSE TestPrinterRoundTrip/empty_block
+=== PAUSE TestTokenizer/single_identifier
+=== CONT  TestParser/empty_input_yields_zero_file
+=== PAUSE TestPrinter/block_with_one_record
+=== PAUSE TestParserBlocks/block_followed_by_top_level_record
+=== RUN   TestTokenizer/string_literal
+=== RUN   TestPrinterRoundTrip/block_with_one_record
+=== PAUSE TestTokenizer/string_literal
+--- PASS: TestParser (0.00s)
+    --- PASS: TestParser/empty_input_yields_zero_file (0.00s)
+=== PAUSE TestPrinterRoundTrip/block_with_one_record
+=== RUN   TestTokenizer/equals_symbol
+=== RUN   TestPrinterRoundTrip/block_with_two_records
+=== PAUSE TestTokenizer/equals_symbol
+=== CONT  TestParserBlocks/block_with_one_record
+=== RUN   TestTokenizer/open_brace_symbol
+=== PAUSE TestTokenizer/open_brace_symbol
+=== RUN   TestTokenizer/close_brace_symbol
+=== PAUSE TestPrinterRoundTrip/block_with_two_records
+=== CONT  TestParserBlocks/empty_block
+=== RUN   TestPrinterRoundTrip/block_then_top_level_record
+=== CONT  TestParserBlocks/block_with_two_records
+=== PAUSE TestPrinterRoundTrip/block_then_top_level_record
+=== RUN   TestPrinter/block_with_two_records
+=== CONT  TestPrinterRoundTrip/empty_block
+=== PAUSE TestPrinter/block_with_two_records
+=== CONT  TestPrinterRoundTrip/block_with_one_record
+=== CONT  TestPrinter/top_level_string_record
+=== CONT  TestParserBlocks/block_followed_by_top_level_record
+=== CONT  TestPrinter/empty_block
+=== PAUSE TestTokenizer/close_brace_symbol
+=== CONT  TestPrinterRoundTrip/single_top_level_string_record
+=== RUN   TestTokenizer/semicolon_symbol
+=== CONT  TestPrinterRoundTrip/block_with_two_records
+=== CONT  TestPrinter/empty_file_prints_empty_string
+=== CONT  TestPrinterRoundTrip/block_then_top_level_record
+=== PAUSE TestTokenizer/semicolon_symbol
+=== RUN   TestTokenizer/braces_and_semicolon_together
+=== CONT  TestPrinter/block_with_two_records
+=== CONT  TestPrinterRoundTrip/empty_source_round_trips
+=== CONT  TestPrinter/block_with_one_record
+--- PASS: TestParserBlocks (0.00s)
+    --- PASS: TestParserBlocks/block_with_one_record (0.00s)
+    --- PASS: TestParserBlocks/empty_block (0.00s)
+    --- PASS: TestParserBlocks/block_with_two_records (0.00s)
+    --- PASS: TestParserBlocks/block_followed_by_top_level_record (0.00s)
+=== PAUSE TestTokenizer/braces_and_semicolon_together
+=== RUN   TestTokenizer/block_record_full
+--- PASS: TestPrinterRoundTrip (0.00s)
+    --- PASS: TestPrinterRoundTrip/empty_block (0.00s)
+    --- PASS: TestPrinterRoundTrip/block_with_one_record (0.00s)
+    --- PASS: TestPrinterRoundTrip/block_with_two_records (0.00s)
+    --- PASS: TestPrinterRoundTrip/single_top_level_string_record (0.00s)
+    --- PASS: TestPrinterRoundTrip/empty_source_round_trips (0.00s)
+    --- PASS: TestPrinterRoundTrip/block_then_top_level_record (0.00s)
+=== PAUSE TestTokenizer/block_record_full
+--- PASS: TestPrinter (0.00s)
+    --- PASS: TestPrinter/empty_block (0.00s)
+    --- PASS: TestPrinter/top_level_string_record (0.00s)
+    --- PASS: TestPrinter/empty_file_prints_empty_string (0.00s)
+    --- PASS: TestPrinter/block_with_two_records (0.00s)
+    --- PASS: TestPrinter/block_with_one_record (0.00s)
+=== CONT  TestTokenizer/single_identifier
+=== CONT  TestTokenizer/block_record_full
+=== CONT  TestTokenizer/open_brace_symbol
+=== CONT  TestTokenizer/close_brace_symbol
+=== CONT  TestTokenizer/braces_and_semicolon_together
+=== CONT  TestTokenizer/empty_input_yields_no_tokens
+=== CONT  TestTokenizer/semicolon_symbol
+=== CONT  TestTokenizer/string_literal
+=== CONT  TestTokenizer/equals_symbol
+--- PASS: TestTokenizer (0.00s)
+    --- PASS: TestTokenizer/single_identifier (0.00s)
+    --- PASS: TestTokenizer/block_record_full (0.00s)
+    --- PASS: TestTokenizer/open_brace_symbol (0.00s)
+    --- PASS: TestTokenizer/close_brace_symbol (0.00s)
+    --- PASS: TestTokenizer/braces_and_semicolon_together (0.00s)
+    --- PASS: TestTokenizer/empty_input_yields_no_tokens (0.00s)
+    --- PASS: TestTokenizer/semicolon_symbol (0.00s)
+    --- PASS: TestTokenizer/string_literal (0.00s)
+    --- PASS: TestTokenizer/equals_symbol (0.00s)
+PASS
+ok  	kvr	1.016s

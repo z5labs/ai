@@ -1,0 +1,86 @@
+=== RUN   TestParser
+=== PAUSE TestParser
+=== RUN   TestPrinter
+=== PAUSE TestPrinter
+=== RUN   TestPrinterRoundTrip
+=== PAUSE TestPrinterRoundTrip
+=== RUN   TestTokenizer
+=== PAUSE TestTokenizer
+=== CONT  TestParser
+=== CONT  TestPrinterRoundTrip
+=== CONT  TestTokenizer
+=== RUN   TestParser/empty_input_yields_zero_file
+=== PAUSE TestParser/empty_input_yields_zero_file
+=== RUN   TestPrinterRoundTrip/empty_source_round_trips
+=== RUN   TestTokenizer/empty_input_yields_no_tokens
+=== PAUSE TestPrinterRoundTrip/empty_source_round_trips
+=== PAUSE TestTokenizer/empty_input_yields_no_tokens
+=== RUN   TestPrinterRoundTrip/single_string_record_round_trips
+=== RUN   TestParser/single_string_record
+=== RUN   TestTokenizer/string_record_yields_idents_symbol_and_string
+=== PAUSE TestPrinterRoundTrip/single_string_record_round_trips
+=== CONT  TestPrinter
+=== PAUSE TestParser/single_string_record
+=== RUN   TestPrinter/empty_file_prints_empty_string
+=== RUN   TestParser/two_string_records_separated_by_newline
+=== RUN   TestPrinterRoundTrip/two_string_records_round_trip
+=== PAUSE TestParser/two_string_records_separated_by_newline
+=== PAUSE TestPrinterRoundTrip/two_string_records_round_trip
+=== RUN   TestParser/string_value_decodes_escapes
+=== RUN   TestPrinterRoundTrip/string_value_with_escapes_round_trips
+=== PAUSE TestTokenizer/string_record_yields_idents_symbol_and_string
+=== PAUSE TestPrinter/empty_file_prints_empty_string
+=== PAUSE TestParser/string_value_decodes_escapes
+=== RUN   TestPrinter/single_string_record_prints_canonical_form
+=== PAUSE TestPrinterRoundTrip/string_value_with_escapes_round_trips
+=== RUN   TestTokenizer/leading_whitespace_shifts_first_token_column
+=== PAUSE TestPrinter/single_string_record_prints_canonical_form
+=== CONT  TestParser/two_string_records_separated_by_newline
+=== CONT  TestPrinterRoundTrip/two_string_records_round_trip
+=== RUN   TestPrinter/two_string_records_each_on_own_line
+=== CONT  TestParser/string_value_decodes_escapes
+=== PAUSE TestPrinter/two_string_records_each_on_own_line
+=== PAUSE TestTokenizer/leading_whitespace_shifts_first_token_column
+=== RUN   TestPrinter/string_value_escapes_special_characters
+=== CONT  TestParser/single_string_record
+=== PAUSE TestPrinter/string_value_escapes_special_characters
+=== CONT  TestPrinter/string_value_escapes_special_characters
+=== RUN   TestTokenizer/string_with_escapes_decodes_value
+=== CONT  TestParser/empty_input_yields_zero_file
+=== PAUSE TestTokenizer/string_with_escapes_decodes_value
+=== RUN   TestTokenizer/newline_increments_line_and_resets_column
+=== CONT  TestPrinter/two_string_records_each_on_own_line
+=== PAUSE TestTokenizer/newline_increments_line_and_resets_column
+=== CONT  TestPrinter/empty_file_prints_empty_string
+=== CONT  TestPrinterRoundTrip/empty_source_round_trips
+=== CONT  TestPrinter/single_string_record_prints_canonical_form
+=== CONT  TestPrinterRoundTrip/single_string_record_round_trips
+=== CONT  TestPrinterRoundTrip/string_value_with_escapes_round_trips
+=== CONT  TestTokenizer/empty_input_yields_no_tokens
+--- PASS: TestParser (0.00s)
+    --- PASS: TestParser/string_value_decodes_escapes (0.00s)
+    --- PASS: TestParser/two_string_records_separated_by_newline (0.00s)
+    --- PASS: TestParser/single_string_record (0.00s)
+    --- PASS: TestParser/empty_input_yields_zero_file (0.00s)
+=== CONT  TestTokenizer/leading_whitespace_shifts_first_token_column
+=== CONT  TestTokenizer/string_with_escapes_decodes_value
+--- PASS: TestPrinter (0.00s)
+    --- PASS: TestPrinter/string_value_escapes_special_characters (0.00s)
+    --- PASS: TestPrinter/two_string_records_each_on_own_line (0.00s)
+    --- PASS: TestPrinter/empty_file_prints_empty_string (0.00s)
+    --- PASS: TestPrinter/single_string_record_prints_canonical_form (0.00s)
+=== CONT  TestTokenizer/newline_increments_line_and_resets_column
+=== CONT  TestTokenizer/string_record_yields_idents_symbol_and_string
+--- PASS: TestTokenizer (0.00s)
+    --- PASS: TestTokenizer/empty_input_yields_no_tokens (0.00s)
+    --- PASS: TestTokenizer/leading_whitespace_shifts_first_token_column (0.00s)
+    --- PASS: TestTokenizer/string_with_escapes_decodes_value (0.00s)
+    --- PASS: TestTokenizer/newline_increments_line_and_resets_column (0.00s)
+    --- PASS: TestTokenizer/string_record_yields_idents_symbol_and_string (0.00s)
+--- PASS: TestPrinterRoundTrip (0.00s)
+    --- PASS: TestPrinterRoundTrip/string_value_with_escapes_round_trips (0.00s)
+    --- PASS: TestPrinterRoundTrip/empty_source_round_trips (0.00s)
+    --- PASS: TestPrinterRoundTrip/two_string_records_round_trip (0.00s)
+    --- PASS: TestPrinterRoundTrip/single_string_record_round_trips (0.00s)
+PASS
+ok  	kvr	1.014s

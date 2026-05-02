@@ -25,7 +25,8 @@
         {"id": "no-scratch-files-left", "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory"},
         {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package (e.g. _spec_tokens.md should not exist)"},
         {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"},
-        {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_tokens.md / _context_ast.md, and do not full-read the growing tokenizer.go / parser.go / printer.go source file (issue #47 acceptance)"}
+        {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_tokens.md / _context_ast.md, and do not full-read the growing tokenizer.go / parser.go / printer.go source file (issue #47 acceptance)"},
+        {"id": "small-fixture-no-partition", "text": "partition_plan.md exists in the package and reports `no partitioning needed` for every phase (kvr is below the 600-line gate, so no phase should partition)"}
       ]
     },
     {
@@ -48,7 +49,8 @@
         {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
         {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"},
         {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"},
-        {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_tokens.md / _context_ast.md, and do not full-read the growing tokenizer.go / parser.go / printer.go source file (issue #47 acceptance)"}
+        {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_tokens.md / _context_ast.md, and do not full-read the growing tokenizer.go / parser.go / printer.go source file (issue #47 acceptance)"},
+        {"id": "small-fixture-no-partition", "text": "partition_plan.md exists in the package and reports `no partitioning needed` for every phase (kvr is below the 600-line gate, so no phase should partition)"}
       ]
     },
     {
@@ -69,6 +71,39 @@
         {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
         {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
         {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"},
+        {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"},
+        {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_tokens.md / _context_ast.md, and do not full-read the growing tokenizer.go / parser.go / printer.go source file (issue #47 acceptance)"},
+        {"id": "small-fixture-no-partition", "text": "partition_plan.md exists in the package and reports `no partitioning needed` for every phase (kvr is below the 600-line gate, so no phase should partition)"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "kvrx-bool-and-conditional",
+      "prompt": "I have a scaffolded Go package at ./kvrx/ with tokenizer.go/parser.go/printer.go stubs and a SPEC.md describing the KVRX format (a richer extension of KVR). Implement support for boolean record values AND the `if`/`elif`/`else` conditional statement end-to-end (per SPEC.md's Lexical Elements, Structure (Grammar), and Semantics sections). Specifically: tokenize the keywords `true`, `false`, `if`, `elif`, `else` (still as TokenIdentifier per spec; the parser distinguishes by Value), parse `record bool KEY = true|false`, parse the Conditional statement with its `if (Expression) { ... }` body and any `elif`/`else` clauses, and add a Bool literal AST node and a Conditional AST node. The Conditional's expression must be evaluated at parse time using previously-declared records (a tiny scope-walking helper is enough — full Expression resolution can be a stub that handles `&NAME` lookups and `==` comparison against bool literals). I want tokenizer tests with exact Pos values, parser tests that drive Parse() (no hand-constructed AST), a direct printer test, and a round-trip test for both record-bool and the conditional statement. Don't read the whole SPEC.md — slice it. Note: the parser-phase slices for KVRX clear the 600-line gate, so the orchestrator must partition the parser (and likely printer) phase into sub-units before launching subagents — announce the plan up front and write partition_plan.md.",
+      "expected_output": "kvrx/tokenizer.go remains unchanged for new token types (per spec, true/false/if/elif/else are just TokenIdentifier values); kvrx/parser.go gains a Conditional AST node, a Bool literal AST node, parseConditional and parseRecordBoolValue actions consumed by the parser's action loop, and a small parse-time evaluator for the conditional expression; kvrx/printer.go formats both record-bool and the conditional statement; partition_plan.md announces sub-unit partitioning for at least one phase; tests cover tokenizer Pos values, parser via Parse(), direct print, and round-trip; `go test -race ./...` passes.",
+      "files": ["fixtures/kvrx"],
+      "assertions": [
+        {"id": "bool-literal-ast-node", "text": "parser.go defines a Bool literal AST node (e.g. BoolLiteral struct or named constant) with a Value field"},
+        {"id": "conditional-ast-node", "text": "parser.go defines a Conditional struct (or equivalent AST node) with at least an If branch (condition + body), an Elifs slice, and an Else body"},
+        {"id": "parse-bool-record-value", "text": "parser.go has a parser path that handles `record bool KEY = true` / `... = false` and stores the bool value on the resulting AST node"},
+        {"id": "parse-conditional-statement", "text": "parser.go has a parseConditional (or equivalent named action) that recognises `if`/`elif`/`else` keyword identifiers and builds the Conditional AST"},
+        {"id": "parse-conditional-resolves-statically", "text": "parser.go evaluates the conditional's expression at parse time against previously-declared record values (a scope-walking lookup function or environment is present)"},
+        {"id": "expect-used", "text": "parser.go uses p.expect(...) at sites that require a specific token type — no inline TokenType comparisons in the new code"},
+        {"id": "printer-emits-conditional", "text": "printer.go has a function or action that emits a Conditional back to source text (with `if (...) { ... }`, optional `elif (...) { ... }`, optional `else { ... }`)"},
+        {"id": "printer-emits-bool-record", "text": "printer.go emits `true` or `false` as the value of a bool record"},
+        {"id": "tokenizer-test-keyword-pos", "text": "tokenizer_test.go has a test for one of the new keywords (true/false/if) that asserts an exact Pos{Line, Column} value"},
+        {"id": "parser-test-via-parse", "text": "parser_test.go uses Parse(strings.NewReader(...)) for the test inputs and does not hand-construct Conditional or Bool literals as expected values (the empty-input scaffold case excepted)"},
+        {"id": "parser-test-conditional", "text": "parser_test.go has a subtest that parses a `record bool ENABLED = true; if (&ENABLED) { record number PORT = 443; }`-shaped input and asserts the Conditional AST"},
+        {"id": "printer-direct-test-conditional", "text": "printer_test.go has a direct test that calls Print on a *File containing a Conditional and asserts the output string matches an expected literal"},
+        {"id": "printer-round-trip-test", "text": "printer_test.go has a round-trip test (Parse → Print → Parse → require.Equal) covering both record-bool and the conditional statement"},
+        {"id": "tests-parallel", "text": "all new tests call t.Parallel() at both function and subtest level"},
+        {"id": "tests-testify-require", "text": "tests use github.com/stretchr/testify/require"},
+        {"id": "go-test-passes", "text": "go test -race ./... exits cleanly"},
+        {"id": "no-scratch-files-left", "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory (partition_plan.md is preserved per SKILL.md and is NOT a scratch file)"},
+        {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package (e.g. _spec_tokens.md should not exist)"},
+        {"id": "partition-plan-exists", "text": "partition_plan.md exists in the package directory after the run (per the SKILL.md ## Outputs and ## Cleanup instructions)"},
+        {"id": "partition-plan-announces-sub-units", "text": "partition_plan.md reports that at least one phase was partitioned into 2+ sub-units (kvrx's parser-phase slices total over 600 lines, so the gate must trip)"},
+        {"id": "partition-plan-serial-order", "text": "partition_plan.md's per-sub-unit start/done log shows non-overlapping timestamps within each partitioned phase (sub-unit i's `done` precedes sub-unit i+1's `starting`) — proof that sub-calls ran serially, not in parallel"},
         {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"},
         {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_tokens.md / _context_ast.md, and do not full-read the growing tokenizer.go / parser.go / printer.go source file (issue #47 acceptance)"}
       ]

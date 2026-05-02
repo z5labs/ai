@@ -1,0 +1,146 @@
+=== RUN   TestParser
+=== PAUSE TestParser
+=== RUN   TestParserErrors
+=== PAUSE TestParserErrors
+=== RUN   TestPrinter
+=== PAUSE TestPrinter
+=== RUN   TestPrinterRoundTrip
+=== PAUSE TestPrinterRoundTrip
+=== RUN   TestTokenizer
+=== PAUSE TestTokenizer
+=== RUN   TestTokenizerUnterminatedString
+=== PAUSE TestTokenizerUnterminatedString
+=== RUN   TestTokenizerUnexpectedCharacter
+=== PAUSE TestTokenizerUnexpectedCharacter
+=== CONT  TestTokenizerUnexpectedCharacter
+=== CONT  TestPrinterRoundTrip
+=== RUN   TestPrinterRoundTrip/empty_source_round_trips
+=== CONT  TestTokenizer
+--- PASS: TestTokenizerUnexpectedCharacter (0.00s)
+=== CONT  TestTokenizerUnterminatedString
+=== CONT  TestPrinter
+=== RUN   TestTokenizer/empty_input_yields_no_tokens
+=== CONT  TestParserErrors
+=== RUN   TestParserErrors/unexpected_token_when_value_is_brace
+=== CONT  TestParser
+=== PAUSE TestTokenizer/empty_input_yields_no_tokens
+=== RUN   TestParser/empty_input_yields_zero_file
+=== PAUSE TestParserErrors/unexpected_token_when_value_is_brace
+=== PAUSE TestParser/empty_input_yields_zero_file
+=== RUN   TestParser/single_string_record_parses
+=== RUN   TestTokenizer/single_identifier
+=== RUN   TestParserErrors/unexpected_end_of_tokens_after_equals
+=== PAUSE TestPrinterRoundTrip/empty_source_round_trips
+=== RUN   TestPrinter/empty_file_prints_empty_string
+=== PAUSE TestPrinter/empty_file_prints_empty_string
+--- PASS: TestTokenizerUnterminatedString (0.00s)
+=== PAUSE TestParser/single_string_record_parses
+=== PAUSE TestTokenizer/single_identifier
+=== PAUSE TestParserErrors/unexpected_end_of_tokens_after_equals
+=== RUN   TestPrinterRoundTrip/single_string_record
+=== RUN   TestTokenizer/identifier_with_underscore_and_digits
+=== RUN   TestParser/two_string_records_parse
+=== RUN   TestPrinter/single_string_record
+=== RUN   TestParserErrors/unexpected_keyword_when_not_record
+=== PAUSE TestPrinter/single_string_record
+=== PAUSE TestParser/two_string_records_parse
+=== PAUSE TestParserErrors/unexpected_keyword_when_not_record
+=== PAUSE TestPrinterRoundTrip/single_string_record
+=== RUN   TestPrinter/two_string_records
+=== PAUSE TestPrinter/two_string_records
+=== PAUSE TestTokenizer/identifier_with_underscore_and_digits
+=== RUN   TestPrinter/string_record_with_quote_and_backslash_escapes
+=== CONT  TestParserErrors/unexpected_end_of_tokens_after_equals
+=== RUN   TestTokenizer/equals_symbol
+=== PAUSE TestTokenizer/equals_symbol
+=== PAUSE TestPrinter/string_record_with_quote_and_backslash_escapes
+=== RUN   TestPrinter/string_record_with_newline_and_tab_escapes
+=== RUN   TestParser/string_record_with_escapes_parses
+=== PAUSE TestPrinter/string_record_with_newline_and_tab_escapes
+=== RUN   TestTokenizer/simple_string_literal
+=== PAUSE TestParser/string_record_with_escapes_parses
+=== CONT  TestPrinter/empty_file_prints_empty_string
+=== RUN   TestParser/equivalent_sources_yield_equal_files
+=== PAUSE TestTokenizer/simple_string_literal
+=== CONT  TestParserErrors/unexpected_token_when_value_is_brace
+=== RUN   TestTokenizer/string_with_escaped_quote
+=== PAUSE TestParser/equivalent_sources_yield_equal_files
+=== CONT  TestParserErrors/unexpected_keyword_when_not_record
+=== CONT  TestParser/two_string_records_parse
+=== PAUSE TestTokenizer/string_with_escaped_quote
+=== CONT  TestParser/equivalent_sources_yield_equal_files
+=== RUN   TestTokenizer/string_with_escaped_backslash
+=== CONT  TestPrinter/single_string_record
+=== PAUSE TestTokenizer/string_with_escaped_backslash
+=== RUN   TestPrinterRoundTrip/two_string_records
+=== CONT  TestParser/empty_input_yields_zero_file
+=== CONT  TestPrinter/string_record_with_quote_and_backslash_escapes
+=== CONT  TestParser/string_record_with_escapes_parses
+=== PAUSE TestPrinterRoundTrip/two_string_records
+--- PASS: TestParserErrors (0.00s)
+    --- PASS: TestParserErrors/unexpected_end_of_tokens_after_equals (0.00s)
+    --- PASS: TestParserErrors/unexpected_token_when_value_is_brace (0.00s)
+    --- PASS: TestParserErrors/unexpected_keyword_when_not_record (0.00s)
+=== RUN   TestPrinterRoundTrip/string_record_with_escaped_quote
+=== PAUSE TestPrinterRoundTrip/string_record_with_escaped_quote
+=== RUN   TestPrinterRoundTrip/string_record_with_escaped_backslash
+=== PAUSE TestPrinterRoundTrip/string_record_with_escaped_backslash
+=== CONT  TestParser/single_string_record_parses
+=== CONT  TestPrinter/two_string_records
+=== RUN   TestPrinterRoundTrip/string_record_with_escaped_newline_and_tab
+=== RUN   TestTokenizer/string_with_escaped_newline_and_tab
+=== PAUSE TestTokenizer/string_with_escaped_newline_and_tab
+=== PAUSE TestPrinterRoundTrip/string_record_with_escaped_newline_and_tab
+=== CONT  TestPrinterRoundTrip/empty_source_round_trips
+=== CONT  TestPrinterRoundTrip/two_string_records
+=== CONT  TestPrinterRoundTrip/string_record_with_escaped_quote
+--- PASS: TestParser (0.00s)
+    --- PASS: TestParser/two_string_records_parse (0.00s)
+    --- PASS: TestParser/equivalent_sources_yield_equal_files (0.00s)
+    --- PASS: TestParser/string_record_with_escapes_parses (0.00s)
+    --- PASS: TestParser/empty_input_yields_zero_file (0.00s)
+    --- PASS: TestParser/single_string_record_parses (0.00s)
+=== CONT  TestPrinterRoundTrip/single_string_record
+=== CONT  TestPrinter/string_record_with_newline_and_tab_escapes
+=== CONT  TestPrinterRoundTrip/string_record_with_escaped_newline_and_tab
+=== CONT  TestPrinterRoundTrip/string_record_with_escaped_backslash
+=== RUN   TestTokenizer/record_string_declaration
+--- PASS: TestPrinter (0.00s)
+    --- PASS: TestPrinter/empty_file_prints_empty_string (0.00s)
+    --- PASS: TestPrinter/single_string_record (0.00s)
+    --- PASS: TestPrinter/string_record_with_quote_and_backslash_escapes (0.00s)
+    --- PASS: TestPrinter/two_string_records (0.00s)
+    --- PASS: TestPrinter/string_record_with_newline_and_tab_escapes (0.00s)
+=== PAUSE TestTokenizer/record_string_declaration
+=== RUN   TestTokenizer/two_records_separated_by_newline
+=== PAUSE TestTokenizer/two_records_separated_by_newline
+=== CONT  TestTokenizer/empty_input_yields_no_tokens
+=== CONT  TestTokenizer/string_with_escaped_quote
+=== CONT  TestTokenizer/simple_string_literal
+=== CONT  TestTokenizer/two_records_separated_by_newline
+--- PASS: TestPrinterRoundTrip (0.00s)
+    --- PASS: TestPrinterRoundTrip/empty_source_round_trips (0.00s)
+    --- PASS: TestPrinterRoundTrip/two_string_records (0.00s)
+    --- PASS: TestPrinterRoundTrip/string_record_with_escaped_quote (0.00s)
+    --- PASS: TestPrinterRoundTrip/single_string_record (0.00s)
+    --- PASS: TestPrinterRoundTrip/string_record_with_escaped_newline_and_tab (0.00s)
+    --- PASS: TestPrinterRoundTrip/string_record_with_escaped_backslash (0.00s)
+=== CONT  TestTokenizer/single_identifier
+=== CONT  TestTokenizer/equals_symbol
+=== CONT  TestTokenizer/identifier_with_underscore_and_digits
+=== CONT  TestTokenizer/string_with_escaped_newline_and_tab
+=== CONT  TestTokenizer/record_string_declaration
+=== CONT  TestTokenizer/string_with_escaped_backslash
+--- PASS: TestTokenizer (0.00s)
+    --- PASS: TestTokenizer/empty_input_yields_no_tokens (0.00s)
+    --- PASS: TestTokenizer/string_with_escaped_quote (0.00s)
+    --- PASS: TestTokenizer/simple_string_literal (0.00s)
+    --- PASS: TestTokenizer/single_identifier (0.00s)
+    --- PASS: TestTokenizer/two_records_separated_by_newline (0.00s)
+    --- PASS: TestTokenizer/equals_symbol (0.00s)
+    --- PASS: TestTokenizer/identifier_with_underscore_and_digits (0.00s)
+    --- PASS: TestTokenizer/string_with_escaped_newline_and_tab (0.00s)
+    --- PASS: TestTokenizer/record_string_declaration (0.00s)
+    --- PASS: TestTokenizer/string_with_escaped_backslash (0.00s)
+PASS
+ok  	kvr	1.015s

@@ -1,0 +1,82 @@
+{
+  "eval_id": 2,
+  "eval_name": "kvr-comment-round-trip",
+  "config": "with_skill",
+  "summary": {
+    "passed": 14,
+    "total": 14,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "tokenizer.go defines a TokenComment constant in the TokenType const block",
+      "passed": true,
+      "evidence": "TokenComment constant defined"
+    },
+    {
+      "text": "tokenizer.go has an action (function or closure) that consumes # to end-of-line and yields a TokenComment",
+      "passed": true,
+      "evidence": "tokenizer handles # comments"
+    },
+    {
+      "text": "parser.go's Record struct has a LeadingComments []string field (or an equivalent trivia attachment that survives round-trip)",
+      "passed": true,
+      "evidence": "Record carries ['LeadingComments', 'Comments', 'Leading']"
+    },
+    {
+      "text": "parser.go captures TokenComment tokens before a record and stores them on the next AST node (look for code that reads TokenComment and appends to a slice that flushes when the next non-comment token arrives)",
+      "passed": true,
+      "evidence": "parser captures and attaches comments"
+    },
+    {
+      "text": "printer.go emits the LeadingComments before the record's own output (look for a write call inside printRecord that iterates comments before printing the record body)",
+      "passed": true,
+      "evidence": "printer emits leading comments"
+    },
+    {
+      "text": "printer_test.go (or a parser+printer interaction test) has a round-trip subtest with one comment above a record",
+      "passed": true,
+      "evidence": "round-trip with comment present"
+    },
+    {
+      "text": "printer_test.go has a round-trip subtest with at least two comments above the same record",
+      "passed": true,
+      "evidence": "multi-comment round-trip test present"
+    },
+    {
+      "text": "tokenizer_test.go has a test for a comment token that asserts an exact Pos value for the comment",
+      "passed": true,
+      "evidence": "comment Pos test (has_pos=True, has_comment=True)"
+    },
+    {
+      "text": "all new tests call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "t.Parallel at both levels"
+    },
+    {
+      "text": "go test -race ./... exits cleanly",
+      "passed": true,
+      "evidence": "go test -race ./... passes"
+    },
+    {
+      "text": "no scratch copy of SPEC.md content was written to the package",
+      "passed": true,
+      "evidence": "no _spec*.md leftovers"
+    },
+    {
+      "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)",
+      "passed": true,
+      "evidence": "section_present=True; strict_format=True; 400_line_cap=True; chunk_on_overflow=True; files_documented=True"
+    },
+    {
+      "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_tokens.md / _context_ast.md, and do not full-read the growing tokenizer.go / parser.go / printer.go source file (issue #47 acceptance)",
+      "passed": true,
+      "evidence": "before_start_present=True; scope_gate=True; line_threshold=True; chunked_threshold=True; partition_subunits=True; section_boundary=True; announce=True; chunking_section_present=True; serial=True; append=True; forbids_full_read=True (forbid_phrase=True, all_sources_present=True); summary_filenames=True"
+    },
+    {
+      "text": "partition_plan.md exists in the package and reports `no partitioning needed` for every phase (kvr is below the 600-line gate, so no phase should partition)",
+      "passed": true,
+      "evidence": "tokenizer: no partitioning; parser: no partitioning; printer: no partitioning"
+    }
+  ]
+}
