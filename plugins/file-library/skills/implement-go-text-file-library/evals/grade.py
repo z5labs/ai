@@ -156,17 +156,34 @@ def assertion_phase_chunking_spec() -> tuple[bool, str]:
     has_scope_gate = "scope gate" in before_lower
     findings.append(f"scope_gate={has_scope_gate}")
 
-    # Numeric threshold: at least one >=3-digit number — the threshold
-    # itself (e.g. "600", "300") is what we want, not the existing
-    # "400-line cap" which only appears in `## Context summary format`.
-    has_threshold = bool(re.search(r"\b\d{3,}\b", before_start))
-    findings.append(f"numeric_threshold={has_threshold}")
+    # Sliced-line threshold: at least one >=3-digit number — the line
+    # threshold itself (e.g. "600", "300") is what we want, not the
+    # existing "400-line cap" which only appears in `## Context summary
+    # format`.
+    has_line_threshold = bool(re.search(r"\b\d{3,}\b", before_start))
+    findings.append(f"line_threshold={has_line_threshold}")
 
+    # Chunked-file threshold: a digit immediately preceding "chunked
+    # file(s)". Required so the chunked-file half of the gate can't
+    # silently regress while the line-count half still satisfies the
+    # 3-digit check.
+    has_chunked_threshold = bool(
+        re.search(r"\b\d+\s+chunked\s+files?", before_start, re.IGNORECASE)
+    )
+    findings.append(f"chunked_threshold={has_chunked_threshold}")
+
+    # Partition along spec-section boundaries (issue #47's exact
+    # acceptance phrasing). "section bound" matches both "section
+    # boundary" and "section boundaries"; the "spec-" prefix is allowed
+    # but not required.
     has_partition_subunits = (
         "partition" in before_lower
         and ("sub-unit" in before_lower or "sub-units" in before_lower)
     )
     findings.append(f"partition_subunits={has_partition_subunits}")
+
+    has_section_boundary = "section bound" in before_lower
+    findings.append(f"section_boundary={has_section_boundary}")
 
     has_announce = (
         "tell the user" in before_lower
@@ -177,8 +194,10 @@ def assertion_phase_chunking_spec() -> tuple[bool, str]:
 
     gate_ok = (
         has_scope_gate
-        and has_threshold
+        and has_line_threshold
+        and has_chunked_threshold
         and has_partition_subunits
+        and has_section_boundary
         and has_announce
     )
 
