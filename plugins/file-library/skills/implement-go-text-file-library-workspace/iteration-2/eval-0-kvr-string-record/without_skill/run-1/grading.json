@@ -1,0 +1,107 @@
+{
+  "eval_id": 0,
+  "eval_name": "kvr-string-record",
+  "config": "without_skill",
+  "summary": {
+    "passed": 17,
+    "total": 19,
+    "pass_rate": 0.8947368421052632
+  },
+  "expectations": [
+    {
+      "text": "tokenizer.go defines a TokenString constant in the TokenType const block",
+      "passed": true,
+      "evidence": "TokenString constant defined"
+    },
+    {
+      "text": "tokenizer.go has an action (function or closure) that handles double-quoted string literals and yields a TokenString",
+      "passed": true,
+      "evidence": "tokenizer handles quoted strings"
+    },
+    {
+      "text": "parser.go defines a Record struct (or equivalent AST node) with at least a Type, Key, and Value field",
+      "passed": true,
+      "evidence": "Record struct present with fields ['Type', 'Key', 'Value', 'Name']"
+    },
+    {
+      "text": "the File struct in parser.go has a Records slice (or equivalent collection field)",
+      "passed": true,
+      "evidence": "File.Records present"
+    },
+    {
+      "text": "parser.go defines a parseRecord (or equivalent) action consumed by the parser's action loop",
+      "passed": true,
+      "evidence": "parseRecord-style action present"
+    },
+    {
+      "text": "parser.go uses p.expect(...) at sites that require a specific token type \u2014 no inline TokenType comparisons in the new code",
+      "passed": true,
+      "evidence": "p.expect used; inline compares=0"
+    },
+    {
+      "text": "printer.go has a function or action that emits a Record back to source text",
+      "passed": true,
+      "evidence": "printer handles Record"
+    },
+    {
+      "text": "tokenizer_test.go has a test for a string literal that asserts an exact Pos{Line, Column} value (not a zero/placeholder Pos)",
+      "passed": true,
+      "evidence": "exact Pos in tokenizer test (has_pos=True, has_string_test=True)"
+    },
+    {
+      "text": "parser_test.go uses Parse(strings.NewReader(...)) for the test inputs and does not hand-construct Record literals as expected values (the empty-input scaffold case is the only allowed exception)",
+      "passed": false,
+      "evidence": "parser tests use Parse() (has_parse=True, bad_literal=True)"
+    },
+    {
+      "text": "printer_test.go has a direct test that calls Print on a *File and asserts the output string matches an expected literal",
+      "passed": true,
+      "evidence": "direct print test (has_print=True, has_assert=True)"
+    },
+    {
+      "text": "printer_test.go has a round-trip test that runs Parse \u2192 Print \u2192 Parse and asserts require.Equal on the two *File values",
+      "passed": true,
+      "evidence": "round-trip test present"
+    },
+    {
+      "text": "all new tests call t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "t.Parallel at both levels in all test files"
+    },
+    {
+      "text": "tests use github.com/stretchr/testify/require",
+      "passed": true,
+      "evidence": "tests use testify/require"
+    },
+    {
+      "text": "go test -race ./... exits cleanly",
+      "passed": true,
+      "evidence": "go test -race ./... passes"
+    },
+    {
+      "text": "no leftover _spec_*.md or _context_*.md scratch files in the package directory",
+      "passed": true,
+      "evidence": "no _*.md scratch files"
+    },
+    {
+      "text": "no scratch copy of SPEC.md content was written to the package (e.g. _spec_tokens.md should not exist)",
+      "passed": true,
+      "evidence": "no _spec*.md scratch copies"
+    },
+    {
+      "text": "SKILL.md specifies, for both _context_tokens.md and _context_ast.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)",
+      "passed": true,
+      "evidence": "section_present=True; strict_format=True; 400_line_cap=True; chunk_on_overflow=True; files_documented=True"
+    },
+    {
+      "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_tokens.md / _context_ast.md, and do not full-read the growing tokenizer.go / parser.go / printer.go source file (issue #47 acceptance)",
+      "passed": true,
+      "evidence": "before_start_present=True; scope_gate=True; line_threshold=True; chunked_threshold=True; partition_subunits=True; section_boundary=True; announce=True; chunking_section_present=True; serial=True; append=True; forbids_full_read=True (forbid_phrase=True, all_sources_present=True); summary_filenames=True"
+    },
+    {
+      "text": "partition_plan.md exists in the package and reports `no partitioning needed` for every phase (kvr is below the 600-line gate, so no phase should partition)",
+      "passed": false,
+      "evidence": "partition_plan.md not found"
+    }
+  ]
+}

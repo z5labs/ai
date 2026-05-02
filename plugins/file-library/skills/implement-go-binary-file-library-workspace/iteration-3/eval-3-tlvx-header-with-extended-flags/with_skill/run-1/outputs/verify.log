@@ -1,0 +1,80 @@
+=== RUN   TestDecodeHeaderHappyPath
+=== PAUSE TestDecodeHeaderHappyPath
+=== RUN   TestDecodeHeaderMagicMismatch
+=== PAUSE TestDecodeHeaderMagicMismatch
+=== RUN   TestDecodeHeaderTruncated
+=== PAUSE TestDecodeHeaderTruncated
+=== RUN   TestDecodeHeaderUnknownVersion
+=== PAUSE TestDecodeHeaderUnknownVersion
+=== RUN   TestDecodeHeaderReserved1NonZero
+=== PAUSE TestDecodeHeaderReserved1NonZero
+=== RUN   TestDecodeHeaderReservedFlagBitSet
+=== PAUSE TestDecodeHeaderReservedFlagBitSet
+=== RUN   TestDecodeHeaderUnknownChecksumAlg
+=== PAUSE TestDecodeHeaderUnknownChecksumAlg
+=== RUN   TestEncodeHeaderHappyPath
+=== PAUSE TestEncodeHeaderHappyPath
+=== RUN   TestEncodeHeaderRejectsReservedFlagBit
+=== PAUSE TestEncodeHeaderRejectsReservedFlagBit
+=== RUN   TestEncodeHeaderRejectsNonZeroReserved1
+=== PAUSE TestEncodeHeaderRejectsNonZeroReserved1
+=== RUN   TestEncodeHeaderRejectsUnknownChecksumAlg
+=== PAUSE TestEncodeHeaderRejectsUnknownChecksumAlg
+=== RUN   TestRoundTripHeader
+=== PAUSE TestRoundTripHeader
+=== RUN   TestErrorChain
+=== PAUSE TestErrorChain
+=== RUN   TestHeaderSize
+=== PAUSE TestHeaderSize
+=== RUN   TestFlagsBitFieldMasks
+=== PAUSE TestFlagsBitFieldMasks
+=== RUN   TestFlagsCombineAndQuery
+=== PAUSE TestFlagsCombineAndQuery
+=== RUN   TestChecksumAlgString
+=== PAUSE TestChecksumAlgString
+=== RUN   TestUnexpectedMagicError
+=== PAUSE TestUnexpectedMagicError
+--- PASS: TestEncodeHeaderRejectsNonZeroReserved1 (0.00s)
+--- PASS: TestEncodeHeaderRejectsReservedFlagBit (0.00s)
+--- PASS: TestHeaderSize (0.00s)
+--- PASS: TestErrorChain (0.00s)
+--- PASS: TestUnexpectedMagicError (0.00s)
+--- PASS: TestEncodeHeaderRejectsUnknownChecksumAlg (0.00s)
+--- PASS: TestDecodeHeaderUnknownChecksumAlg (0.00s)
+--- PASS: TestDecodeHeaderReserved1NonZero (0.00s)
+--- PASS: TestFlagsCombineAndQuery (0.00s)
+--- PASS: TestDecodeHeaderMagicMismatch (0.00s)
+--- PASS: TestDecodeHeaderReservedFlagBitSet (0.00s)
+--- PASS: TestDecodeHeaderUnknownVersion (0.00s)
+--- PASS: TestDecodeHeaderTruncated (0.00s)
+    --- PASS: TestDecodeHeaderTruncated/truncated_after_magic (0.00s)
+    --- PASS: TestDecodeHeaderTruncated/truncated_in_magic (0.00s)
+--- PASS: TestRoundTripHeader (0.00s)
+    --- PASS: TestRoundTripHeader/minimal (0.00s)
+    --- PASS: TestRoundTripHeader/all_flags (0.00s)
+    --- PASS: TestRoundTripHeader/every_checksum_alg (0.00s)
+--- PASS: TestEncodeHeaderHappyPath (0.00s)
+    --- PASS: TestEncodeHeaderHappyPath/with_flags_compressed_indexed_sealed (0.00s)
+    --- PASS: TestEncodeHeaderHappyPath/all_seven_flags_extended (0.00s)
+    --- PASS: TestEncodeHeaderHappyPath/minimal_no_flags (0.00s)
+--- PASS: TestDecodeHeaderHappyPath (0.00s)
+    --- PASS: TestDecodeHeaderHappyPath/minimal_no_flags (0.00s)
+    --- PASS: TestDecodeHeaderHappyPath/all_seven_flags_extended (0.00s)
+    --- PASS: TestDecodeHeaderHappyPath/with_flags_compressed_indexed_sealed (0.00s)
+--- PASS: TestFlagsBitFieldMasks (0.00s)
+    --- PASS: TestFlagsBitFieldMasks/encrypted (0.00s)
+    --- PASS: TestFlagsBitFieldMasks/sealed (0.00s)
+    --- PASS: TestFlagsBitFieldMasks/indexed (0.00s)
+    --- PASS: TestFlagsBitFieldMasks/signed (0.00s)
+    --- PASS: TestFlagsBitFieldMasks/strict (0.00s)
+    --- PASS: TestFlagsBitFieldMasks/compressed (0.00s)
+    --- PASS: TestFlagsBitFieldMasks/extended (0.00s)
+--- PASS: TestChecksumAlgString (0.00s)
+    --- PASS: TestChecksumAlgString/xxh64 (0.00s)
+    --- PASS: TestChecksumAlgString/crc64_ecma (0.00s)
+    --- PASS: TestChecksumAlgString/crc32_ieee (0.00s)
+    --- PASS: TestChecksumAlgString/blake3_t32 (0.00s)
+    --- PASS: TestChecksumAlgString/sha256_t32 (0.00s)
+    --- PASS: TestChecksumAlgString/unknown (0.00s)
+PASS
+ok  	tlvx	1.016s

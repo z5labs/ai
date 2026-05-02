@@ -1,0 +1,78 @@
+$ cd /home/carson/github.com/z5labs/ai/plugins/file-library/skills/implement-go-binary-file-library-workspace/iteration-3/eval-1-tlv-record-variable-length/without_skill/run-1/outputs/tlv && go test -race ./...
+ok  	tlv	1.013s
+
+$ cd /home/carson/github.com/z5labs/ai/plugins/file-library/skills/implement-go-binary-file-library-workspace/iteration-3/eval-1-tlv-record-variable-length/without_skill/run-1/outputs/tlv && go test -race -v ./...
+=== RUN   TestDecodeStubReturnsErrUnimplemented
+=== PAUSE TestDecodeStubReturnsErrUnimplemented
+=== RUN   TestEncodeStubReturnsErrUnimplemented
+=== PAUSE TestEncodeStubReturnsErrUnimplemented
+=== RUN   TestRecordTypeConstants
+=== PAUSE TestRecordTypeConstants
+=== RUN   TestFileHoldsRecords
+=== PAUSE TestFileHoldsRecords
+=== RUN   TestDecodeRecord
+=== PAUSE TestDecodeRecord
+=== RUN   TestEncodeRecord
+=== PAUSE TestEncodeRecord
+=== RUN   TestRecordRoundTrip
+=== PAUSE TestRecordRoundTrip
+=== RUN   TestErrorChain
+=== PAUSE TestErrorChain
+=== CONT  TestDecodeStubReturnsErrUnimplemented
+=== CONT  TestDecodeRecord
+=== CONT  TestRecordTypeConstants
+=== CONT  TestErrorChain
+=== CONT  TestRecordRoundTrip
+=== RUN   TestRecordRoundTrip/STRING
+=== PAUSE TestRecordRoundTrip/STRING
+=== CONT  TestEncodeRecord
+=== CONT  TestFileHoldsRecords
+=== RUN   TestRecordRoundTrip/INT
+--- PASS: TestDecodeStubReturnsErrUnimplemented (0.00s)
+--- PASS: TestRecordTypeConstants (0.00s)
+=== CONT  TestEncodeStubReturnsErrUnimplemented
+=== RUN   TestDecodeRecord/typical_STRING_record
+=== RUN   TestEncodeRecord/typical_STRING_record
+=== PAUSE TestRecordRoundTrip/INT
+=== PAUSE TestDecodeRecord/typical_STRING_record
+--- PASS: TestErrorChain (0.00s)
+=== RUN   TestRecordRoundTrip/BLOB
+--- PASS: TestFileHoldsRecords (0.00s)
+=== PAUSE TestEncodeRecord/typical_STRING_record
+--- PASS: TestEncodeStubReturnsErrUnimplemented (0.00s)
+=== PAUSE TestRecordRoundTrip/BLOB
+=== RUN   TestEncodeRecord/empty_record_(Length=0)
+=== RUN   TestRecordRoundTrip/NESTED
+=== PAUSE TestEncodeRecord/empty_record_(Length=0)
+=== PAUSE TestRecordRoundTrip/NESTED
+=== CONT  TestRecordRoundTrip/STRING
+=== CONT  TestRecordRoundTrip/INT
+=== CONT  TestRecordRoundTrip/BLOB
+=== CONT  TestRecordRoundTrip/NESTED
+=== RUN   TestDecodeRecord/empty_record_(Length=0)
+=== RUN   TestEncodeRecord/INT_record_(Length=8)
+=== PAUSE TestDecodeRecord/empty_record_(Length=0)
+=== PAUSE TestEncodeRecord/INT_record_(Length=8)
+--- PASS: TestRecordRoundTrip (0.00s)
+    --- PASS: TestRecordRoundTrip/INT (0.00s)
+    --- PASS: TestRecordRoundTrip/STRING (0.00s)
+    --- PASS: TestRecordRoundTrip/BLOB (0.00s)
+    --- PASS: TestRecordRoundTrip/NESTED (0.00s)
+=== CONT  TestEncodeRecord/empty_record_(Length=0)
+=== RUN   TestDecodeRecord/INT_record_(Length=8)
+=== CONT  TestEncodeRecord/INT_record_(Length=8)
+=== CONT  TestEncodeRecord/typical_STRING_record
+=== PAUSE TestDecodeRecord/INT_record_(Length=8)
+=== CONT  TestDecodeRecord/empty_record_(Length=0)
+=== CONT  TestDecodeRecord/INT_record_(Length=8)
+=== CONT  TestDecodeRecord/typical_STRING_record
+--- PASS: TestEncodeRecord (0.00s)
+    --- PASS: TestEncodeRecord/empty_record_(Length=0) (0.00s)
+    --- PASS: TestEncodeRecord/INT_record_(Length=8) (0.00s)
+    --- PASS: TestEncodeRecord/typical_STRING_record (0.00s)
+--- PASS: TestDecodeRecord (0.00s)
+    --- PASS: TestDecodeRecord/empty_record_(Length=0) (0.00s)
+    --- PASS: TestDecodeRecord/INT_record_(Length=8) (0.00s)
+    --- PASS: TestDecodeRecord/typical_STRING_record (0.00s)
+PASS
+ok  	tlv	1.014s

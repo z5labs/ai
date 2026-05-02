@@ -47,6 +47,139 @@ def has_t_parallel_at_both_levels(text: str) -> bool:
 
 CONTEXT_FILENAMES = ("_context_types.md", "_context_decoder.md")
 SOURCE_FILENAMES = ("types.go", "decoder.go", "encoder.go")
+PHASE_NAMES = ("types", "decoder", "encoder")
+PACKAGE_NAMES = {0: "tlv", 1: "tlv", 2: "tlv", 3: "tlvx"}
+
+
+def parse_partition_plan(pkg: Path) -> dict:
+    """Parse `<pkg>/partition_plan.md` into a structured summary.
+
+    See the matching helper in the implement-go-text-file-library grade.py for
+    the full file format. Phases for binary are `types` / `decoder` / `encoder`.
+    """
+    plan_path = pkg / "partition_plan.md"
+    result = {
+        "exists": plan_path.exists(),
+        "raw": "",
+        "phases": {p: {"partitioned": False, "sub_unit_count": 0, "summary_text": ""} for p in PHASE_NAMES},
+        "sub_unit_log": [],
+    }
+    if not result["exists"]:
+        return result
+
+    text = plan_path.read_text()
+    result["raw"] = text
+
+    for phase in PHASE_NAMES:
+        section = extract_section(text, f"{phase} phase")
+        partitioned = False
+        sub_unit_count = 0
+        m = re.search(r"partitioned\s+into\s+(\d+)\s+sub[-\s]?units?", section, re.IGNORECASE)
+        if m:
+            partitioned = True
+            sub_unit_count = int(m.group(1))
+        result["phases"][phase] = {
+            "partitioned": partitioned,
+            "sub_unit_count": sub_unit_count,
+            "summary_text": section,
+        }
+
+    pattern = re.compile(
+        r"^##\s+(\w+)\s+sub[-\s]?unit\s+(\d+)\s*[—–\-]\s*(starting|done)(?:\s*\(([^)]*)\))?",
+        re.MULTILINE | re.IGNORECASE,
+    )
+    for m in pattern.finditer(text):
+        phase = m.group(1).lower()
+        idx = int(m.group(2))
+        kind = m.group(3).lower()
+        ts = m.group(4) or ""
+        if phase in PHASE_NAMES:
+            result["sub_unit_log"].append((phase, idx, kind, ts))
+
+    return result
+
+
+def assertion_partition_plan_exists(pkg: Path) -> tuple[bool, str]:
+    plan = parse_partition_plan(pkg)
+    if not plan["exists"]:
+        return False, "partition_plan.md not found in package"
+    return True, f"partition_plan.md exists ({len(plan['raw'])} bytes)"
+
+
+def assertion_partition_plan_announces_sub_units(pkg: Path) -> tuple[bool, str]:
+    plan = parse_partition_plan(pkg)
+    if not plan["exists"]:
+        return False, "partition_plan.md not found"
+    findings = []
+    max_count = 0
+    any_partitioned = False
+    for phase, info in plan["phases"].items():
+        if info["partitioned"]:
+            any_partitioned = True
+            findings.append(f"{phase}: {info['sub_unit_count']} sub-units")
+            max_count = max(max_count, info["sub_unit_count"])
+    if not any_partitioned:
+        return False, "no phase reported as partitioned in partition_plan.md"
+    if max_count < 2:
+        return False, f"max sub-unit count is {max_count} (need >= 2): {findings}"
+    return True, "; ".join(findings)
+
+
+def assertion_partition_plan_serial_order(pkg: Path) -> tuple[bool, str]:
+    plan = parse_partition_plan(pkg)
+    if not plan["exists"]:
+        return False, "partition_plan.md not found"
+
+    by_phase: dict = {p: [] for p in PHASE_NAMES}
+    for phase, idx, kind, ts in plan["sub_unit_log"]:
+        by_phase[phase].append((idx, kind, ts))
+
+    findings = []
+    for phase, info in plan["phases"].items():
+        if not info["partitioned"]:
+            continue
+        log = by_phase[phase]
+        expected = info["sub_unit_count"]
+        if len(log) < expected * 2:
+            return False, f"{phase}: log has {len(log)} entries but {expected*2} expected (start+done per sub-unit)"
+        for i in range(expected):
+            s_idx, s_kind, _ = log[2 * i]
+            d_idx, d_kind, _ = log[2 * i + 1]
+            if (s_idx, s_kind) != (i + 1, "starting"):
+                return False, f"{phase}: entry {2*i} = (sub-unit {s_idx}, {s_kind}); want (sub-unit {i+1}, starting)"
+            if (d_idx, d_kind) != (i + 1, "done"):
+                return False, f"{phase}: entry {2*i+1} = (sub-unit {d_idx}, {d_kind}); want (sub-unit {i+1}, done)"
+        findings.append(f"{phase}: {expected} sub-units logged in serial order")
+    if not findings:
+        return False, "no partitioned phase had its serial-order log validated"
+    return True, "; ".join(findings)
+
+
+def assertion_small_fixture_no_partition(pkg: Path) -> tuple[bool, str]:
+    plan = parse_partition_plan(pkg)
+    if not plan["exists"]:
+        return False, "partition_plan.md not found"
+    findings = []
+    for phase, info in plan["phases"].items():
+        if info["partitioned"]:
+            return False, f"{phase}: unexpectedly partitioned (sub-unit count: {info['sub_unit_count']})"
+        if "no partitioning" not in info["summary_text"].lower():
+            return False, f"{phase}: summary missing 'no partitioning' phrase"
+        findings.append(f"{phase}: no partitioning")
+    return True, "; ".join(findings)
+
+
+def assertion_partition_common(asid: str, pkg: Path):
+    """Dispatch the four partition-related assertions shared across all evals."""
+    if asid == "small-fixture-no-partition":
+        return assertion_small_fixture_no_partition(pkg)
+    if asid == "partition-plan-exists":
+        return assertion_partition_plan_exists(pkg)
+    if asid == "partition-plan-announces-sub-units":
+        return assertion_partition_plan_announces_sub_units(pkg)
+    if asid == "partition-plan-serial-order":
+        return assertion_partition_plan_serial_order(pkg)
+    return None
 
 
 def skill_md_text() -> str:
@@ -281,6 +414,9 @@ def assertion_phase_chunking_spec() -> tuple[bool, str]:
 
 
 def assertion_eval0_header(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, str]:
+    common = assertion_partition_common(asid, pkg)
+    if common is not None:
+        return common
     types = read(pkg / "types.go")
     decoder = read(pkg / "decoder.go")
     encoder = read(pkg / "encoder.go")
@@ -401,6 +537,9 @@ def assertion_eval0_header(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, s
 
 
 def assertion_eval1_record(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, str]:
+    common = assertion_partition_common(asid, pkg)
+    if common is not None:
+        return common
     types = read(pkg / "types.go")
     decoder = read(pkg / "decoder.go")
     encoder = read(pkg / "encoder.go")
@@ -500,6 +639,9 @@ def assertion_eval1_record(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, s
 
 
 def assertion_eval2_trailer(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, str]:
+    common = assertion_partition_common(asid, pkg)
+    if common is not None:
+        return common
     types = read(pkg / "types.go")
     decoder = read(pkg / "decoder.go")
     encoder = read(pkg / "encoder.go")
@@ -576,10 +718,162 @@ def assertion_eval2_trailer(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, 
     return False, f"unknown assertion id: {asid}"
 
 
+def assertion_eval3_tlvx_header_extended(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, str]:
+    """Grader for the gate-tripping tlvx eval (issue #55).
+
+    The eval exercises the `partition_plan.md` mechanism: tlvx's decoder-phase
+    slices clear the 600-line gate, so the orchestrator must partition. The
+    partition-plan assertions are dispatched via `assertion_partition_common`.
+    The remaining assertions check the actual implementation: a Header struct
+    with the eight TLVX fields (Magic / Version / Flags / ChecksumAlg /
+    Reserved1 / IndexCount / ExtCount / TrailerOffset), the seven defined Flags
+    bit-field constants, and the ChecksumAlg enum with its String() method.
+    """
+    common = assertion_partition_common(asid, pkg)
+    if common is not None:
+        return common
+
+    types = read(pkg / "types.go")
+    decoder = read(pkg / "decoder.go")
+    encoder = read(pkg / "encoder.go")
+    decoder_test = read(pkg / "decoder_test.go")
+    encoder_test = read(pkg / "encoder_test.go")
+    types_test = read(pkg / "types_test.go")
+    all_test = decoder_test + encoder_test + types_test
+
+    if asid == "header-struct-defined":
+        if not re.search(r"type\s+Header\s+struct", types):
+            return False, "no Header struct in types.go"
+        missing = [f for f in ("Magic", "Version", "Flags", "ChecksumAlg",
+                               "Reserved1", "IndexCount", "ExtCount", "TrailerOffset")
+                   if not re.search(rf"\b{f}\b", types)]
+        if missing:
+            return False, f"Header missing fields: {missing}"
+        return True, "Header struct present with all eight TLVX fields"
+
+    if asid == "flags-bit-field-constants":
+        # The seven defined Flags: COMPRESSED, ENCRYPTED, SIGNED, INDEXED,
+        # EXTENDED, STRICT, SEALED. (TLVX bit 7 is reserved.) Accept "Flag"
+        # prefix or bare names.
+        required = ["COMPRESSED", "ENCRYPTED", "SIGNED", "INDEXED", "EXTENDED", "STRICT", "SEALED"]
+        missing = [f for f in required if not re.search(rf"\b\w*{f}\w*\b", types)]
+        if missing:
+            return False, f"Flags constants missing: {missing}"
+        return True, "all seven defined TLVX flag constants present"
+
+    if asid == "checksum-alg-enum":
+        # Look for a named type ChecksumAlg with constants. Accept any of the
+        # five algorithm names being present (we ask for at least three in the
+        # assertion text).
+        if not re.search(r"type\s+ChecksumAlg\b", types):
+            return False, "no ChecksumAlg type defined in types.go"
+        algs = [a for a in ("CRC32_IEEE", "CRC32IEEE", "CRC64_ECMA", "CRC64ECMA",
+                            "SHA256_T32", "SHA256T32", "XXH64", "BLAKE3_T32", "BLAKE3T32")
+                if re.search(rf"\b{a}\b", types)]
+        # Normalise: collapse equivalent names down to a unique-algorithm count
+        normalized = set()
+        for a in algs:
+            if "CRC32" in a: normalized.add("CRC32")
+            elif "CRC64" in a: normalized.add("CRC64")
+            elif "SHA256" in a: normalized.add("SHA256")
+            elif "XXH64" in a: normalized.add("XXH64")
+            elif "BLAKE3" in a: normalized.add("BLAKE3")
+        if len(normalized) < 3:
+            return False, f"only {len(normalized)} ChecksumAlg constants found ({sorted(normalized)}); need >= 3"
+        return True, f"ChecksumAlg enum with {len(normalized)} algorithms: {sorted(normalized)}"
+
+    if asid == "checksum-alg-string-method":
+        ok = re.search(r"func\s*\(\s*\w+\s+ChecksumAlg\s*\)\s+String\s*\(\s*\)\s+string", types) is not None
+        return ok, "ChecksumAlg.String() defined" if ok else "no String() method on ChecksumAlg"
+
+    if asid == "file-includes-header":
+        ok = re.search(r"type\s+File\s+struct\s*\{[^}]*Header", types) is not None
+        return ok, "File struct references Header" if ok else "File struct does not include Header"
+
+    if asid == "read-header-method":
+        ok = re.search(r"func\s*\(\s*\w+\s+\*?decoder\s*\)\s+readHeader\b", decoder) is not None
+        return ok, "readHeader method on decoder" if ok else "no readHeader method"
+
+    if asid == "write-header-method":
+        ok = re.search(r"func\s*\(\s*\w+\s+\*?encoder\s*\)\s+writeHeader\b", encoder) is not None
+        return ok, "writeHeader method on encoder" if ok else "no writeHeader method"
+
+    if asid == "errors-funnel-through-wrapErr":
+        # Any direct construction of FieldError or OffsetError outside the
+        # wrapErr helpers fails this check. Strip the helper bodies first.
+        d_stripped = re.sub(r"func\s*\(\s*\w\s+\*?decoder\s*\)\s+wrapErr[\s\S]*?\n\}", "", decoder, count=1)
+        e_stripped = re.sub(r"func\s*\(\s*\w\s+\*?encoder\s*\)\s+wrapErr[\s\S]*?\n\}", "", encoder, count=1)
+        bad = []
+        for label, txt in (("decoder.go", d_stripped), ("encoder.go", e_stripped)):
+            for direct in re.findall(r"&FieldError\s*\{|&OffsetError\s*\{", txt):
+                bad.append(f"{label}: {direct}")
+        ok = len(bad) == 0
+        return ok, ("no direct FieldError/OffsetError outside wrapErr" if ok else f"direct error construction: {bad[:3]}")
+
+    if asid == "decode-test-hex-literal":
+        # Test that decodes a hex byte literal containing the TLVX magic
+        # (54 4C 56 58 or "TLVX") and asserts Header field values.
+        has_magic = ("0x54" in decoder_test and "0x4C" in decoder_test) or '"TLVX"' in decoder_test
+        has_decode = re.search(r"\bDecode\s*\(", decoder_test) is not None
+        ok = has_magic and has_decode
+        return ok, f"decode test with TLVX magic (has_magic={has_magic}, has_decode={has_decode})"
+
+    if asid == "decode-failure-test-chain":
+        # Failure-path test asserting errors.Is(leaf) AND errors.As(*FieldError)
+        has_is = re.search(r"errors\.Is\b|require\.ErrorIs\b", decoder_test) is not None
+        has_as = re.search(r"errors\.As\b|require\.ErrorAs\b", decoder_test) is not None
+        has_field_error = "FieldError" in decoder_test
+        ok = has_is and has_as and has_field_error
+        return ok, f"failure-path chain test (Is={has_is}, As={has_as}, FieldError={has_field_error})"
+
+    if asid == "encode-test-hex-literal":
+        has_encode = re.search(r"\bEncode\s*\(", encoder_test) is not None
+        # Hex bytes in the assertion (TLVX magic) or a string-literal "TLVX"
+        has_hex = "0x54" in encoder_test or "0x4C" in encoder_test or '"TLVX"' in encoder_test
+        ok = has_encode and has_hex
+        return ok, f"encode happy-path test (has_encode={has_encode}, has_hex={has_hex})"
+
+    if asid == "round-trip-test":
+        ok = ("Encode" in encoder_test and "Decode" in encoder_test) and \
+             ("RoundTrip" in encoder_test or "round" in encoder_test.lower())
+        return ok, "round-trip test present" if ok else "no round-trip test"
+
+    if asid == "tests-parallel":
+        for name, txt in [("decoder_test.go", decoder_test), ("encoder_test.go", encoder_test), ("types_test.go", types_test)]:
+            if txt and txt.count("t.Parallel()") < 2:
+                return False, f"{name} insufficient t.Parallel"
+        return True, "t.Parallel at both levels in all test files"
+
+    if asid == "tests-testify-require":
+        ok = "github.com/stretchr/testify/require" in all_test
+        return ok, "tests use testify/require" if ok else "no testify/require import"
+
+    if asid == "go-test-passes":
+        ok = go_test_log_passed(run_dir)
+        return ok, "go test -race ./... passes" if ok else "go test failed (see verify.log)"
+
+    if asid == "no-scratch-files-left":
+        leftovers = [p.name for p in pkg.glob("_*.md")]
+        return len(leftovers) == 0, "no _*.md scratch files" if not leftovers else f"leftover scratch: {leftovers}"
+
+    if asid == "no-full-spec-copy":
+        leftovers = [p.name for p in pkg.glob("_spec*.md")]
+        return len(leftovers) == 0, "no _spec*.md scratch copies" if not leftovers else f"spec copy leftover: {leftovers}"
+
+    if asid == "context-summary-spec-tightened":
+        return assertion_context_summary_spec_tightened()
+
+    if asid == "phase-chunking-spec-tightened":
+        return assertion_phase_chunking_spec()
+
+    return False, f"unknown assertion id: {asid}"
+
+
 GRADERS = {
     0: assertion_eval0_header,
     1: assertion_eval1_record,
     2: assertion_eval2_trailer,
+    3: assertion_eval3_tlvx_header_extended,
 }
 
 
@@ -588,7 +882,7 @@ def grade_run(eval_dir: Path, config: str) -> dict:
     eval_id = meta["eval_id"]
     grader = GRADERS[eval_id]
     run_dir = eval_dir / config / "run-1"
-    pkg = run_dir / "outputs" / "tlv"
+    pkg = run_dir / "outputs" / PACKAGE_NAMES[eval_id]
     expectations = []
     for a in meta["assertions"]:
         passed, evidence = grader(a["id"], pkg, run_dir)
