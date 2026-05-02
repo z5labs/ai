@@ -216,21 +216,27 @@ def assertion_phase_chunking_spec() -> tuple[bool, str]:
     has_append = "append" in chunking_lower
     findings.append(f"append={has_append}")
 
-    # No full-Read of the growing source file: a forbidding phrase plus a
-    # source filename plus the word "read" must all appear inside the
-    # `## Phase chunking` section. The forbidding-phrase set covers the
-    # current "no full-`Read`" / "without a fresh whole-file read" /
+    # No full-Read of the growing source file: a forbidding phrase plus
+    # all three source filenames plus the word "read" must appear inside
+    # the `## Phase chunking` section. Requiring *all* of SOURCE_FILENAMES
+    # (mirroring the CONTEXT_FILENAMES check below) prevents the spec
+    # from silently regressing to covering only one or two of the per-
+    # phase source files. The forbidding-phrase set covers the current
+    # "no full-`Read`" / "without a fresh whole-file read" /
     # "never the whole file" wordings without pinning the exact phrase.
     forbid_phrase = any(
         p in chunking_lower for p in ("no full", "whole file", "whole-file")
     )
-    has_source_filename = any(name in chunking for name in SOURCE_FILENAMES)
+    missing_sources = [name for name in SOURCE_FILENAMES if name not in chunking]
+    all_sources_documented = not missing_sources
     forbids_full_read = (
-        forbid_phrase and has_source_filename and "read" in chunking_lower
+        forbid_phrase and all_sources_documented and "read" in chunking_lower
     )
     findings.append(
         f"forbids_full_read={forbids_full_read}"
-        f" (forbid_phrase={forbid_phrase}, has_source={has_source_filename})"
+        f" (forbid_phrase={forbid_phrase}, "
+        + (f"missing_sources={missing_sources}" if missing_sources else "all_sources_present=True")
+        + ")"
     )
 
     # Both running-summary filenames present in the chunking section, so

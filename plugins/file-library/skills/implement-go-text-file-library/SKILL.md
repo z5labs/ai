@@ -47,7 +47,7 @@ Build a `(section, line_start, line_end)` table from that output. Each section e
 
 Always include `Overview` for every phase — it carries the high-level shape that frames the section the subagent is reading. Always include `Examples` — they're the cheapest sanity check on whether the implementation matches user-facing behavior.
 
-If `SPEC.md` is paired with already-chunked `tokens/<name>.md` or `grammar/<name>.md` files (the layout some `extract-text-spec` runs produce), pass those file paths verbatim to the relevant phase subagent — they're already chunked, so no slicing is needed.
+If `SPEC.md` is paired with already-chunked `tokens/<name>.md` or `grammar/<name>.md` files (the layout some `extract-text-spec` runs produce), pass those file paths verbatim to the relevant phase subagent — they're already chunked, so no slicing is needed. The phase-to-directory mapping mirrors the partition table: **tokenizer phase consumes `tokens/*.md`** (Lexical Elements); **parser and printer phases each consume `grammar/*.md`** (Structure (Grammar)). The scope-gate file count in step 5 of `## Before you start` follows the same mapping — count `tokens/*.md` for the tokenizer phase and `grammar/*.md` for the parser and printer phases.
 
 Before launching subagents, grep the slices for `> **Ambiguity:**` callouts and surface them to the user.
 
@@ -147,7 +147,7 @@ Sub-call `i` in a partitioned phase is briefed exactly like the un-partitioned p
 2. **Append, don't overwrite, the running summary.** When `i == 1`, `_context_tokens.md` / `_context_ast.md` does not yet exist; the sub-call writes it under the strict format from `## Context summary format`. When `i > 1`, the file already holds symbols added by sub-calls 1..i-1; the sub-call **reads** it (capped at 400 lines, so cheap) and **appends** its own new symbols at the end of the relevant `## Section`, in source declaration order. Don't duplicate headings; don't reorder existing entries.
 3. **No full-`Read` of the growing source file.** Sub-calls `i > 1` treat the running `_context_*.md` as the cross-reference of record for what symbols already exist in `tokenizer.go` / `parser.go` / `printer.go`. `Edit` adds new symbols without a fresh whole-file read; if a specific helper needs inspection (e.g. to mirror an existing pattern), `Read` it with `offset` / `limit`, never the whole file. This is the whole point of the gate — once a phase has appended hundreds of lines to its source, re-reading that source in the next sub-call would crowd out the spec slice the sub-call is here for.
 
-After all sub-units complete, the merged `_context_tokens.md` / `_context_ast.md` is what the next phase consumes. The 400-line cap still applies to the merged file; if hitting it looks likely, the sub-unit cap was sized too generously — re-partition with smaller sub-units, or stop and ask the user to chunk the request further.
+After all sub-units complete, the merged `_context_tokens.md` / `_context_ast.md` is what the next phase consumes. The 400-line cap still applies to the merged file; **after each sub-unit's append, count the lines in the merged file and stop if it exceeds 400** — the sub-unit cap was sized too generously, so re-partition with smaller sub-units, or ask the user to chunk the request further. Do not launch the next sub-unit while the merged summary is over the cap.
 
 ## Why this shape
 
