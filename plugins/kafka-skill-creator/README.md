@@ -6,7 +6,8 @@ A Claude Code plugin that generates a per-team Kafka research skill (`kafka-<tea
 
 After running, you get a skill at `<output>/` (default `./.claude/skills/kafka-<team>/`) containing:
 
-- `SKILL.md` — team-specific triggering description plus a quickstart for running the wrappers.
+- `SKILL.md` — what Claude reads when the skill triggers. Model-invocable by default (no `disable-model-invocation`) so it fires on natural-language prompts like "what's lag on the orders projector?", not just on `/kafka-<team>` slash invocations.
+- `README.md` — human-facing quickstart with copy-paste examples for each wrapper, the `.env`-per-environment workflow, and the regeneration command. This is the file an engineer reads when onboarding to the team's Kafka tooling.
 - `scripts/_common.sh` — shared bootstrap: env-file resolution, allowlist enforcement, container runtime selection, env-var forwarding.
 - `scripts/consume.sh` — peek/tail messages on an owned topic, with Schema Registry deserialization when configured.
 - `scripts/describe-topic.sh` — config and partition layout for an owned topic.

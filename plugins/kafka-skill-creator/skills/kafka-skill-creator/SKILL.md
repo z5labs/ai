@@ -150,6 +150,8 @@ Create these files under `<output>/` (the resolved output directory). Substitute
 
 The frontmatter `name` is what gets registered with Claude Code. The `description` is what determines triggering — name the team, mention the topic domain, and list the most prominent topic names so the model recognizes the right context.
 
+**Do NOT set `disable-model-invocation: true` on the generated skill.** The generated `kafka-<team>` skill is meant to fire automatically when its description matches the user's prose ("what's lag on the orders projector?", "peek at the last few payments.refunds.v1 messages"). Disabling model invocation would force the user to type `/kafka-<team>` explicitly to use it, which defeats the point of having a per-team skill that the model recognizes by topic context. The meta-generator (this `kafka-skill-creator`) is slash-only because *it* requires deliberate invocation; the *generated* skill should not inherit that property. Omit the field — Claude Code's default is "model-invocable" — rather than setting it to `false` (the field's name is a footgun; explicit `false` reads like an extra knob even though it's just the default).
+
 ```markdown
 ---
 name: kafka-<team>
@@ -292,6 +294,18 @@ This file is committed into the repo and contains **no secrets**. The runtime en
 
 A verbatim copy of the manifest used to generate this skill, for transparency and as input for re-generation. The runtime scripts do not parse it — the allowlist is embedded in `_common.sh`'s arrays.
 
+### `<output>/README.md`
+
+A human-facing README the team can read in their plugin tree (or under `.claude/skills/kafka-<team>/`) without having to open `SKILL.md`. SKILL.md is written for Claude when triggering; the README is for the engineer who's about to use the skill or onboard a new teammate.
+
+Read `references/generated-readme-skeleton.md` for the verbatim template. Substitute the `<...>` placeholders with real values from the manifest at generation time:
+
+- `<team>` and `<env list>` — straight from the manifest
+- `<bullet list>` — emit one `- ` line per item under `topics:` and `consumer_groups:`
+- `<first-topic>` and `<first-group>` — the first entries of those lists, used in the sample-use code blocks so the examples are runnable copy-paste
+
+The README must include a working sample for every wrapper (`consume.sh`, `describe-topic.sh`, `describe-group.sh`, `lag.sh`, `reset-offsets.sh`), the one-time-setup `.env` step, and the regeneration command — those are the things engineers ask first when they open the skill directory.
+
 ### `<output>/references/cluster.md`
 
 Render `cluster.json` as a short markdown summary: cluster id, broker count, controller id, broker list. One short paragraph plus a table.
@@ -341,6 +355,8 @@ The latest Schema Registry response for `<topic>-value`, verbatim. Skip if Schem
 After writing files, check:
 
 - `<output>/SKILL.md` exists and is non-empty
+- `<output>/SKILL.md`'s frontmatter does **not** contain `disable-model-invocation: true` (the generated skill must be model-invocable so it fires on natural-language prompts)
+- `<output>/README.md` exists and is non-empty
 - `<output>/scripts/{_common,describe-topic,describe-group,lag,consume,reset-offsets}.sh` all exist and are executable
 - `<output>/scripts/.env.example` has one block per declared context
 - `<output>/scripts/manifest.yml` is a verbatim copy of the input manifest (or the in-memory manifest built from manual flags)

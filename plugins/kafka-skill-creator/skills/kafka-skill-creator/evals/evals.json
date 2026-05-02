@@ -75,6 +75,8 @@
       "assertions": [
         {"id": "writes-to-output-path", "text": "the generated files appear under plugins/team-payments/skills/kafka-payments/, not under .claude/skills/"},
         {"id": "frontmatter-name-from-team", "text": "the generated SKILL.md's frontmatter `name` field is `kafka-payments`, derived from the team value — not from the leaf segment of --output"},
+        {"id": "generated-skill-is-model-invocable", "text": "the generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true` — the team-level skill is meant to fire on natural-language prompts, not require a slash command"},
+        {"id": "generated-readme-exists", "text": "a README.md is written at the output root with sample uses for each wrapper (consume.sh / describe-topic.sh / describe-group.sh / lag.sh / reset-offsets.sh), so an engineer can use the skill without opening SKILL.md"},
         {"id": "smoke-test-failure-surfaced", "text": "if the smoke test fails (broker unreachable), the assistant surfaces the failure rather than claiming success"},
         {"id": "reminds-about-plugin-json", "text": "the reporting mentions that the operator may need to register the new skill in the plugin's plugin.json since --output landed inside a plugin tree"}
       ]
