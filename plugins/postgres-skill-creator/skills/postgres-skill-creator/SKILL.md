@@ -232,6 +232,18 @@ fi
 PGDATABASE="<dbname>"
 export PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE
 
+# Forward every libpq env var (PGHOST/PGPORT/PGUSER/PGDATABASE/PGPASSWORD plus
+# PGSSLMODE, PGSSLROOTCERT, PGSERVICE, PGOPTIONS, PGTARGETSESSIONATTRS,
+# PGAPPNAME, PGCONNECT_TIMEOUT, …) into the container. Filter `^PG[A-Z]` so
+# libpq-style names (PGFOO) pass while our internal config (PG_DOCKER_ARGS,
+# PG_CONTAINER_RUNTIME, PG_ENV_FILE) does not — those start with PG_ and would
+# confuse psql if forwarded.
+LIBPQ_ENV_ARGS=()
+while IFS= read -r var; do
+  [ -z "$var" ] && continue
+  LIBPQ_ENV_ARGS+=(-e "$var")
+done < <(compgen -e | grep -E '^PG[A-Z]' || true)
+
 if [ -n "${PG_CONTAINER_RUNTIME:-}" ]; then
   RUNTIME="$PG_CONTAINER_RUNTIME"
 elif command -v docker >/dev/null 2>&1; then
@@ -248,18 +260,20 @@ read -r -a EXTRA_ARGS <<< "${PG_DOCKER_ARGS:-}"
 
 if [ ${#SQL_ARGS[@]} -eq 0 ]; then
   exec "$RUNTIME" run --rm -i \
-    -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGDATABASE \
+    "${LIBPQ_ENV_ARGS[@]}" \
     "${EXTRA_ARGS[@]}" "$PSQL_IMAGE"
 else
   # Join all positional args with spaces so unquoted SQL like
   # `query.sh SELECT 1` is preserved instead of silently truncated to "SELECT".
   exec "$RUNTIME" run --rm -i \
-    -e PGHOST -e PGPORT -e PGUSER -e PGPASSWORD -e PGDATABASE \
+    "${LIBPQ_ENV_ARGS[@]}" \
     "${EXTRA_ARGS[@]}" "$PSQL_IMAGE" -c "${SQL_ARGS[*]}"
 fi
 ```
 
 Substitute `<host>`, `<port>`, `<user>`, and `<dbname>` with the values of `PGHOST`, `PGPORT`, `PGUSER`, and `PGDATABASE` at generation time. **Never substitute `PGPASSWORD`** — the generated `query.sh` reads it from `.env` at runtime, and writing it into a file alongside the skill would re-create the secret-on-disk problem this skill is designed to avoid. `chmod +x` the script after writing.
+
+The `LIBPQ_ENV_ARGS` block is what gives users access to the rest of libpq's connection surface (TLS settings, service files, target_session_attrs, etc.) — anything they export with a `PG[A-Z]…` name flows through to `psql` inside the container, the same way it would for a host-side `psql`.
 
 Keep the `PSQL_IMAGE` default in `query.sh` aligned with the default in `introspect.sh` so the generated skill works out of the box without the env var set.
 
@@ -279,6 +293,10 @@ A commented template the user copies to a real `.env` (or per-environment `.env.
 # PGPORT=<port>
 # PGUSER=<user>
 # PGPASSWORD=
+
+# Any other libpq env var (PGSSLMODE, PGSSLROOTCERT, PGSERVICE, PGOPTIONS,
+# PGTARGETSESSIONATTRS, PGAPPNAME, PGCONNECT_TIMEOUT, …) set here is also
+# forwarded to psql inside the container.
 ```
 
 ### `references/tables.md`

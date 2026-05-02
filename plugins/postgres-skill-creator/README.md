@@ -36,6 +36,8 @@ The generator takes **no arguments**. Connection details come from the standard 
 
 All five must be set before invocation. If any is missing, the skill stops and lists the missing variables; it will not prompt for them, accept them inline, or fall back to a default.
 
+Beyond the five required vars, **any other libpq env var** is forwarded to `psql` inside the container — so `PGSSLMODE`, `PGSSLROOTCERT`, `PGSERVICE`, `PGOPTIONS`, `PGTARGETSESSIONATTRS`, `PGAPPNAME`, `PGCONNECT_TIMEOUT`, etc. all work as you'd expect for a host-side `psql`. The forwarding rule is "names matching `PG[A-Z]…`", which keeps libpq vars (no underscore after `PG`) flowing through while excluding this plugin's own configuration vars (`PG_DOCKER_ARGS`, `PG_CONTAINER_RUNTIME`, `PG_ENV_FILE`, `PSQL_IMAGE`).
+
 ```
 /postgres-skill-creator
 ```

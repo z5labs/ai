@@ -184,6 +184,100 @@ $helper_output")
   echo "FAIL: refusal mentions credential-helper path"
 fi
 
+# --- Positive-path test: invocation shape -------------------------------------
+#
+# The refusal-path tests above never reach the docker invocation. This block
+# stubs PG_CONTAINER_RUNTIME with a fake "container runtime" that just logs its
+# arguments to a file, then asserts on what introspect.sh would have passed to
+# `docker run`. Catches regressions in the -e VAR forwarding and the overall
+# arg shape without needing a Postgres or container runtime.
+
+FAKE_RUNTIME="$(mktemp)"
+INVOCATION_LOG="$(mktemp)"
+TMPOUT="$(mktemp -d)"
+trap 'rm -rf "$FAKE_RUNTIME" "$INVOCATION_LOG" "$TMPOUT"' EXIT
+
+cat > "$FAKE_RUNTIME" <<'FAKE'
+#!/usr/bin/env bash
+# Append every argument as one line, terminated by ---END--- so concurrent
+# invocations stay separable. Drain stdin so heredoc-style queries don't break
+# the script. Exit 0 so introspect.sh thinks each query succeeded.
+{
+  for a in "$@"; do printf '%s\n' "$a"; done
+  echo "---END---"
+} >> "$INVOCATION_LOG"
+cat > /dev/null
+exit 0
+FAKE
+chmod +x "$FAKE_RUNTIME"
+
+# Run introspect.sh with the fake runtime and a rich set of libpq env vars
+# (including non-original ones like PGSSLMODE/PGAPPNAME/PGOPTIONS) plus our
+# internal PG_DOCKER_ARGS — which must NOT be forwarded as -e PG_DOCKER_ARGS.
+env -i PATH="$PATH" HOME="$HOME" \
+  INVOCATION_LOG="$INVOCATION_LOG" \
+  bash -c "
+    export PGHOST=db.internal PGPORT=5432 PGUSER=app PGDATABASE=orders PGPASSWORD=secret
+    export PGSSLMODE=require PGAPPNAME=introspect-test PGOPTIONS='-c statement_timeout=5000'
+    export PG_DOCKER_ARGS='--network=host'
+    export PG_CONTAINER_RUNTIME='$FAKE_RUNTIME'
+    bash '$INTROSPECT' '$TMPOUT'
+  " > /dev/null 2>&1
+
+# Pick the first invocation block (all subsequent ones share the same -e shape).
+first_invocation="$(awk '/---END---/{exit} {print}' "$INVOCATION_LOG")"
+
+check_invocation() {
+  local name="$1" pattern="$2"
+  if grep -qFx -- "$pattern" <<<"$first_invocation"; then
+    PASS=$((PASS + 1))
+    echo "PASS: $name"
+  else
+    FAIL=$((FAIL + 1))
+    FAILURES+=("$name: expected line [$pattern] in invocation. Captured:
+$first_invocation")
+    echo "FAIL: $name"
+  fi
+}
+
+check_invocation_absent() {
+  local name="$1" pattern="$2"
+  if grep -qFx -- "$pattern" <<<"$first_invocation"; then
+    FAIL=$((FAIL + 1))
+    FAILURES+=("$name: expected line [$pattern] to be ABSENT. Captured:
+$first_invocation")
+    echo "FAIL: $name"
+  else
+    PASS=$((PASS + 1))
+    echo "PASS: $name"
+  fi
+}
+
+# The five originally-required libpq vars must all be forwarded.
+for v in PGHOST PGPORT PGUSER PGDATABASE PGPASSWORD; do
+  check_invocation "forwards -e $v to runtime" "$v"
+done
+# Extended libpq vars must also be forwarded — this is what restores the
+# connection-surface coverage that was previously available via the DSN.
+for v in PGSSLMODE PGAPPNAME PGOPTIONS; do
+  check_invocation "forwards extended libpq var -e $v" "$v"
+done
+# Internal config vars must NOT be forwarded as -e flags. PG_DOCKER_ARGS is
+# our own thing (its *value* gets word-split into the runtime command line as
+# extra args, but the *name* must never appear as a forwarded env var).
+check_invocation_absent "does NOT forward internal PG_DOCKER_ARGS as -e" "PG_DOCKER_ARGS"
+check_invocation_absent "does NOT forward internal PG_CONTAINER_RUNTIME as -e" "PG_CONTAINER_RUNTIME"
+check_invocation_absent "does NOT forward PSQL_IMAGE as -e" "PSQL_IMAGE"
+
+# PG_DOCKER_ARGS value must reach the runtime. Word-split inserts --network=host
+# as a standalone argument.
+check_invocation "applies PG_DOCKER_ARGS value to runtime" "--network=host"
+
+# The image must appear as a positional arg, and the script must NOT pass any
+# old-style connection string.
+check_invocation "passes PSQL_IMAGE as positional arg" "docker.io/alpine/psql:17.7"
+check_invocation_absent "does NOT pass any postgresql:// DSN" "postgresql://app:secret@db.internal:5432/orders"
+
 # --- Summary ------------------------------------------------------------------
 
 echo

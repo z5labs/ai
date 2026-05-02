@@ -51,6 +51,19 @@ PSQL_IMAGE="${PSQL_IMAGE:-docker.io/alpine/psql:17.7}"
 # Word-split PG_DOCKER_ARGS into an array so users can pass multiple flags.
 read -r -a EXTRA_ARGS <<< "${PG_DOCKER_ARGS:-}"
 
+# Forward every libpq env var (PGHOST, PGPORT, PGUSER, PGDATABASE, PGPASSWORD,
+# plus PGSSLMODE, PGSSLROOTCERT, PGSERVICE, PGOPTIONS, PGTARGETSESSIONATTRS,
+# PGAPPNAME, PGCONNECT_TIMEOUT, …) into the container. Filter `^PG[A-Z]` so
+# libpq-style names (PGFOO) pass while our internal config (PG_DOCKER_ARGS,
+# PG_CONTAINER_RUNTIME, PG_ENV_FILE) does not — those start with PG_ and would
+# confuse psql if forwarded. This restores the connection-surface coverage that
+# users previously got via the connection-string querystring.
+LIBPQ_ENV_ARGS=()
+while IFS= read -r var; do
+  [ -z "$var" ] && continue
+  LIBPQ_ENV_ARGS+=(-e "$var")
+done < <(compgen -e | grep -E '^PG[A-Z]' || true)
+
 if [ -n "${PG_CONTAINER_RUNTIME:-}" ]; then
   RUNTIME="$PG_CONTAINER_RUNTIME"
 elif command -v docker >/dev/null 2>&1; then
@@ -68,10 +81,10 @@ run_query() {
   local name="$1" sql="$2"
   local outfile="$OUT/$name.tsv"
   # -A unaligned, -t tuples-only, -F $'\t' tab separator, -X no .psqlrc.
-  # libpq inside the container reads PGHOST/PGPORT/PGUSER/PGDATABASE/PGPASSWORD
-  # from the environment — no connection string on the command line.
+  # libpq inside the container reads its connection settings from the forwarded
+  # PG* environment variables — no connection string on the command line.
   if "$RUNTIME" run --rm -i \
-    -e PGHOST -e PGPORT -e PGUSER -e PGDATABASE -e PGPASSWORD \
+    "${LIBPQ_ENV_ARGS[@]}" \
     "${EXTRA_ARGS[@]}" \
     "$PSQL_IMAGE" -X -A -t -F $'\t' -c "$sql" \
     > "$outfile"; then
@@ -172,7 +185,7 @@ while IFS=$'\t' read -r vschema vname; do
   safe_schema="$(sanitize_filename "$vschema")"
   safe_name="$(sanitize_filename "$vname")"
   "$RUNTIME" run --rm -i \
-    -e PGHOST -e PGPORT -e PGUSER -e PGDATABASE -e PGPASSWORD \
+    "${LIBPQ_ENV_ARGS[@]}" \
     "${EXTRA_ARGS[@]}" \
     "$PSQL_IMAGE" -X -A -t \
     -v vschema="$vschema" -v vname="$vname" \
