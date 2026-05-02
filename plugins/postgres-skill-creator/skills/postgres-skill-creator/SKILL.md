@@ -2,12 +2,24 @@
 name: postgres-skill-creator
 description: Introspect a Postgres database and generate a project-level skill (`pg-<dbname>`) that bakes its schema into a reference the model can consult for ad-hoc query/exploration work
 disable-model-invocation: true
-argument-hint: "[connection-string]"
 ---
 
-Generate a project-level skill at `./.claude/skills/pg-<dbname>/` that captures the schema of the Postgres database identified by `$ARGUMENTS[0]`. The generated skill is meant for an analyst or developer doing ad-hoc reads, one-off DML, and manual exploration — so its job is to give the model enough schema context to write correct SQL without re-introspecting on every invocation.
+Generate a project-level skill at `./.claude/skills/pg-<dbname>/` that captures the schema of the Postgres database identified by the `PGDATABASE` environment variable. The generated skill is meant for an analyst or developer doing ad-hoc reads, one-off DML, and manual exploration — so its job is to give the model enough schema context to write correct SQL without re-introspecting on every invocation.
 
-The connection string is the first argument. If it is missing, ask the user for it. The connection string identifies host/port/database/user, but **not the password** — the password is read from the `PGPASSWORD` environment variable for the introspection run. If `PGPASSWORD` is unset, prompt the user for it and export it for the duration of the run; do not write it to disk. The generated `query.sh` does **not** retain the password — at runtime users supply credentials (host/port/user/password) via a `.env` file (see Step 2).
+## Preconditions
+
+This skill takes **no arguments**. All connection details are read from the standard libpq environment variables:
+
+- `PGHOST`, `PGPORT`, `PGUSER`, `PGDATABASE` — routing
+- `PGPASSWORD` — credential
+
+If **any** of the five is unset, **stop immediately**. Do not prompt the user for the missing value, do not accept it inline, do not invent a placeholder. Print the full list of missing variables and tell the user to export them — or to load them from a pre-authenticated credential helper they already use (`op run --env-file=…`, `vault`, `gcloud`, a direnv-loaded `.env`, etc.) — and re-invoke the skill. Example refusal:
+
+> The following environment variables are required but unset: `PGPASSWORD`, `PGHOST`. Export them (directly, or via a credential helper such as `op run --env-file=secrets.env -- claude …`) before re-invoking this skill.
+
+The reason is non-negotiable: secrets must reach tools out-of-band, never through model context. If the password lands in your context — even briefly, even just to "export and forget" — it is captured in transcript, in any future compaction, and in any logs the harness keeps. The libpq env vars are how `psql` already expects credentials, so honoring them is both safer and more idiomatic than passing a connection string.
+
+The generated `query.sh` does **not** retain the password — at runtime users supply credentials (host/port/user/password) via a `.env` file (see Step 2).
 
 ## Why this skill exists
 
@@ -23,17 +35,19 @@ Postgres schemas are often too large to keep in working memory, but most ad-hoc 
 
 The bundled `scripts/introspect.sh` does step 1 and 2. Read it before running so you understand what queries it issues — you may need to adapt if a query fails (e.g. older Postgres versions lack a column).
 
-If the host can't reach the database via the connection string as-is (common on Linux when the DB is on `localhost`), set `PG_DOCKER_ARGS=--network=host` before invoking the script.
+If the host can't reach the database via `PGHOST` as-is (common on Linux when the DB is on `localhost` and `PGHOST=localhost` would resolve inside the container), set `PG_DOCKER_ARGS=--network=host` before invoking the script.
 
 Override `PSQL_IMAGE` when the default `docker.io/alpine/psql` won't work — either to pin a psql major version that matches an older server, or to pull from a private registry in environments where docker.io is blocked (e.g. `PSQL_IMAGE=registry.internal.example.com/alpine/psql:17.7`). Authentication to the private registry (`docker login` / `podman login`) is the user's responsibility; the script just passes the image reference through. The generated skill's `query.sh` reads `PSQL_IMAGE` too, so users in locked-down environments should export it persistently (e.g. in their shell profile) rather than only for the generation run.
 
 ## Step 1: Run introspection
 
 ```bash
-bash <skill-dir>/scripts/introspect.sh "$CONN_STRING" /tmp/pg-introspect-<dbname>
+bash <skill-dir>/scripts/introspect.sh /tmp/pg-introspect-<dbname>
 ```
 
 `<skill-dir>` is wherever this skill is installed (the directory containing the `SKILL.md` you are reading). Use an absolute path — don't assume a relative path resolves from the user's current working directory.
+
+The script reads `PGHOST`/`PGPORT`/`PGUSER`/`PGDATABASE`/`PGPASSWORD` from the environment and validates them itself; it will exit non-zero with the same kind of refusal described in Preconditions if any are missing. You should still check Preconditions first so the user gets the refusal *before* the script runs, not as a script error.
 
 The script writes one TSV per topic into the output directory:
 
@@ -49,7 +63,7 @@ If any query fails, look at the script's error output and either fix the query i
 
 ## Step 2: Write the generated skill
 
-Create these files under `./.claude/skills/pg-<dbname>/` (where `<dbname>` is parsed from the connection string). Before using `<dbname>` in the path or deleting anything, validate that it is non-empty and matches `^[A-Za-z0-9_-]+$`. If validation fails, stop and ask the user to confirm the database name or supply a safe override; do not delete any directory. If the validated target directory already exists, **delete it first** — overwrite is intentional, schemas drift and stale references mislead.
+Create these files under `./.claude/skills/pg-<dbname>/` (where `<dbname>` is the value of `PGDATABASE`). Before using `<dbname>` in the path or deleting anything, validate that it is non-empty and matches `^[A-Za-z0-9_-]+$`. If validation fails, stop and ask the user to either re-export `PGDATABASE` with a path-safe value or supply a safe override; do not delete any directory. If the validated target directory already exists, **delete it first** — overwrite is intentional, schemas drift and stale references mislead.
 
 ### `SKILL.md`
 
@@ -245,7 +259,7 @@ else
 fi
 ```
 
-Substitute `<host>`, `<port>`, `<user>`, and `<dbname>` with the values parsed from the user's connection string at generation time. If the user-supplied connection string had a password embedded (`postgresql://user:pw@host/db`), discard it — the password belongs in the user's `.env` at runtime, not in a file generated alongside the skill. `chmod +x` the script after writing.
+Substitute `<host>`, `<port>`, `<user>`, and `<dbname>` with the values of `PGHOST`, `PGPORT`, `PGUSER`, and `PGDATABASE` at generation time. **Never substitute `PGPASSWORD`** — the generated `query.sh` reads it from `.env` at runtime, and writing it into a file alongside the skill would re-create the secret-on-disk problem this skill is designed to avoid. `chmod +x` the script after writing.
 
 Keep the `PSQL_IMAGE` default in `query.sh` aligned with the default in `introspect.sh` so the generated skill works out of the box without the env var set.
 
@@ -334,7 +348,7 @@ After writing files, check:
 - At least `references/tables.md` and `references/relationships.md` exist
 - `query.sh` has no unsubstituted `<...>` placeholders (the generator must have filled in `<host>`, `<port>`, `<user>`, and `<dbname>`)
 
-Run a smoke test: `bash .claude/skills/pg-<dbname>/scripts/query.sh "SELECT 1"`. `PGPASSWORD` is still exported from the introspection step, so the script picks it up from the environment without needing a `.env` file. If this fails, the generated skill is broken — surface the error to the user instead of claiming success.
+Run a smoke test: `bash .claude/skills/pg-<dbname>/scripts/query.sh "SELECT 1"`. The libpq env vars (`PGHOST`/`PGPORT`/`PGUSER`/`PGDATABASE`/`PGPASSWORD`) are still exported from the invocation that triggered this skill, so the script picks them up from the environment without needing a `.env` file. If this fails, the generated skill is broken — surface the error to the user instead of claiming success.
 
 ## Step 4: Report
 

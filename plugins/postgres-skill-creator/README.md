@@ -24,22 +24,47 @@ From a Claude Code session:
 
 ## Generating a skill
 
+The generator takes **no arguments**. Connection details come from the standard libpq environment variables:
+
+| Variable | Purpose |
+|---|---|
+| `PGHOST` | Database host. |
+| `PGPORT` | Database port. |
+| `PGUSER` | Database user. |
+| `PGDATABASE` | Database name. Also determines the generated skill's path (`./.claude/skills/pg-$PGDATABASE/`). |
+| `PGPASSWORD` | Database password. Never seen by the model — read directly from the environment by `psql` inside the container. |
+
+All five must be set before invocation. If any is missing, the skill stops and lists the missing variables; it will not prompt for them, accept them inline, or fall back to a default.
+
 ```
-/postgres-skill-creator postgresql://user@host:5432/mydb
+/postgres-skill-creator
 ```
 
-The connection string identifies host, port, user, and database. The **password** is read from `PGPASSWORD` for the duration of the generation run; export it before invoking the generator. The generated `query.sh` does **not** retain the password — see the [`.env` workflow](#env-per-environment-workflow) below.
+The generated `query.sh` does **not** retain the password — see the [`.env` workflow](#env-per-environment-workflow) below for how the *runtime* picks credentials up per environment.
 
-Requirements:
+### Pairing with a credential helper
+
+Because the skill is agnostic to where the env vars came from, it composes naturally with any pre-authenticated tool you already use to manage secrets — 1Password CLI, HashiCorp Vault, `gcloud`, `direnv`-loaded `.env` files, and so on. For example, with the 1Password CLI:
+
+```
+op run --env-file=postgres.env -- claude
+```
+
+…where `postgres.env` declares `PGHOST=op://Vault/Item/host`, `PGPASSWORD=op://Vault/Item/password`, etc. `op run` resolves the secrets, exports them into the subprocess environment, and tears them down on exit — the model invoking `/postgres-skill-creator` only ever sees that the variables are *set*, never the values themselves. The same shape works with `vault read … | …`, `direnv exec`, `gcloud auth print-access-token`, or any helper that exposes secrets to a subprocess via env vars.
+
+This is the recommended pattern. Exporting `PGPASSWORD` globally in your shell rc works too, but loses the boundary that a per-invocation helper provides.
+
+### Other requirements
+
 - `docker` or `podman` on `PATH` (the plugin runs `psql` from a container — no host-side `psql` install needed).
-- The host can reach the database via the connection string. On Linux when the DB is on `localhost`, set `PG_DOCKER_ARGS=--network=host` so the container shares the host network.
+- The container can reach `PGHOST`. On Linux when the DB is on `localhost`, set `PG_DOCKER_ARGS=--network=host` so the container shares the host network (otherwise `localhost` resolves *inside* the container).
 
 ## Regenerating / updating an installed skill
 
-Schemas drift. To pull in changes, re-run the generator with the same connection string:
+Schemas drift. To pull in changes, re-export the same env vars and re-run the generator:
 
 ```
-/postgres-skill-creator postgresql://user@host:5432/mydb
+/postgres-skill-creator
 ```
 
 This **overwrites** the existing `./.claude/skills/pg-<dbname>/` directory in place. That is intentional — stale references mislead the model. Any local edits you made to files under `pg-<dbname>/` will be lost, so keep project-specific guidance somewhere else (e.g. a top-level `CLAUDE.md` or a sibling skill).
@@ -104,3 +129,12 @@ These environment variables apply to both the generator (`introspect.sh`) and th
 If you use a private registry, authenticate (`docker login` / `podman login`) before invocation — the scripts pass the image reference through as-is.
 
 If you set `PSQL_IMAGE` during generation, export the same value in any session that uses the generated skill so the runtime image matches the one introspection ran against.
+
+## Development
+
+Lightweight evals live under `skills/postgres-skill-creator/evals/`:
+
+- `evals/test_introspect.sh` — shell-level tests for `introspect.sh`'s env-var validation and argument signature. Run with `bash evals/test_introspect.sh` from the skill directory; no Postgres or container runtime needed (the script exits before reaching `psql` when env vars are missing or the arg shape is wrong).
+- `evals/evals.json` — skill-level eval that exercises the "refuse and instruct when env vars are missing" behavior of the SKILL.md instructions themselves.
+
+A full end-to-end eval loop with a containerized Postgres fixture is tracked in [#61](https://github.com/z5labs/ai/issues/61).
