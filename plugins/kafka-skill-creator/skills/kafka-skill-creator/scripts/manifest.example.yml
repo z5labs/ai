@@ -1,0 +1,54 @@
+# kafka-skill-creator manifest (v1)
+#
+# One manifest declares everything the team owns: topics, consumer groups,
+# cluster auth shape, and the list of environments (contexts) the team
+# operates against. The generator turns this into a kafka-<team>/ skill
+# whose scripts refuse to operate on anything not listed below.
+#
+# Per-environment values that change between dev/staging/prod (broker
+# addresses, SASL passwords, Schema Registry URLs) live in .env.<context>
+# files, not here. Run `cp scripts/.env.example .env.dev` after generation.
+#
+# v1 supports SASL/SCRAM + Schema Registry basic auth only. mTLS (#64),
+# SASL/PLAIN (#63), and OAUTHBEARER (#65) are tracked as follow-ups.
+
+# Drives the generated skill name (kafka-payments) and its triggering
+# description. Path-safe characters only: [A-Za-z0-9_-].
+team: payments
+
+# Topics this team owns. Becomes the topic allowlist embedded in every
+# generated script. A clever model invocation that names a topic outside
+# this list is refused by the script source — there is no passthrough.
+topics:
+  - payments.orders.v1
+  - payments.refunds.v1
+
+# Consumer groups this team owns. Same allowlist treatment as topics.
+consumer_groups:
+  - payments-orders-projector
+  - payments-refunds-archiver
+
+cluster:
+  # v1: SASL_SCRAM only. Other values are rejected with a pointer to the
+  # tracking issue.
+  auth: SASL_SCRAM
+
+  # 'required' = TLS to the brokers (server auth). For mTLS (client
+  # certs), see #64.
+  tls: required
+
+  # Optional. Omit this whole block if the team's topics aren't
+  # schema-versioned.
+  schema_registry:
+    auth: basic
+
+# One entry per environment. The `name` here flows into `kafkactl
+# --context <name>` and into the uppercased segment of the runtime env
+# vars (CONTEXTS_DEV_BROKERS, CONTEXTS_PROD_SASL_PASSWORD, ...).
+contexts:
+  - name: dev
+    sasl_mechanism: SCRAM-SHA-512
+  - name: staging
+    sasl_mechanism: SCRAM-SHA-512
+  - name: prod
+    sasl_mechanism: SCRAM-SHA-512

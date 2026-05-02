@@ -21,6 +21,12 @@
       "source": "./plugins/audit-skill",
       "description": "Statically audit a Claude Code skill against four quality objectives: idempotency, reproducibility, context management, and strict definitions",
       "version": "0.1.0"
+    },
+    {
+      "name": "kafka-skill-creator",
+      "source": "./plugins/kafka-skill-creator",
+      "description": "Generate a per-team Kafka research skill from a manifest, baking owned topics and consumer groups into a project-level skill for self-service investigation",
+      "version": "0.1.0"
     }
   ]
 }
