@@ -156,20 +156,30 @@ def assertion_phase_chunking_spec() -> tuple[bool, str]:
     has_scope_gate = "scope gate" in before_lower
     findings.append(f"scope_gate={has_scope_gate}")
 
-    # Sliced-line threshold: at least one >=3-digit number — the line
-    # threshold itself (e.g. "600", "300") is what we want, not the
-    # existing "400-line cap" which only appears in `## Context summary
-    # format`.
-    has_line_threshold = bool(re.search(r"\b\d{3,}\b", before_start))
+    # Sliced-line gate trigger: a comparator phrase ("more than", ">",
+    # "exceeds", "over") immediately preceding a >=3-digit number,
+    # followed by "lines" within the same clause. Anchoring to the
+    # comparator keeps the example total ("920 lines"), the per-subunit
+    # cap ("<= 300 sliced lines"), and the unrelated "400-line cap" in
+    # `## Context summary format` from satisfying the check on their own
+    # — only the gate trigger ("more than 600 lines") qualifies.
+    has_line_threshold = bool(re.search(
+        r"(?:more\s+than|exceeds?|over|>)\s+\d{3,}[^,;.\n]*?\s+lines?",
+        before_start,
+        re.IGNORECASE,
+    ))
     findings.append(f"line_threshold={has_line_threshold}")
 
-    # Chunked-file threshold: a digit immediately preceding "chunked
-    # file(s)". Required so the chunked-file half of the gate can't
-    # silently regress while the line-count half still satisfies the
-    # 3-digit check.
-    has_chunked_threshold = bool(
-        re.search(r"\b\d+\s+chunked\s+files?", before_start, re.IGNORECASE)
-    )
+    # Chunked-file gate trigger: same comparator-anchored shape, with
+    # "chunked file(s)" in the tail. This isolates the gate trigger
+    # ("more than 8 chunked files") from the per-subunit cap ("<= 4
+    # chunked files each"), so removing the trigger fails the assertion
+    # even while the cap remains.
+    has_chunked_threshold = bool(re.search(
+        r"(?:more\s+than|exceeds?|over|>)\s+\d+[^,;.\n]*?chunked\s+files?",
+        before_start,
+        re.IGNORECASE,
+    ))
     findings.append(f"chunked_threshold={has_chunked_threshold}")
 
     # Partition along spec-section boundaries (issue #47's exact
