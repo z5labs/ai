@@ -30,9 +30,12 @@ cp .claude/skills/pg-<dbname>/scripts/.env.example .env.dev
 # edit .env.dev — fill in PGHOST, PGPORT, PGUSER, PGPASSWORD
 # (PGDATABASE is intentionally absent — the dbname is hardcoded in query.sh)
 
-# Add the env files to .gitignore — they contain secrets:
-echo '/.env' >> .gitignore
-echo '/.env.*' >> .gitignore
+# Add the env files to .gitignore — they contain secrets. The `grep -qxF`
+# guard makes this re-runnable: appending only when the exact line is not
+# already present, so following this README twice doesn't duplicate rules.
+touch .gitignore
+grep -qxF '/.env'   .gitignore || echo '/.env'   >> .gitignore
+grep -qxF '/.env.*' .gitignore || echo '/.env.*' >> .gitignore
 \`\`\`
 
 For locked-down environments, populate the env vars via a credential helper instead of a plain `.env` file:
