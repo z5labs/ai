@@ -25,7 +25,8 @@
         {"id": "no-full-spec-copy", "text": "no copy of SPEC.md content was written to a scratch file in the package (e.g. _spec_structures.md should not exist)"},
         {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_types.md and _context_decoder.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"},
         {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_types.md / _context_decoder.md, and do not full-read the growing types.go / decoder.go / encoder.go source file (issue #47 acceptance)"},
-        {"id": "small-fixture-no-partition", "text": "partition_plan.md exists in the package and reports `no partitioning needed` for every phase (tlv is below the 600-line gate, so no phase should partition)"}
+        {"id": "small-fixture-no-partition", "text": "partition_plan.md exists in the package and reports `no partitioning needed` for every phase (tlv is below the 600-line gate, so no phase should partition)"},
+        {"id": "section-names-canonical", "text": "SKILL.md's partition table uses canonical SPEC.md headings (`Conditional and Optional Fields`, `Checksums and Integrity`, `Padding and Alignment`) and documents the prefix-match rule for adapted specs (issue #82 acceptance)"}
       ]
     },
     {
@@ -51,7 +52,8 @@
         {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content (e.g. _spec_structures.md) was written to the package"},
         {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_types.md and _context_decoder.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"},
         {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_types.md / _context_decoder.md, and do not full-read the growing types.go / decoder.go / encoder.go source file (issue #47 acceptance)"},
-        {"id": "small-fixture-no-partition", "text": "partition_plan.md exists in the package and reports `no partitioning needed` for every phase (tlv is below the 600-line gate, so no phase should partition)"}
+        {"id": "small-fixture-no-partition", "text": "partition_plan.md exists in the package and reports `no partitioning needed` for every phase (tlv is below the 600-line gate, so no phase should partition)"},
+        {"id": "section-names-canonical", "text": "SKILL.md's partition table uses canonical SPEC.md headings (`Conditional and Optional Fields`, `Checksums and Integrity`, `Padding and Alignment`) and documents the prefix-match rule for adapted specs (issue #82 acceptance)"}
       ]
     },
     {
@@ -76,7 +78,8 @@
         {"id": "no-full-spec-copy", "text": "no scratch copy of SPEC.md content was written to the package"},
         {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_types.md and _context_decoder.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"},
         {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_types.md / _context_decoder.md, and do not full-read the growing types.go / decoder.go / encoder.go source file (issue #47 acceptance)"},
-        {"id": "small-fixture-no-partition", "text": "partition_plan.md exists in the package and reports `no partitioning needed` for every phase (tlv is below the 600-line gate, so no phase should partition)"}
+        {"id": "small-fixture-no-partition", "text": "partition_plan.md exists in the package and reports `no partitioning needed` for every phase (tlv is below the 600-line gate, so no phase should partition)"},
+        {"id": "section-names-canonical", "text": "SKILL.md's partition table uses canonical SPEC.md headings (`Conditional and Optional Fields`, `Checksums and Integrity`, `Padding and Alignment`) and documents the prefix-match rule for adapted specs (issue #82 acceptance)"}
       ]
     },
     {
@@ -107,7 +110,8 @@
         {"id": "partition-plan-announces-sub-units", "text": "partition_plan.md reports that at least one phase was partitioned into 2+ sub-units (tlvx's decoder-phase slices total over 600 lines, so the gate must trip)"},
         {"id": "partition-plan-serial-order", "text": "partition_plan.md's per-sub-unit start/done log shows non-overlapping timestamps within each partitioned phase (sub-unit i's `done` precedes sub-unit i+1's `starting`) — proof that sub-calls ran serially, not in parallel"},
         {"id": "context-summary-spec-tightened", "text": "SKILL.md specifies, for both _context_types.md and _context_decoder.md, a strict signature-only format (no rationale, no examples), a hard 400-line cap, and a chunk-and-relaunch protocol when the cap would be exceeded (issue #46 acceptance)"},
-        {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_types.md / _context_decoder.md, and do not full-read the growing types.go / decoder.go / encoder.go source file (issue #47 acceptance)"}
+        {"id": "phase-chunking-spec-tightened", "text": "SKILL.md specifies the issue #47 phase-chunking protocol: an up-front scope gate in `Before you start` (numeric threshold, partitioning into sub-units along section boundaries, plan announced to the user before any subagent launches) and a `## Phase chunking` section saying sub-calls run serially, append to the running _context_types.md / _context_decoder.md, and do not full-read the growing types.go / decoder.go / encoder.go source file (issue #47 acceptance)"},
+        {"id": "section-names-canonical", "text": "SKILL.md's partition table uses canonical SPEC.md headings (`Conditional and Optional Fields`, `Checksums and Integrity`, `Padding and Alignment`) and documents the prefix-match rule for adapted specs (issue #82 acceptance)"}
       ]
     }
   ]

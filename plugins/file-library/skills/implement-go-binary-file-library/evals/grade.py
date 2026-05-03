@@ -413,6 +413,83 @@ def assertion_phase_chunking_spec() -> tuple[bool, str]:
     return ok, "; ".join(findings)
 
 
+def assertion_section_names_canonical() -> tuple[bool, str]:
+    """Verify SKILL.md's partition table uses canonical SPEC.md headings.
+
+    Acceptance from issue #82: the partition table must reference
+    `Conditional and Optional Fields`, `Checksums and Integrity`, and
+    `Padding and Alignment` (the canonical headings scaffolded by
+    `new-go-binary-file-library`), not the abbreviated forms
+    (`Conditional/Optional Fields`, `Checksums`, `Padding`) that won't
+    match `grep -n '^## '` output. The section must also document the
+    prefix-match rule so specs adapted from external standards still
+    resolve.
+
+    Pinned to the partition table rows themselves — the `| decoder |`
+    and `| encoder |` lines — not just to "the canonical name appears
+    somewhere in the section." Otherwise a regression that abbreviates
+    the table rows but keeps the prefix-match prose paragraph (which
+    legitimately references the canonical heading by example) would
+    slip through.
+    """
+    text = skill_md_text()
+    section = extract_section(text, "Partition SPEC.md by line range (do not read the whole file)")
+    findings = []
+
+    section_present = bool(section.strip())
+    findings.append(f"section_present={section_present}")
+    if not section_present:
+        return False, "; ".join(findings) + " (no `## Partition SPEC.md...` section)"
+
+    # Pull the per-phase table rows specifically. Each row starts with
+    # `| <phase> |` and ends at end-of-line; what we care about is the
+    # second cell — the comma-separated section list.
+    rows = {}
+    for phase in ("decoder", "encoder"):
+        m = re.search(rf"^\|\s*{phase}\s*\|([^\n]*)\|", section, re.MULTILINE)
+        if m:
+            rows[phase] = m.group(1)
+    missing_rows = [p for p in ("decoder", "encoder") if p not in rows]
+    if missing_rows:
+        findings.append(f"missing_table_rows={missing_rows}")
+        return False, "; ".join(findings)
+
+    # Canonical names required per row. Encoder doesn't list
+    # `Conditional and Optional Fields` (it has no encode-time
+    # contract), so it's only required in the decoder row.
+    required = {
+        "decoder": ["Conditional and Optional Fields", "Checksums and Integrity", "Padding and Alignment"],
+        "encoder": ["Checksums and Integrity", "Padding and Alignment"],
+    }
+    for phase, names in required.items():
+        for name in names:
+            present = name in rows[phase]
+            findings.append(f"{phase}_row.{name!r}={present}")
+            if not present:
+                return False, "; ".join(findings)
+
+    # Reject abbreviated forms in the table rows specifically. The
+    # slash form is unambiguous; for the bare words, require a trailing
+    # comma (table-cell separator) or pipe — the canonical forms
+    # always have " and " continuing after the bare word.
+    abbreviated_patterns = [
+        ("Conditional/Optional Fields", "Conditional/Optional Fields"),
+        ("Checksums (bare)", re.compile(r"\bChecksums\s*[,|]")),
+        ("Padding (bare)", re.compile(r"\bPadding\s*[,|]")),
+    ]
+    for phase, row in rows.items():
+        for label, pat in abbreviated_patterns:
+            hit = (pat in row) if isinstance(pat, str) else bool(pat.search(row))
+            if hit:
+                findings.append(f"{phase}_row.abbreviated_present={label}")
+                return False, "; ".join(findings)
+
+    section_lower = section.lower()
+    has_prefix_rule = "prefix" in section_lower and "match" in section_lower
+    findings.append(f"prefix_match_documented={has_prefix_rule}")
+    return has_prefix_rule, "; ".join(findings)
+
+
 def assertion_eval0_header(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, str]:
     common = assertion_partition_common(asid, pkg)
     if common is not None:
@@ -533,6 +610,9 @@ def assertion_eval0_header(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, s
     if asid == "phase-chunking-spec-tightened":
         return assertion_phase_chunking_spec()
 
+    if asid == "section-names-canonical":
+        return assertion_section_names_canonical()
+
     return False, f"unknown assertion id: {asid}"
 
 
@@ -635,6 +715,9 @@ def assertion_eval1_record(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, s
     if asid == "phase-chunking-spec-tightened":
         return assertion_phase_chunking_spec()
 
+    if asid == "section-names-canonical":
+        return assertion_section_names_canonical()
+
     return False, f"unknown assertion id: {asid}"
 
 
@@ -714,6 +797,9 @@ def assertion_eval2_trailer(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, 
 
     if asid == "phase-chunking-spec-tightened":
         return assertion_phase_chunking_spec()
+
+    if asid == "section-names-canonical":
+        return assertion_section_names_canonical()
 
     return False, f"unknown assertion id: {asid}"
 
@@ -865,6 +951,9 @@ def assertion_eval3_tlvx_header_extended(asid: str, pkg: Path, run_dir: Path) ->
 
     if asid == "phase-chunking-spec-tightened":
         return assertion_phase_chunking_spec()
+
+    if asid == "section-names-canonical":
+        return assertion_section_names_canonical()
 
     return False, f"unknown assertion id: {asid}"
 
