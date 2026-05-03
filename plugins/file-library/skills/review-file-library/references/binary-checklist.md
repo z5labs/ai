@@ -69,7 +69,7 @@ Field types that disagree with the spec's field table (e.g., spec says `uint32`,
 ## Decoder phase
 
 **Source files to read:** `decoder.go`, `decoder_test.go`.
-**Spec sections received:** Overview, Conventions, Field Definitions, Encoding Tables, Conditional/Optional Fields, Checksums, Padding, Examples.
+**Spec sections received:** Overview, Conventions, Field Definitions, Encoding Tables, Conditional and Optional Fields, Checksums and Integrity, Padding and Alignment, Examples.
 **Chunked spec received (if present):** `structures/*.md`, `encoding-tables/*.md`.
 
 ### Categories
@@ -84,12 +84,12 @@ Three sub-checks, each producing its own findings:
 
 - **Length checks.** For every field whose spec entry says "length", "size", "count", or implies a count of subsequent records, verify the decoder uses the value to bound a read or loop. A length field that's read but ignored is a `[blocker]` — malformed inputs will overrun the buffer.
 - **Offset checks.** For every field whose spec entry is an offset to another structure (common in container formats: PNG chunk offsets, BMP DIB-header offsets, ELF section-header offsets), verify the decoder seeks to that offset before reading the target. An offset that's read but never used is a `[blocker]`.
-- **Checksum checks.** For every CRC, Adler-32, MD5, or other integrity field defined in the spec's `## Checksums` section (or implied in a structure's field table), verify `decoder.go` validates the value after reading. A checksum that's read but not compared is a `[blocker]` — silent corruption.
+- **Checksum checks.** For every CRC, Adler-32, MD5, or other integrity field defined in the spec's `## Checksums and Integrity` section (or implied in a structure's field table), verify `decoder.go` validates the value after reading. A checksum that's read but not compared is a `[blocker]` — silent corruption.
 
 If the spec says "checksum is informational, do not validate" (some formats do), the decoder reading-without-validating is correct; flag as `[info]` rather than `[blocker]` and cite the spec line that justifies it.
 
 #### Drift
-Decoder methods whose accept/reject behavior differs from the spec — extra bytes consumed, missing optional-field handling, wrong byte order. The Conventions section is the source of truth for byte order; the Conditional/Optional Fields section is the source of truth for which fields are optional and under what condition.
+Decoder methods whose accept/reject behavior differs from the spec — extra bytes consumed, missing optional-field handling, wrong byte order. The Conventions section is the source of truth for byte order; the Conditional and Optional Fields section is the source of truth for which fields are optional and under what condition.
 
 Failing tests that pin spec behavior (decode the spec's example bytes, expect a known struct) are direct drift evidence — cite the failing test name from the test-status header.
 
@@ -100,7 +100,7 @@ If `decoder_test.go` lacks a failure-path test that asserts the `FieldError → 
 ## Encoder phase
 
 **Source files to read:** `encoder.go`, `encoder_test.go`.
-**Spec sections received:** Overview, Conventions, Field Definitions, Encoding Tables, Checksums, Padding, Examples.
+**Spec sections received:** Overview, Conventions, Field Definitions, Encoding Tables, Checksums and Integrity, Padding and Alignment, Examples.
 **Chunked spec received (if present):** `structures/*.md`, `encoding-tables/*.md`.
 
 ### Categories

@@ -13,7 +13,7 @@ Read `references/text-checklist.md` (text packages) or `references/binary-checkl
 
 - **Package path** (required) — the Go package directory to audit (e.g. "audit `pkg/kvr`"). Source: user prompt. Validate by listing the directory and detecting the pipeline shape (see `## Detect package shape`).
 - **`<package>/SPEC.md`** (required) — Source: filesystem. Sliced by line range per phase. **If `SPEC.md` is missing, stop and tell the user to run `extract-text-spec` or `extract-binary-spec` first.** A spec-less audit cannot detect drift or missing coverage — every finding is spec-driven — so partial value would be misleading.
-- **`<package>/structures/*.md`, `<package>/encoding-tables/*.md`** (binary packages only, optional) — Source: filesystem. Per-structure and per-table chunked spec produced by `extract-binary-spec`. When present, listed with `Glob` and the file paths passed verbatim to the relevant phase subagent. When absent, the audit proceeds against `SPEC.md` alone but flags the encoding-table coverage category as "skipped — no encoding-tables/" in the report.
+- **`<package>/structures/*.md`, `<package>/encoding-tables/*.md`** (binary packages only, optional) — Source: filesystem. Per-structure and per-table chunked spec produced by `extract-binary-spec`. When present, listed with `Glob` and the file paths passed verbatim to the relevant phase subagent. When absent, the audit proceeds against `SPEC.md` alone — the types subagent then audits enums declared inline in `SPEC.md`'s `## Encoding Tables` section (the binary checklist only marks the encoding-table category `skipped` when the chunked directory is absent **and** `SPEC.md` defines no inline tables; a binary spec that puts its enums inline is still audited).
 
 ## Outputs
 
@@ -60,11 +60,13 @@ Build a `(section, line_start, line_end)` table from that output. Each section e
 
 **Binary packages** — same partition as `implement-go-binary-file-library`:
 
-| Phase   | Sections to slice                                                                                          |
-|---------|------------------------------------------------------------------------------------------------------------|
-| types   | Overview, Conventions, Field Definitions, Encoding Tables, Versioning                                      |
-| decoder | Overview, Conventions, Field Definitions, Encoding Tables, Conditional/Optional Fields, Checksums, Padding, Examples |
-| encoder | Overview, Conventions, Field Definitions, Encoding Tables, Checksums, Padding, Examples                    |
+| Phase   | Sections to slice                                                                                                                  |
+|---------|------------------------------------------------------------------------------------------------------------------------------------|
+| types   | Overview, Conventions, Field Definitions, Encoding Tables, Versioning                                                              |
+| decoder | Overview, Conventions, Field Definitions, Encoding Tables, Conditional and Optional Fields, Checksums and Integrity, Padding and Alignment, Examples |
+| encoder | Overview, Conventions, Field Definitions, Encoding Tables, Checksums and Integrity, Padding and Alignment, Examples                |
+
+Match section names against `grep -n '^## '` output by **prefix**, not exact equality — a binary spec that abbreviates `## Checksums and Integrity` to `## Checksums` should still match. The canonical names above are what `new-go-binary-file-library` scaffolds, but specs adapted from external standards may diverge.
 
 Always include `Overview` for every phase (frames what the section is for). Text always includes `Examples` (the cheapest sanity check on user-facing behavior). Binary always includes `Conventions` (byte order is load-bearing for all three phases).
 
