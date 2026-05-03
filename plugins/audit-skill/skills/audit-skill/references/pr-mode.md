@@ -17,14 +17,15 @@ This file specifies the exact `gh` invocations the skill uses when a PR is open.
 
 Re-running the audit on the same head SHA must be a no-op. Without this guard, every re-run posts a duplicate review.
 
+The marker line on each summary review (`<!-- audit-skill: $HEAD_SHA -->`, posted in step 4) is the dedup mechanism. It distinguishes runs by SHA, lets you spot a prior audit on the current head, and lets PR readers see which commit each review covered. Prior-SHA reviews remain visible by design — the audit history is the audit trail; on a long-lived branch you'll see one summary review per audit run, and that's expected.
+
 1. List existing reviews: `gh api repos/$OWNER/$REPO/pulls/$PR_NUMBER/reviews --paginate -q '.[] | {id, body, commit_id, html_url}'`.
 2. Filter to reviews whose body starts with `<!-- audit-skill: ` — those are prior audit-skill runs.
 3. Decide:
    - **Marker matches `HEAD_SHA`**: an audit was already posted for this exact commit. Skip the rest of PR mode entirely. Tell the user the existing review URL and stop.
-   - **Marker is for an older SHA**: dismiss it before posting fresh. `gh api -X PUT repos/$OWNER/$REPO/pulls/$PR_NUMBER/reviews/$ID/dismissals -f message="superseded by audit on $HEAD_SHA"`. Continue to step 2.
-   - **No marker found**: continue to step 2.
+   - **Marker is for an older SHA**, or **no marker found**: continue to step 2. The new review will carry the current SHA's marker and supersede any prior ones in meaning, even though they remain visible.
 
-Dismissed reviews stay in the PR's history (collapsed), so the user can still see what changed between audits — that's the point of dismissing rather than deleting.
+Why no dismissal step: the GitHub API only allows dismissing reviews submitted as `APPROVE` or `REQUEST_CHANGES`. Audit-skill posts with `event=COMMENT` (step 4), which the API refuses to dismiss (HTTP 422 "Can not dismiss a commented pull request review"). Switching the audit to `REQUEST_CHANGES` would gate the merge; switching to `APPROVE` would auto-approve a PR the audit may have just flagged. Neither is appropriate for a static linter, so the marker carries the dedup load alone.
 
 ## Step 2: build the modified-line index
 

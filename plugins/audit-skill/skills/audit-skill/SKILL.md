@@ -14,7 +14,7 @@ This skill is itself bound by the same five objectives. If you find yourself wan
 This skill is idempotent in both modes; re-running on the same target is a documented refresh path.
 
 - **File mode** — overwrites `audit-<skill-name>-<YYYY-MM-DD>.md` on re-run. Two runs on different days produce two dated reports (intentional — the date is part of the path).
-- **PR mode** — deduplicates against prior audits via a marker line (`<!-- audit-skill: $HEAD_SHA -->`, where `$HEAD_SHA` is replaced with the actual commit SHA) on the summary review. If a marker matches the current head SHA, skip posting and tell the user the existing review URL; if a marker is for an older SHA, dismiss it before posting fresh. See `references/pr-mode.md` for the exact procedure.
+- **PR mode** — deduplicates against prior audits via a marker line (`<!-- audit-skill: $HEAD_SHA -->`, where `$HEAD_SHA` is replaced with the actual commit SHA) on the summary review. If a marker matches the current head SHA, skip posting and tell the user the existing review URL; if a marker is for an older SHA, post a fresh review (older-SHA reviews remain visible — the marker carries the dedup load, since GitHub's API forbids dismissing the `event=COMMENT` reviews this skill posts). See `references/pr-mode.md` for the exact procedure.
 
 ## Inputs
 

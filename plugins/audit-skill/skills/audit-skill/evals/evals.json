@@ -128,5 +128,13 @@
         {"id": "findings-flat-by-objective", "text": "findings are grouped by objective, not by severity"}
       ]
     }
+  ],
+  "regression_checks": [
+    {
+      "id": "issue-60-pr-mode-dismissal-removed",
+      "script": "regression_pr_mode_dismissal.sh",
+      "text": "audit-skill must not invoke `gh api -X PUT .../reviews/<id>/dismissals` — GitHub rejects dismissals on event=COMMENT reviews (HTTP 422), and audit-skill posts with event=COMMENT. The marker line is the dedup mechanism. See issue #60.",
+      "kind": "static-source-check"
+    }
   ]
 }
