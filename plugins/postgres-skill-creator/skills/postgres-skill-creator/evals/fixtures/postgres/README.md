@@ -35,7 +35,9 @@ The shape is deliberately small but covers every introspection query in `scripts
 
 ## Reusing across runs
 
-`up.sh` skips the bring-up if a container with the same name is already running. So a developer iterating on the suite can `bash up.sh` once, run the suite many times, then `bash down.sh` at the end. Parallel runs on different ports get distinct container names and don't collide.
+`up.sh` uses the stable container name `pg-skill-eval` by default and skips the bring-up when a container with that name is already running — discovering its host port via `<runtime> port` so the emitted env points at the live mapping. So a developer iterating on the suite can `bash up.sh` once, run the suite many times, then `bash down.sh` at the end.
+
+For parallel runs, set `PG_FIXTURE_NAME` to a distinct name per invocation (e.g. `PG_FIXTURE_NAME=pg-skill-eval-a` and `…-b`); each gets its own ephemeral host port and `down.sh`'s default sweep cleans them all up.
 
 ## Image and version
 

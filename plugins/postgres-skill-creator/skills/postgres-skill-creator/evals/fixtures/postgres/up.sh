@@ -6,14 +6,14 @@
 #   eval "$(bash up.sh)"
 #   bash ../../scripts/introspect.sh /tmp/introspect-out
 #
-# The container is named after the host port (`pg-skill-eval-<port>`) so
-# parallel invocations on different ports don't collide. The port is chosen
-# from a free ephemeral one if the caller doesn't override it.
+# The container has a stable default name (`pg-skill-eval`) so a second
+# invocation reuses the running container instead of standing up a fresh one.
+# For parallel runs, set `PG_FIXTURE_NAME` to a distinct name per run.
 #
 # Environment overrides:
 #   POSTGRES_IMAGE   — image to run (default: docker.io/library/postgres:17-alpine).
-#   PG_FIXTURE_PORT  — host port to bind. Default: an ephemeral free port.
-#   PG_FIXTURE_NAME  — container name. Default: pg-skill-eval-<port>.
+#   PG_FIXTURE_PORT  — host port to bind. Default: an ephemeral free port. Ignored when reusing an existing container (the running port is discovered).
+#   PG_FIXTURE_NAME  — container name. Default: pg-skill-eval.
 #   PG_CONTAINER_RUNTIME — `docker` or `podman`; auto-detected by default.
 #
 # Constants:
@@ -41,25 +41,34 @@ else
   exit 1
 fi
 
-# Pick a free ephemeral port if the caller didn't pin one. Python's the most
-# portable way that's likely to be installed alongside docker/podman; if it's
-# not, we fall back to a fixed port (the container name is still derived so
-# parallel runs on the same port collide loudly rather than silently).
-if [ -z "${PG_FIXTURE_PORT:-}" ]; then
-  if command -v python3 >/dev/null 2>&1; then
-    PG_FIXTURE_PORT="$(python3 -c 'import socket;s=socket.socket();s.bind(("",0));print(s.getsockname()[1]);s.close()')"
-  else
-    PG_FIXTURE_PORT=55432
-  fi
-fi
-PG_FIXTURE_NAME="${PG_FIXTURE_NAME:-pg-skill-eval-${PG_FIXTURE_PORT}}"
+PG_FIXTURE_NAME="${PG_FIXTURE_NAME:-pg-skill-eval}"
 
 # If a container with this name is already running, reuse it. Lets a developer
 # `bash up.sh` once and re-run the eval suite without paying the bring-up cost
 # every time. Tear-down is explicit via down.sh.
+#
+# Reuse: discover the host port the running container exposes, rather than
+# trusting whatever PG_FIXTURE_PORT we'd otherwise pick — they must agree or
+# the emitted env would point callers at a port nothing's listening on.
 if "$RUNTIME" inspect "$PG_FIXTURE_NAME" >/dev/null 2>&1; then
-  echo "# reusing existing container $PG_FIXTURE_NAME" >&2
+  PG_FIXTURE_PORT="$("$RUNTIME" port "$PG_FIXTURE_NAME" 5432 | head -n1 | awk -F: '{print $NF}')"
+  if [ -z "$PG_FIXTURE_PORT" ]; then
+    echo "fixture: container $PG_FIXTURE_NAME exists but has no host mapping for 5432" >&2
+    exit 1
+  fi
+  echo "# reusing existing container $PG_FIXTURE_NAME on port $PG_FIXTURE_PORT" >&2
 else
+  # Pick a free ephemeral port if the caller didn't pin one. Python's the most
+  # portable way that's likely to be installed alongside docker/podman; if it's
+  # not, we fall back to a fixed port (parallel runs on the same port collide
+  # loudly rather than silently because the container name is also taken).
+  if [ -z "${PG_FIXTURE_PORT:-}" ]; then
+    if command -v python3 >/dev/null 2>&1; then
+      PG_FIXTURE_PORT="$(python3 -c 'import socket;s=socket.socket();s.bind(("",0));print(s.getsockname()[1]);s.close()')"
+    else
+      PG_FIXTURE_PORT=55432
+    fi
+  fi
   "$RUNTIME" run -d --rm \
     --name "$PG_FIXTURE_NAME" \
     -e POSTGRES_USER="$PG_USER" \
@@ -92,12 +101,13 @@ done
 # user-defined network), so localhost is correct from the host's perspective.
 # The generator's own container will need PG_DOCKER_ARGS=--network=host to
 # resolve "localhost" to the host loopback rather than its own.
-cat <<EOF
-PGHOST=127.0.0.1
-PGPORT=${PG_FIXTURE_PORT}
-PGUSER=${PG_USER}
-PGPASSWORD=${PG_PASSWORD}
-PGDATABASE=${PG_DATABASE}
-PG_FIXTURE_NAME=${PG_FIXTURE_NAME}
-PG_DOCKER_ARGS=--network=host
-EOF
+#
+# Values flow through `printf '%q'` so callers can safely `eval "$(bash up.sh)"`
+# even if a PG_FIXTURE_* override carries shell metacharacters.
+printf 'PGHOST=127.0.0.1\n'
+printf 'PGPORT=%q\n'         "$PG_FIXTURE_PORT"
+printf 'PGUSER=%q\n'         "$PG_USER"
+printf 'PGPASSWORD=%q\n'     "$PG_PASSWORD"
+printf 'PGDATABASE=%q\n'     "$PG_DATABASE"
+printf 'PG_FIXTURE_NAME=%q\n' "$PG_FIXTURE_NAME"
+printf 'PG_DOCKER_ARGS=--network=host\n'
