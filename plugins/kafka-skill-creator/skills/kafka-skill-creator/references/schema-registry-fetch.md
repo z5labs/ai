@@ -18,8 +18,13 @@ If you collapse this back to `docker run -e SR_PASS="$value" ... curl -u "$user:
 | `TEAM` | The manifest's `team` field. Validated path-safe in Precondition 4 of the parent SKILL.md. |
 | `CONTEXT` | The same context name used in Step 1 (the manifest's first context). |
 | `TOPICS=()` | Bash array of the manifest's `topics:` values (one entry per topic). |
-| `RUNTIME` | `docker` or `podman`. The snippet auto-detects with the same block `introspect.sh` uses, honoring `KAFKA_CONTAINER_RUNTIME` if set. |
-| `KAFKA_DOCKER_ARGS` | Optional. Word-split into an array and spliced into the `docker run` invocation, identical to `introspect.sh`. The common case is `--network=host` on Linux when Schema Registry is on `localhost`. Default: empty. |
+
+The snippet itself sets two more variables; they are NOT caller inputs but the caller can influence them via env:
+
+| Variable | Set by snippet | Override via |
+|---|---|---|
+| `RUNTIME` | Auto-detected with the same `command -v docker / podman` block `introspect.sh` uses. | `KAFKA_CONTAINER_RUNTIME` (snippet honors this if set in the env). |
+| `EXTRA_ARGS` | Word-split from `KAFKA_DOCKER_ARGS` and spliced into the `docker run` invocation, identical to `introspect.sh`. The common case is `--network=host` on Linux when Schema Registry is on `localhost`. | `KAFKA_DOCKER_ARGS` (default: empty). |
 
 ## Snippet
 
