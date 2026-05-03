@@ -7,7 +7,15 @@ Substitute every `<...>` placeholder with real values from introspection at gene
 - `<dbname>` — the value of `PGDATABASE` (also the leaf segment of the output path, `pg-<dbname>/`)
 - `<top tables>` — the same 3–5 prominent table names you put in the SKILL.md frontmatter description (highest column count or most-referenced by FKs)
 - `<top-table>` — the single most prominent table from `<top tables>`, used in the sample-use code blocks so the count example is runnable copy-paste
-- `<table count>`, `<view count>`, `<enum count>` — totals from the introspection output (drop the enums clause entirely if `enums.tsv` was empty)
+- `<table count>`, `<view count>`, `<enum count>` — totals from the introspection output
+
+When `enums.tsv` is empty, the generator does not write `references/enums.md`. The README must not advertise content that doesn't exist, so in that case strip every enum mention from the template before writing — there are three of them:
+
+1. The schema-summary line: drop `, and <enum count> enums` so it reads `… describe <table count> tables, <view count> views (top tables: …)`.
+2. The Schema-lookup section: drop the `references/enums.md` bullet entirely.
+3. The Where-things-live section: drop `, and enums` from the `references/` bullet so it reads `… snapshots of tables, FKs, views, and indexes.`
+
+If `enums.tsv` is non-empty, leave all three places as written and substitute `<enum count>` with the integer.
 
 ```markdown
 # pg-<dbname>
@@ -95,7 +103,7 @@ Before writing a non-trivial query, consult the relevant reference under `refere
 - `references/relationships.md` — flat list of foreign keys in arrow form (`orders.user_id → users.id`)
 - `references/views.md` — view definitions verbatim (often pre-joined query patterns worth reusing)
 - `references/indexes.md` — one line per index, schema-qualified, for judging WHERE-clause cost
-- `references/enums.md` — enum types and their values (only present if the database defines any)
+- `references/enums.md` — enum types and their values
 
 ## Regeneration
 
