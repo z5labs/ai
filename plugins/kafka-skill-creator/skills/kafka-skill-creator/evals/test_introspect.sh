@@ -261,6 +261,18 @@ assert_test \
   "$ALL_DEV" \
   --context dev /tmp/some-other-dir
 
+# A caller can technically slip a dash-prefixed positional past the
+# argparse loop's `-*)` guard via `--` end-of-options. The leaf-prefix
+# check is the safety net that catches it (no leaf starting with `-`
+# matches `kafka-introspect-*`); pin that guarantee so the inline
+# comment in introspect.sh stays honest.
+assert_test \
+  "refuses dash-prefixed leaf slipped in via -- end-of-options" \
+  2 \
+  "kafka-introspect-" \
+  "$ALL_DEV" \
+  --context dev -- -evil-leaf
+
 # Trailing slash on a kafka-introspect- path should still pass the guard
 # (basename strips the slash). This is the positive case for the prefix
 # check, exercised here via the env-var-validation refusal so the test

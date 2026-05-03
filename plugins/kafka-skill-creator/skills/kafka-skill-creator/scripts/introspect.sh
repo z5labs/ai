@@ -218,9 +218,12 @@ esac
 # Use pure bash parameter expansion rather than `basename -- "$OUT"`:
 # the `--` end-of-options marker is GNU-only and BSD/macOS basename
 # rejects it, which would break the very macOS-default-Bash environment
-# the script otherwise targets. The argparse loop above already rejects
-# any positional starting with `-`, so `$OUT` cannot reach this point
-# beginning with a dash — the only edge case `--` would have guarded.
+# the script otherwise targets. The `--` end-of-options marker isn't
+# needed here either way: parameter expansion (`${OUT%/}` and `${...##*/}`)
+# treats `-` like any other character, and a caller who slips a dash-
+# prefixed OUT past the argparse loop via the `--` end-of-options
+# marker (e.g. `... --context dev -- -evil`) still hits the leaf-prefix
+# refusal below, since no leaf starting with `-` matches `kafka-introspect-*`.
 out_no_trail="${OUT%/}"   # strip a single trailing slash if present
 out_leaf="${out_no_trail##*/}"
 case "$out_leaf" in
