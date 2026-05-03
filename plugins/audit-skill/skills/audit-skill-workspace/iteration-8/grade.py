@@ -57,19 +57,32 @@ def strip_quoted(text: str) -> str:
 
 # Severity-tier labels are only flagged in label-shaped contexts so that
 # bare prose mentions of a severity word (e.g. a quoted heading like
-# "High-level workflow") do not register as the auditor using severity
-# tiers. Recognised shapes:
-#   - "Critical:" / "High —" / "Medium –" (label punctuation, optional
-#     **bold** wrappers around the word)
-#   - "Severity: Critical" / "Priority: High" (prefix form)
-#   - "High severity" / "Critical findings" / "Medium risk" (suffix form)
-#   - bare P0 / P1 (unambiguous priority codes; word boundaries still apply
-#     so identifiers like processP0Records are not matched)
+# "High-level workflow" or quoted target text like "P0 incident handler")
+# do not register as the auditor using severity tiers. P0/P1 codes are
+# treated the same way as the named tiers — no bare match — so that quoted
+# target text containing them does not trip the check either.
+#
+# Recognised shapes (TIER = Critical/High/Medium/Low/P0/P1):
+#   - "<TIER>:" / "<TIER> —" / "<TIER> –" with optional ** wrappers
+#     around the word (e.g. "Critical:", "**P0:**", "**Critical**:")
+#   - ":<TIER>" prefix form, allowing whitespace, ** wrappers, and quote
+#     characters between the colon and the tier
+#     (e.g. "Severity: High", "Priority: **High**", 'Triage: "P0"')
+#   - "<TIER> <noun>" suffix form, where noun ∈ {severity, priority, risk,
+#     impact, finding, issue, tier} (singular or plural), with optional
+#     ** wrappers between the tier and the noun
+#     (e.g. "High severity", "**High** priority", "Critical findings",
+#     "P0 incidents" if "incident" were in the noun set — currently isn't)
+_TIER = r"(?:Critical|High|Medium|Low|P[01])"
+_NOUN = r"(?:severity|priority|risk|impact|finding|issue|tier)s?"
+# The negative lookahead `(?![-\w])` after the tier in the colon-prefix
+# alternative prevents matches like "differently: high-level" (compound
+# word continuation) while still allowing "Triage: P0", `Severity: "High"`,
+# etc. where the tier is a standalone token.
 SEVERITY_LABEL_RE = re.compile(
-    r"\b(?:Critical|High|Medium|Low)[\s*]*[:—–]"
-    r"|\b(?:severity|priority|risk|impact)\s*:\s*(?:Critical|High|Medium|Low)\b"
-    r"|\b(?:Critical|High|Medium|Low)\s+(?:severity|priority|risk|impact|finding|issue|tier)s?\b"
-    r"|\bP[01]\b",
+    rf"\b{_TIER}[\s*]*[:—–]"
+    rf"|:[\s*\"']*{_TIER}\b(?![-\w])"
+    rf"|\b{_TIER}[\s*]+{_NOUN}\b",
     re.IGNORECASE,
 )
 
