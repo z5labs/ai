@@ -1,0 +1,45 @@
+{
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "the assistant refuses to run the generator on the unsafe --output value",
+      "passed": true,
+      "evidence": "refusal language detected"
+    },
+    {
+      "text": "the refusal names the offending --output value so the user knows what tripped the guard",
+      "passed": true,
+      "evidence": ".git path appears in response"
+    },
+    {
+      "text": "the refusal cites the `.git`-segment rule (not just generic 'unsafe path')",
+      "passed": true,
+      "evidence": ".git-segment rule citation detected"
+    },
+    {
+      "text": "the refusal explains that the generator wipes the output dir / would destroy `.git` (rm -rf rationale)",
+      "passed": true,
+      "evidence": "rm -rf / wipe / destroy rationale detected"
+    },
+    {
+      "text": "no files written under .git/skills/, .claude/skills/pg-orders/, or plugins/",
+      "passed": true,
+      "evidence": ".git/skills empty: True; default empty: True; plugins/ empty: True"
+    },
+    {
+      "text": "the eval-9 directory tree is pristine \u2014 `--output .git/skills/pg-orders` did not cause writes outside outputs/",
+      "passed": true,
+      "evidence": "outputs extras: []; run-1 extras: []; with_skill extras: []; eval-dir extras: []"
+    },
+    {
+      "text": "scripts/introspect.sh is not invoked \u2014 the path-safety guard fires before introspection",
+      "passed": true,
+      "evidence": "introspect.sh not actually run"
+    }
+  ]
+}

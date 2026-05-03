@@ -24,7 +24,7 @@ The path's parent directory must already exist (the operator chose where the ski
 
 Before deleting anything, validate the path against four layers of guards. The wipe lands `rm -rf` on a directory the operator named, so a malformed `--output` value is the most safety-critical input this skill takes — these checks fire **before** introspection, container-runtime selection, or anything else that touches disk.
 
-1. **Reject literal danger shapes.** Refuse if `--output` is empty, contains any whitespace anywhere (leading, trailing, or embedded — `plugins/team data/skills/pg-orders` would break every unquoted `cp <skill-dir>/...` sample in the generated README, and quoting every emission for the rare case isn't worth it). Refuse if it equals `/`, `.`, `..`, `~`, or starts with `~/`. Refuse if the **leaf segment** (the last path component, after stripping trailing slashes) is empty, `.`, `..`, `~`, or `*` — the leaf is what `rm -rf` lands on most directly.
+1. **Reject literal danger shapes.** Refuse if `--output` is empty, contains any whitespace anywhere (leading, trailing, or embedded — `plugins/team data/skills/pg-orders` would break every unquoted `cp <skill-dir>/...` sample in the generated README, and quoting every emission for the rare case isn't worth it). Refuse if it equals `/`, `.`, `..`, `~`, or starts with `~/`. Refuse if the **leaf segment** (the last path component, after stripping trailing slashes) is empty, `.`, `..`, `~`, or `*` — the leaf is what `rm -rf` lands on most directly. Refuse if **any path segment** (not just the leaf) equals `.git` — wiping `.git` destroys the repository's history, and AC #73 calls this out explicitly. So `.git`, `.git/foo`, `subdir/.git`, and `subdir/.git/skills/pg-orders` all hit the refusal even though the *leaf* segment is something else like `pg-orders`.
 2. **Reject paths whose components include `..`.** `rm -rf /tmp/out/..` resolves to `/tmp` (or worse), and the literal-string check above wouldn't catch it. Match `..` at any position: leading (`../foo`), trailing (`foo/..`), middle (`foo/../bar`), and lone (`..`).
 3. **Strip any number of trailing slashes** before the wipe. `rm -rf path/` (with trailing slash) on a symlink dereferences the symlink and recursively deletes its target — even one trailing slash forces deref. Iterate the strip until none remain so a sloppy `.../pg-foo///` can't slip past.
 4. **Reject paths that escape the project root via symlinks.** Layers 1–3 are textual; they don't catch a `--output plugins/team-data/skills/pg-orders` where `plugins/team-data` is a symlink to `/etc`. Resolve the canonical path and refuse if it doesn't sit inside the current working directory (the project root). Concretely:
@@ -436,7 +436,15 @@ After writing files, check (against the resolved `<output>` directory, not a har
 - At least `<output>/references/tables.md` and `<output>/references/relationships.md` exist
 - `<output>/scripts/query.sh` has no unsubstituted `<...>` placeholders (the generator must have filled in `<host>`, `<port>`, `<user>`, and `<dbname>`)
 
-Run a smoke test: `bash <output>/scripts/query.sh "SELECT 1"`. The libpq env vars (`PGHOST`/`PGPORT`/`PGUSER`/`PGDATABASE`/`PGPASSWORD`) are still exported from the invocation that triggered this skill, so the script picks them up from the environment without needing a `.env` file. If this fails, the generated skill is broken — surface the error to the user instead of claiming success.
+Run a smoke test, but route around `query.sh`'s `.env` resolution. The libpq env vars (`PGHOST`/`PGPORT`/`PGUSER`/`PGDATABASE`/`PGPASSWORD`) are still exported from the invocation that triggered this skill, and you want the smoke test to use *those* — not whatever `./.env` happens to live at the project root. `query.sh`'s resolution order is `--env-file` → `PG_ENV_FILE` → `./.env`, so on a regeneration in a project that already has `./.env`, the smoke test would silently load that file's values and could end up testing connectivity to the wrong database (or failing on credentials that belong to a different environment). To bypass this, write an empty file and pass it explicitly:
+
+```bash
+tmp_env="$(mktemp)"
+bash <output>/scripts/query.sh --env-file "$tmp_env" "SELECT 1"
+rm -f "$tmp_env"
+```
+
+The empty file beats `./.env` in the resolution order, and `load_env_file` finds nothing to overwrite — so the inherited libpq env vars win. If the smoke test fails after this, the generated skill is broken — surface the error to the user instead of claiming success.
 
 ## Step 4: Report
 

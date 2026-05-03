@@ -4,7 +4,7 @@
     "skill_path": "<path/to/skill>",
     "executor_model": "<model-name>",
     "analyzer_model": "<model-name>",
-    "timestamp": "2026-05-03T22:56:33Z",
+    "timestamp": "2026-05-03T23:31:46Z",
     "evals_run": [
       0,
       1,
@@ -12,7 +12,8 @@
       3,
       4,
       7,
-      8
+      8,
+      9
     ],
     "runs_per_configuration": 3
   },
@@ -307,33 +308,86 @@
         }
       ],
       "notes": []
+    },
+    {
+      "eval_id": 9,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 28.0,
+        "tokens": 21014,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant refuses to run the generator on the unsafe --output value",
+          "passed": true,
+          "evidence": "refusal language detected"
+        },
+        {
+          "text": "the refusal names the offending --output value so the user knows what tripped the guard",
+          "passed": true,
+          "evidence": ".git path appears in response"
+        },
+        {
+          "text": "the refusal cites the `.git`-segment rule (not just generic 'unsafe path')",
+          "passed": true,
+          "evidence": ".git-segment rule citation detected"
+        },
+        {
+          "text": "the refusal explains that the generator wipes the output dir / would destroy `.git` (rm -rf rationale)",
+          "passed": true,
+          "evidence": "rm -rf / wipe / destroy rationale detected"
+        },
+        {
+          "text": "no files written under .git/skills/, .claude/skills/pg-orders/, or plugins/",
+          "passed": true,
+          "evidence": ".git/skills empty: True; default empty: True; plugins/ empty: True"
+        },
+        {
+          "text": "the eval-9 directory tree is pristine \u2014 `--output .git/skills/pg-orders` did not cause writes outside outputs/",
+          "passed": true,
+          "evidence": "outputs extras: []; run-1 extras: []; with_skill extras: []; eval-dir extras: []"
+        },
+        {
+          "text": "scripts/introspect.sh is not invoked \u2014 the path-safety guard fires before introspection",
+          "passed": true,
+          "evidence": "introspect.sh not actually run"
+        }
+      ],
+      "notes": []
     }
   ],
   "run_summary": {
     "with_skill": {
       "pass_rate": {
-        "mean": 0.6582,
-        "stddev": 0.4592,
+        "mean": 0.7009,
+        "stddev": 0.4419,
         "min": 0.0,
         "max": 1.0
       },
       "time_seconds": {
-        "mean": 91.7197,
-        "stddev": 106.7601,
+        "mean": 83.7548,
+        "stddev": 101.3755,
         "min": 23.784,
         "max": 279.1
       },
       "tokens": {
-        "mean": 25397.4286,
-        "stddev": 7103.1558,
+        "mean": 24849.5,
+        "stddev": 6756.3893,
         "min": 20317,
         "max": 36433
       }
     },
     "delta": {
-      "pass_rate": "+0.66",
-      "time_seconds": "+91.7",
-      "tokens": "+25397"
+      "pass_rate": "+0.70",
+      "time_seconds": "+83.8",
+      "tokens": "+24850"
     }
   },
   "notes": []
