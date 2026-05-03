@@ -425,8 +425,12 @@ def assertion_section_names_canonical() -> tuple[bool, str]:
     prefix-match rule so specs adapted from external standards still
     resolve.
 
-    Anchored to the `## Partition SPEC.md by line range...` section so
-    unrelated prose elsewhere in SKILL.md cannot give a false positive.
+    Pinned to the partition table rows themselves — the `| decoder |`
+    and `| encoder |` lines — not just to "the canonical name appears
+    somewhere in the section." Otherwise a regression that abbreviates
+    the table rows but keeps the prefix-match prose paragraph (which
+    legitimately references the canonical heading by example) would
+    slip through.
     """
     text = skill_md_text()
     section = extract_section(text, "Partition SPEC.md by line range (do not read the whole file)")
@@ -437,35 +441,48 @@ def assertion_section_names_canonical() -> tuple[bool, str]:
     if not section_present:
         return False, "; ".join(findings) + " (no `## Partition SPEC.md...` section)"
 
-    canonical = [
-        "Conditional and Optional Fields",
-        "Checksums and Integrity",
-        "Padding and Alignment",
-    ]
-    for name in canonical:
-        present = name in section
-        findings.append(f"{name!r}={present}")
-        if not present:
-            return False, "; ".join(findings)
+    # Pull the per-phase table rows specifically. Each row starts with
+    # `| <phase> |` and ends at end-of-line; what we care about is the
+    # second cell — the comma-separated section list.
+    rows = {}
+    for phase in ("decoder", "encoder"):
+        m = re.search(rf"^\|\s*{phase}\s*\|([^\n]*)\|", section, re.MULTILINE)
+        if m:
+            rows[phase] = m.group(1)
+    missing_rows = [p for p in ("decoder", "encoder") if p not in rows]
+    if missing_rows:
+        findings.append(f"missing_table_rows={missing_rows}")
+        return False, "; ".join(findings)
 
-    # Reject the abbreviated forms that motivated this issue. Match each
-    # in a way that won't false-positive on the canonical names: the
+    # Canonical names required per row. Encoder doesn't list
+    # `Conditional and Optional Fields` (it has no encode-time
+    # contract), so it's only required in the decoder row.
+    required = {
+        "decoder": ["Conditional and Optional Fields", "Checksums and Integrity", "Padding and Alignment"],
+        "encoder": ["Checksums and Integrity", "Padding and Alignment"],
+    }
+    for phase, names in required.items():
+        for name in names:
+            present = name in rows[phase]
+            findings.append(f"{phase}_row.{name!r}={present}")
+            if not present:
+                return False, "; ".join(findings)
+
+    # Reject abbreviated forms in the table rows specifically. The
     # slash form is unambiguous; for the bare words, require a trailing
-    # comma (table-cell separator) or pipe — the canonical forms always
-    # have " and " continuing after the bare word.
+    # comma (table-cell separator) or pipe — the canonical forms
+    # always have " and " continuing after the bare word.
     abbreviated_patterns = [
         ("Conditional/Optional Fields", "Conditional/Optional Fields"),
         ("Checksums (bare)", re.compile(r"\bChecksums\s*[,|]")),
         ("Padding (bare)", re.compile(r"\bPadding\s*[,|]")),
     ]
-    for label, pat in abbreviated_patterns:
-        if isinstance(pat, str):
-            hit = pat in section
-        else:
-            hit = bool(pat.search(section))
-        if hit:
-            findings.append(f"abbreviated_present={label}")
-            return False, "; ".join(findings)
+    for phase, row in rows.items():
+        for label, pat in abbreviated_patterns:
+            hit = (pat in row) if isinstance(pat, str) else bool(pat.search(row))
+            if hit:
+                findings.append(f"{phase}_row.abbreviated_present={label}")
+                return False, "; ".join(findings)
 
     section_lower = section.lower()
     has_prefix_rule = "prefix" in section_lower and "match" in section_lower
