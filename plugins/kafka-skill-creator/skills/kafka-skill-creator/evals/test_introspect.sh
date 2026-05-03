@@ -202,6 +202,25 @@ assert_test \
   "$ALL_DEV" \
   --context dev "~"
 
+# Whitespace-prefixed paths must be rejected for ALL POSIX whitespace,
+# not just a literal space. A naive `" "*` glob would let `$'\t/tmp'` or
+# `$'\n/tmp'` slip past — the `[[:space:]]*` glob in the script catches
+# tab and newline too. Pin both so a regression to the literal-space
+# pattern is caught.
+assert_test \
+  "refuses output-dir starting with tab" \
+  2 \
+  "refusing to wipe" \
+  "$ALL_DEV" \
+  --context dev $'\t/tmp/kafka-introspect-foo'
+
+assert_test \
+  "refuses output-dir starting with newline" \
+  2 \
+  "refusing to wipe" \
+  "$ALL_DEV" \
+  --context dev $'\n/tmp/kafka-introspect-foo'
+
 # String-shape checks alone are bypassable: rm -rf /tmp/out/.. resolves
 # to /tmp before deletion, even though the literal argument doesn't match
 # the simple `..` case. Cover each position a `..` path component can

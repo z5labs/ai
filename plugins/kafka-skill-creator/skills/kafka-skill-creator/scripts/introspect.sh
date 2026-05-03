@@ -198,12 +198,17 @@ OUT="${POSITIONAL[0]}"
 # caller passes a scratch location like /tmp/kafka-introspect-<team>, and
 # the OS will catch un-writable paths at mkdir time.
 case "$OUT" in
-  ""|"/"|"."|".."|"~"|"~/"*|" "*)
+  ""|"/"|"."|".."|"~"|"~/"*|[[:space:]]*)
     echo "error: refusing to wipe suspicious output-dir: $OUT" >&2
     echo "       pass a scratch path like /tmp/kafka-introspect-<team>." >&2
     exit 2
     ;;
 esac
+# `[[:space:]]*` above (rather than `" "*`) is intentional: bash glob
+# character classes match all POSIX whitespace, so a leading tab or
+# newline (e.g. from a sloppy paste) is rejected the same way a leading
+# space is. The naive `" "*` glob only matches a literal leading space
+# and would let `$'\t/tmp'` slip through to the rm.
 # Reject any path whose components include `..`. `rm -rf` resolves
 # `/tmp/out/..` to `/tmp` (or worse), and the string-shape check above
 # wouldn't catch it because the literal string isn't `..` itself. The
