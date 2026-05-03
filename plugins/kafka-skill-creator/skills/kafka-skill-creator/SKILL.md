@@ -278,11 +278,27 @@ The README must include a working sample for every wrapper (`consume.sh`, `descr
 
 ### `<output>/references/cluster.md`
 
-Render `cluster.json` as a short markdown summary: cluster id, broker count, controller id, broker list. One short paragraph plus a table.
+Render `cluster.json` using the fixed template below — substitution only, no paraphrasing, no judgment calls about which fields to include. Two runs against the same JSON must produce byte-identical output.
+
+```markdown
+# Cluster
+
+- Broker count: <N>
+- Controller broker id: <id-or-"(unknown)" if the JSON has no controller field>
+
+## Brokers
+
+| id | address |
+|---|---|
+| <id> | <address> |
+| ... | ... |
+```
+
+Sort the broker rows by `id` ascending (numeric sort, not lexicographic — broker `10` comes after `9`, not after `1`). If a broker row is missing the `address` field in the JSON, write `(unknown)` — never omit the row, never substitute a guess.
 
 ### `<output>/references/topics.md`
 
-For each topic, a section like:
+For each topic, emit a section using the fixed template below. Iterate topics in the manifest's `topics:` order — same deterministic ordering rule used by the SKILL.md description substitution.
 
 ```markdown
 ## <topic>
@@ -293,24 +309,29 @@ For each topic, a section like:
 - Retention: <ms or "compact-only">
 - Schema (latest version): see `references/schemas/<topic>.json`
 
-Notable config (only fields that differ from cluster default):
+Notable config (topic-level overrides):
 
 | key | value |
 |---|---|
+| <key> | <value> |
 | ... | ... |
 ```
+
+The "Notable config" table includes exactly the entries from the JSON's `configs[]` array whose `source` field equals `"DYNAMIC_TOPIC_CONFIG"` — that's the kafkactl / Kafka-admin label for topic-level overrides (as opposed to `DEFAULT_CONFIG` for inherited cluster defaults, `STATIC_BROKER_CONFIG`, etc.). Sort the rows lexicographically by `key` (case-sensitive).
+
+Fallback: if `configs[]` entries don't have a `source` field at all (older kafkactl versions, or a future schema change), include every entry under the same lexicographic sort. Incomplete coverage is better than dropping the section.
 
 Pull the data from `topics/<topic>.json` written by `introspect.sh`.
 
 ### `<output>/references/groups.md`
 
-For each consumer group, a section like:
+For each consumer group, emit a section using the fixed template below. Iterate groups in the manifest's `consumer_groups:` order so re-runs against the same manifest are byte-identical.
 
 ```markdown
 ## <group>
 
 - State: <Stable / Empty / Rebalancing / ...>
-- Subscribed topics: <list>
+- Subscribed topics: <comma-separated list, sorted lexicographically; or "(none)" if empty>
 - Member count: <n> (at generation time — this drifts; treat as a reference, not authoritative)
 ```
 

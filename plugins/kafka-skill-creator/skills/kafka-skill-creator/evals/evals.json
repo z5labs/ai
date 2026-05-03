@@ -80,6 +80,21 @@
         {"id": "smoke-test-failure-surfaced", "text": "if the smoke test fails (broker unreachable), the assistant surfaces the failure rather than claiming success"},
         {"id": "reminds-about-plugin-json", "text": "the reporting mentions that the operator may need to register the new skill in the plugin's plugin.json since --output landed inside a plugin tree"}
       ]
+    },
+    {
+      "id": 6,
+      "name": "deterministic-references-templates",
+      "prompt": "Run /kafka-skill-creator --manifest /tmp/team.yml --output /tmp/skill-out. Manifest:\n\n```yaml\nteam: payments\ntopics: [payments.refunds.v1, payments.orders.v1]\nconsumer_groups: [payments-orders-projector]\ncluster:\n  auth: SASL_SCRAM\n  tls: required\ncontexts:\n  - {name: dev, sasl_mechanism: SCRAM-SHA-512}\n```\n\nCONTEXTS_DEV_* env vars are set with realistic dummy values, docker is on PATH. Pretend introspection has produced these JSON files at /tmp/kafka-introspect-payments/ :\n\n`cluster.json`:\n```json\n[\n  {\"id\": 10, \"address\": \"b10.dev:9092\"},\n  {\"id\": 2, \"address\": \"b2.dev:9092\"},\n  {\"id\": 1, \"address\": \"b1.dev:9092\", \"isController\": true}\n]\n```\n\n`topics/payments.orders.v1.json`:\n```json\n{\n  \"name\": \"payments.orders.v1\",\n  \"partitions\": [{\"id\": 0}, {\"id\": 1}, {\"id\": 2}],\n  \"replicationFactor\": 3,\n  \"configs\": [\n    {\"key\": \"retention.ms\", \"value\": \"604800000\", \"source\": \"DYNAMIC_TOPIC_CONFIG\"},\n    {\"key\": \"cleanup.policy\", \"value\": \"delete\", \"source\": \"DYNAMIC_TOPIC_CONFIG\"},\n    {\"key\": \"min.insync.replicas\", \"value\": \"2\", \"source\": \"DEFAULT_CONFIG\"},\n    {\"key\": \"compression.type\", \"value\": \"producer\", \"source\": \"DEFAULT_CONFIG\"}\n  ]\n}\n```\n\nWhat appears in the generated `references/cluster.md` and `references/topics.md`?",
+      "expected_output": "cluster.md follows the documented template: bullets for broker count (3) and controller broker id (1), then a Brokers table with id|address columns. Broker rows are sorted by id ASCENDING NUMERICALLY (1, 2, 10) — not lexicographically (1, 10, 2). topics.md iterates topics in manifest order (payments.refunds.v1 first, then payments.orders.v1). The 'Notable config' table for payments.orders.v1 includes ONLY entries with source DYNAMIC_TOPIC_CONFIG (cleanup.policy, retention.ms — sorted lexicographically by key) and EXCLUDES entries with source DEFAULT_CONFIG (min.insync.replicas, compression.type).",
+      "files": [],
+      "assertions": [
+        {"id": "cluster-md-broker-count", "text": "cluster.md includes a 'Broker count: 3' bullet"},
+        {"id": "cluster-md-controller-id", "text": "cluster.md identifies the controller broker as id 1"},
+        {"id": "cluster-md-numeric-broker-sort", "text": "cluster.md's Brokers table rows are sorted by id ASCENDING NUMERICALLY (1, 2, 10) — not lexicographically (1, 10, 2)"},
+        {"id": "topics-md-manifest-order", "text": "topics.md iterates topics in manifest order: the payments.refunds.v1 section appears before the payments.orders.v1 section"},
+        {"id": "topics-md-config-source-filter", "text": "the 'Notable config' table for payments.orders.v1 includes ONLY configs with source DYNAMIC_TOPIC_CONFIG (cleanup.policy, retention.ms) and EXCLUDES configs with source DEFAULT_CONFIG (min.insync.replicas, compression.type)"},
+        {"id": "topics-md-config-key-sort", "text": "rows in the 'Notable config' table are sorted lexicographically by key — cleanup.policy comes before retention.ms"}
+      ]
     }
   ]
 }
