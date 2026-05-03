@@ -1,0 +1,120 @@
+{
+  "expectations": [
+    {
+      "text": "audit-md-exists",
+      "passed": true,
+      "evidence": "AUDIT.md exists"
+    },
+    {
+      "text": "header-says-text",
+      "passed": true,
+      "evidence": "header text"
+    },
+    {
+      "text": "header-has-test-status",
+      "passed": true,
+      "evidence": "tests: line in header"
+    },
+    {
+      "text": "header-has-spec-line-count",
+      "passed": true,
+      "evidence": "SPEC.md (N lines) format"
+    },
+    {
+      "text": "tokenizer-section-present",
+      "passed": true,
+      "evidence": "## Tokenizer findings header"
+    },
+    {
+      "text": "parser-section-present",
+      "passed": true,
+      "evidence": "## Parser findings header"
+    },
+    {
+      "text": "printer-section-present",
+      "passed": true,
+      "evidence": "## Printer findings header"
+    },
+    {
+      "text": "missing-token-types-category",
+      "passed": true,
+      "evidence": "### Missing token types subsection"
+    },
+    {
+      "text": "grammar-gaps-category",
+      "passed": true,
+      "evidence": "### Grammar gaps subsection"
+    },
+    {
+      "text": "printer-rules-category",
+      "passed": true,
+      "evidence": "### Missing/incomplete printer rules subsection"
+    },
+    {
+      "text": "round-trip-category",
+      "passed": true,
+      "evidence": "### Round-trip test coverage subsection"
+    },
+    {
+      "text": "drift-categories-present",
+      "passed": true,
+      "evidence": "0 ### Drift sections"
+    },
+    {
+      "text": "uses-blocker-severity",
+      "passed": true,
+      "evidence": "[blocker] severity prefix used"
+    },
+    {
+      "text": "findings-cite-spec-section",
+      "passed": true,
+      "evidence": "SPEC.md \u00a7 citations present"
+    },
+    {
+      "text": "findings-cite-go-file",
+      "passed": true,
+      "evidence": "Go file paths cited"
+    },
+    {
+      "text": "missing-token-string",
+      "passed": true,
+      "evidence": "TokenString gap noted"
+    },
+    {
+      "text": "missing-record-ast",
+      "passed": true,
+      "evidence": "Record AST gap noted"
+    },
+    {
+      "text": "missing-block-ast",
+      "passed": true,
+      "evidence": "Block AST gap noted"
+    },
+    {
+      "text": "no-leftover-scratch",
+      "passed": true,
+      "evidence": "0 leftover _audit_*.md files: []"
+    },
+    {
+      "text": "no-source-edits",
+      "passed": true,
+      "evidence": "differing source files: []"
+    },
+    {
+      "text": "no-test-edits",
+      "passed": true,
+      "evidence": "differing test files: []"
+    },
+    {
+      "text": "no-spec-edits",
+      "passed": true,
+      "evidence": "differing spec files: []"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 22,
+    "failed": 0,
+    "total": 22
+  }
+}

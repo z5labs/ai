@@ -1,0 +1,16 @@
+I cannot run this audit — the package has no `SPEC.md`.
+
+**What I checked**
+- Package: kvr-no-spec
+- Pipeline shape: text package (has `tokenizer.go`, `parser.go`, `printer.go` plus their `_test.go` siblings) — recognized shape, that part is fine.
+- Spec presence: no `SPEC.md`, no `structures/`, no `encoding-tables/`.
+
+**Why I stopped (not partial output)**
+The `review-file-library` skill's Inputs section is explicit: if `SPEC.md` is missing, stop and refuse. Every finding this skill produces is spec-driven ("missing relative to spec X", "drift from spec section Y"). Without a spec there is no authoritative reference to diff against, so any "findings" I invented would be my own opinions about the code dressed up as audit results — that is exactly the misleading partial value the skill tells me not to deliver.
+
+**What to do next**
+Run the spec-extraction skill first, then re-run the audit:
+1. `extract-text-spec` against `./kvr-no-spec` to produce `kvr-no-spec/SPEC.md`. Review/edit the resulting spec so it actually reflects the format you intend.
+2. Re-invoke `review-file-library` with the same package path.
+
+No `AUDIT.md` was written and no `_audit_*.md` scratch files were created.

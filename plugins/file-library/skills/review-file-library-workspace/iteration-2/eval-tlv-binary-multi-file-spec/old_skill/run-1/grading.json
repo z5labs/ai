@@ -1,0 +1,140 @@
+{
+  "expectations": [
+    {
+      "text": "audit-md-exists",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "header-says-binary",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "header-has-test-status",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "header-cites-chunked-tree",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "types-section-present",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "decoder-section-present",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "encoder-section-present",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "missing-structs-category",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "encoding-tables-category",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "unread-fields-category",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "checksum-category",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "unwritten-fields-category",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "encoder-round-trip-category",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "findings-cite-chunked-files",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "crc32-blocker",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "record-type-enum-blocker",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "header-flags-bit-field",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "missing-header-struct",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "missing-record-struct",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "missing-trailer-struct",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "uses-blocker-severity",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "no-leftover-scratch",
+      "passed": true,
+      "evidence": "0 leftover files"
+    },
+    {
+      "text": "no-source-edits",
+      "passed": true,
+      "evidence": "[]"
+    },
+    {
+      "text": "no-spec-edits",
+      "passed": true,
+      "evidence": "[]"
+    },
+    {
+      "text": "round-trip-gap-is-blocker",
+      "passed": false,
+      "evidence": "[blocker] round-trip line"
+    },
+    {
+      "text": "error-chain-test-gap-is-blocker",
+      "passed": false,
+      "evidence": "[blocker] error-chain test gap line"
+    }
+  ],
+  "summary": {
+    "pass_rate": 0.9230769230769231,
+    "passed": 24,
+    "failed": 2,
+    "total": 26
+  }
+}

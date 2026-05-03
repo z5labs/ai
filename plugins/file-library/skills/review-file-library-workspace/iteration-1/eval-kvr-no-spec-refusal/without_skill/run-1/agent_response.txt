@@ -1,0 +1,17 @@
+I can't run this audit as requested. There is no spec to audit against.
+
+What I found in `./kvr-no-spec`:
+- CLAUDE.md, doc.go, go.mod, go.sum
+- tokenizer.go + tokenizer_test.go
+- parser.go + parser_test.go
+- printer.go + printer_test.go
+- No SPEC.md (and no other spec-like document anywhere in the package)
+
+Without that document, "what's missing relative to the spec" has no referent — every behavioral question has no source of truth to check against. I'd just be inventing a spec and then grading the code against my invention, which is not an audit.
+
+To proceed, I need one of:
+1. The SPEC.md (or whatever name) for the KVR format placed in the package, or a path to it elsewhere on disk.
+2. A pointer to an external definition of KVR you want me to treat as the spec.
+3. Confirmation that you want me to audit the scaffold against the process spec in CLAUDE.md rather than against a format spec.
+
+Which of those would you like?
