@@ -138,6 +138,27 @@ require_eq_value() {
 }
 
 KAFKACTL_IMAGE="${KAFKACTL_IMAGE:-docker.io/deviceinsight/kafkactl:v5.18.0-scratch}"
+
+# Per-context static values from the manifest. These are the cluster-shape
+# fields that don't change between environments (sasl mechanism, tls mode,
+# schema registry auth) — secrets still come from .env at runtime. The
+# exports flow through build_env_args's forwarding filter into the kafkactl
+# container, where kafkactl's CONTEXTS_<NAME>_<FIELD> convention autocreates
+# each context with these fields set. There is no separate kafkactl config
+# file; everything lives in the environment.
+#
+# Generation rule: emit one block per manifest context, substitute
+# SCRAM-SHA-512 with contexts[].sasl_mechanism, true/false for TLS_ENABLED
+# from cluster.tls (required -> true, none -> false), and emit the
+# SCHEMAREGISTRY_AUTH line only when manifest declares schema_registry.
+
+# context: <ctx-1>
+export CONTEXTS_<UPPER-1>_SASL_ENABLED=true
+export CONTEXTS_<UPPER-1>_SASL_MECHANISM=<sasl_mechanism from manifest>
+export CONTEXTS_<UPPER-1>_TLS_ENABLED=<true|false>
+# export CONTEXTS_<UPPER-1>_SCHEMAREGISTRY_AUTH=basic   # only when SR configured
+
+# context: <ctx-2>  (same shape)
 ```
 
 ## `describe-topic.sh`

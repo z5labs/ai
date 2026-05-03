@@ -221,7 +221,7 @@ Attempting to invoke any of the scripts with a topic or group outside this list 
 
 The team operates against these contexts: <list of context names>.
 
-Each script reads a `.env.<ctx>` file at runtime (resolution order: `--env-file PATH` → `KAFKA_ENV_FILE` → `./.env`) and passes `--context <ctx>` to kafkactl. The dbname-equivalent (the cluster identity) is fixed per context in `kafkactl-config.yml`; the secrets come from the env file.
+Each script reads a `.env.<ctx>` file at runtime (resolution order: `--env-file PATH` → `KAFKA_ENV_FILE` → `./.env`) and passes `--context <ctx>` to kafkactl. Cluster shape (broker list, SASL mechanism, TLS, Schema Registry auth) is defined entirely through kafkactl's `CONTEXTS_<NAME>_*` env-var convention — the static fields come from `_common.sh`'s baked-in `export` block, the secrets come from the `.env.<ctx>` file. There is no separate kafkactl config file; everything kafkactl needs is in the environment when the wrapper exec's the container.
 
 ### One-time setup
 
@@ -302,26 +302,29 @@ A commented template per declared context. Pre-fill the comments with the keys (
 
 Emit a `# ---- context: <name> ----` block for **every** context declared in the manifest.
 
-### `<output>/scripts/kafkactl-config.yml`
+### Per-context static values exported by `_common.sh`
 
-A committed (no-secrets) kafkactl config that names each context and pins per-context defaults. Sample:
+The manifest declares values that are the same across every environment (`sasl_mechanism`, `cluster.tls`, `cluster.schema_registry.auth`). These would normally live in a `kafkactl-config.yml` config file, but mounting that file into the kafkactl container would require pinning a mount path the container expects, and inconsistencies between the file's contents and the env vars are easy to introduce. kafkactl's documented env-var convention (`CONTEXTS_<NAME>_<FIELD>` autocreates the context with that field set), so the wrappers can route everything through env vars and skip the config file entirely.
 
-```yaml
-contexts:
-  dev:
-    brokers: []   # populated from CONTEXTS_DEV_BROKERS at runtime
-    sasl:
-      enabled: true
-      mechanism: <sasl_mechanism from manifest>
-    tls:
-      enabled: <true if cluster.tls=required else false>
-    schemaRegistry:
-      url: ""    # populated from CONTEXTS_DEV_SCHEMAREGISTRY_URL at runtime
-  # ... one block per context
-current-context: <first context name>
+`_common.sh` therefore exports per-context static values at generation time, one block per declared context:
+
+```bash
+# Per-context static values from the manifest. Secrets come from .env at
+# runtime; these are the cluster-shape fields that don't change between
+# environments. They flow to the container via the same forwarding filter
+# as the .env-supplied secrets (see build_env_args).
+
+# context: dev
+export CONTEXTS_DEV_SASL_ENABLED=true
+export CONTEXTS_DEV_SASL_MECHANISM=SCRAM-SHA-512
+export CONTEXTS_DEV_TLS_ENABLED=true
+export CONTEXTS_DEV_SCHEMAREGISTRY_AUTH=basic   # only when manifest declares schema_registry
+
+# context: staging  (same shape)
+# context: prod     (same shape)
 ```
 
-This file is committed into the repo and contains **no secrets**. The runtime env vars overlay broker addresses, SASL credentials, and Schema Registry credentials.
+Substitute `SCRAM-SHA-512` with the manifest's `contexts[].sasl_mechanism`, `true`/`false` for `TLS_ENABLED` based on `cluster.tls`, and emit the `SCHEMAREGISTRY_AUTH` line only when the manifest has a `schema_registry` block.
 
 ### `<output>/scripts/manifest.yml`
 

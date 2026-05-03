@@ -16,7 +16,7 @@
 #   CONTEXTS_<NAME>_SASL_USERNAME
 #   CONTEXTS_<NAME>_SASL_PASSWORD
 #
-# One key is optional (default lives in the generated kafkactl-config.yml):
+# One key is optional (kafkactl's default — pass it explicitly to override):
 #
 #   CONTEXTS_<NAME>_SASL_MECHANISM
 #

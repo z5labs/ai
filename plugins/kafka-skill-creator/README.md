@@ -14,7 +14,6 @@ After running, you get a skill at `<output>/` (default `./.claude/skills/kafka-<
 - `scripts/describe-group.sh` — members, subscriptions, and lag for an owned consumer group.
 - `scripts/lag.sh` — convenience over `describe-group.sh` that surfaces only the lag-relevant fields.
 - `scripts/reset-offsets.sh` — offset reset against an owned consumer group, with `--dry-run` and no bypass for kafkactl's active-member protection.
-- `scripts/kafkactl-config.yml` — committed (no-secrets) kafkactl config naming each context.
 - `scripts/manifest.yml` — verbatim copy of the input manifest, for transparency and re-generation.
 - `scripts/.env.example` — one block per declared context documenting the `CONTEXTS_<NAME>_*` keys to populate.
 - `references/{cluster,topics,groups}.md` — markdown summaries of the introspection dumps.
