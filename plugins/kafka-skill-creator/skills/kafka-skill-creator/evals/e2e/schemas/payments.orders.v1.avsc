@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "Order",
+  "namespace": "payments.orders.v1",
+  "fields": [
+    {"name": "order_id", "type": "string"},
+    {"name": "customer_id", "type": "string"},
+    {"name": "amount_cents", "type": "long"},
+    {"name": "currency", "type": "string"},
+    {"name": "created_at_epoch_ms", "type": "long"}
+  ]
+}

@@ -107,7 +107,11 @@ reject_positional_dsn() {
 
 CONTEXT=""
 TOPICS=()
-GROUPS=()
+# `GROUPS` is a Bash readonly built-in (the supplementary group IDs of
+# the current user); assignments to it are silently ignored, so we use
+# CONSUMER_GROUPS for the per-script accumulator and let the caller
+# spell the flag `--group <name>`.
+CONSUMER_GROUPS=()
 POSITIONAL=()
 
 while [ $# -gt 0 ]; do
@@ -136,13 +140,13 @@ while [ $# -gt 0 ]; do
     --group)
       [ $# -ge 2 ] || { echo "error: --group requires a value" >&2; exit 2; }
       reject_positional_dsn "$2"
-      GROUPS+=("$2")
+      CONSUMER_GROUPS+=("$2")
       shift 2
       ;;
     --group=*)
       _v="${1#--group=}"
       reject_positional_dsn "$_v"
-      GROUPS+=("$_v")
+      CONSUMER_GROUPS+=("$_v")
       shift
       ;;
     -h|--help)
@@ -309,6 +313,34 @@ fi
 
 KAFKACTL_IMAGE="${KAFKACTL_IMAGE:-docker.io/deviceinsight/kafkactl:v5.18.0-scratch}"
 
+# Translate the SASL mechanism to kafkactl's expected casing. The manifest
+# (and Kafka itself) spell SCRAM mechanisms `SCRAM-SHA-{256,512}`, but
+# kafkactl accepts only the squashed lowercase form `scram-sha{256,512}`
+# and rejects the canonical Kafka spelling with `Unknown sasl mechanism`.
+# Re-export under the same env-var name so the container's forwarding
+# filter picks up the corrected value without us touching the FORWARD_PATTERN.
+mech_var="${prefix}_SASL_MECHANISM"
+if [ -n "${!mech_var:-}" ]; then
+  case "${!mech_var}" in
+    SCRAM-SHA-256|scram-sha-256) export "$mech_var"=scram-sha256 ;;
+    SCRAM-SHA-512|scram-sha-512) export "$mech_var"=scram-sha512 ;;
+    *) ;;  # leave alone; kafkactl will surface its own error
+  esac
+fi
+
+# Generate a kafkactl config.yml that pre-declares the chosen context.
+# kafkactl rejects `--context <name>` if the context isn't present in
+# its config file; CONTEXTS_<NAME>_* env-var overlays only modify
+# already-declared contexts, they don't create them. An empty-bodied
+# entry is enough — the env vars supply broker addresses, credentials,
+# and SR settings at runtime.
+KAFKACTL_CONFIG_DIR="$(mktemp -d -t kafkactl-cfg-XXXXXX)"
+trap 'rm -rf -- "$KAFKACTL_CONFIG_DIR"' EXIT
+cat > "$KAFKACTL_CONFIG_DIR/config.yml" <<EOF
+contexts:
+  $CONTEXT: {}
+EOF
+
 # Word-split KAFKA_DOCKER_ARGS into an array so callers can pass multiple flags.
 read -r -a EXTRA_ARGS <<< "${KAFKA_DOCKER_ARGS:-}"
 
@@ -354,7 +386,12 @@ sanitize_filename() {
 
 run_kafkactl() {
   local outfile="$1"; shift
+  # `:z` is the SELinux shared-relabel marker; ignored on systems without
+  # SELinux. Without it, Fedora/RHEL hosts hit "Permission denied" reading
+  # the config because the host's file context isn't accessible from the
+  # container's process context.
   if "$RUNTIME" run --rm -i \
+    -v "$KAFKACTL_CONFIG_DIR/config.yml:/.config/kafkactl/config.yml:ro,z" \
     "${KAFKACTL_ENV_ARGS[@]}" \
     "${EXTRA_ARGS[@]}" \
     "$KAFKACTL_IMAGE" \
@@ -377,7 +414,7 @@ for topic in "${TOPICS[@]}"; do
   run_kafkactl "$OUT/topics/${safe}.json" describe topic "$topic" --output json
 done
 
-for group in "${GROUPS[@]}"; do
+for group in "${CONSUMER_GROUPS[@]}"; do
   safe="$(sanitize_filename "$group")"
   run_kafkactl "$OUT/groups/${safe}.json" describe consumer-group "$group" --output json
 done
@@ -385,4 +422,4 @@ done
 echo "introspection written to $OUT" >&2
 echo "  cluster: $OUT/cluster.json" >&2
 echo "  topics:  ${#TOPICS[@]} file(s) under $OUT/topics/" >&2
-echo "  groups:  ${#GROUPS[@]} file(s) under $OUT/groups/" >&2
+echo "  groups:  ${#CONSUMER_GROUPS[@]} file(s) under $OUT/groups/" >&2

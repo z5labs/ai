@@ -96,6 +96,37 @@
         {"id": "topics-md-config-source-filter", "text": "the 'Notable config' table for payments.orders.v1 includes ONLY configs with source DYNAMIC_TOPIC_CONFIG (cleanup.policy, retention.ms) and EXCLUDES configs with source DEFAULT_CONFIG (min.insync.replicas, compression.type)"},
         {"id": "topics-md-config-key-sort", "text": "rows in the 'Notable config' table are sorted lexicographically by key — cleanup.policy comes before retention.ms"}
       ]
+    },
+    {
+      "id": 7,
+      "name": "e2e-real-cluster",
+      "prompt": "Run /kafka-skill-creator with the manifest at plugins/kafka-skill-creator/skills/kafka-skill-creator/evals/e2e/manifest.yml and --output /tmp/skill-out. The fixture is up (Kafka on localhost:9092 SASL/SCRAM, Karapace on localhost:8081 with HTTP basic auth), CONTEXTS_DEV_* env vars are exported in the parent shell, KAFKA_DOCKER_ARGS=--network=host is set, and podman is on PATH. Generate the skill end-to-end against the live cluster. After Step 5's describe-topic.sh smoke test, additionally exercise each of the other four generated wrappers against the live fixture and report each exit code: (1) `bash /tmp/skill-out/scripts/consume.sh payments.refunds.v1 --context dev --from-beginning --max 1`, (2) `bash /tmp/skill-out/scripts/describe-group.sh payments-orders-projector --context dev`, (3) `bash /tmp/skill-out/scripts/lag.sh payments-refunds-replayer --context dev`, (4) `bash /tmp/skill-out/scripts/reset-offsets.sh payments-refunds-replayer --topic payments.refunds.v1 --to-earliest --dry-run --context dev`. The seed leaves payments-refunds-replayer with non-zero lag (50), so lag.sh should report totalLag > 0.",
+      "expected_output": "A complete kafka-payments/ skill at /tmp/skill-out, generated against the live broker and Schema Registry. SKILL.md exists with frontmatter name kafka-payments and is model-invocable (no disable-model-invocation: true). README.md exists. references/cluster.md shows broker count 1 and the controller broker id. references/topics.md has sections for all three manifest topics in manifest order, each with partitions/replication/cleanup/retention bullets. references/groups.md has sections for both consumer groups. references/schemas/<topic>.json files exist for all three topics, each containing the verbatim Karapace SR envelope (subject, version, id, schema fields). All five generated wrappers (consume.sh, describe-topic.sh, describe-group.sh, lag.sh, reset-offsets.sh) plus _common.sh exist and are executable. The Step 5 smoke test (describe-topic.sh against the first topic) succeeds with non-empty JSON output, and each of the four additional wrapper smoke tests (consume.sh, describe-group.sh, lag.sh, reset-offsets.sh dry-run) also exits 0 with non-empty output. lag.sh on payments-refunds-replayer reports totalLag > 0.",
+      "files": [],
+      "assertions": [
+        {"id": "skill-md-exists-non-empty", "text": "/tmp/skill-out/SKILL.md exists and is non-empty"},
+        {"id": "skill-md-name-kafka-payments", "text": "/tmp/skill-out/SKILL.md frontmatter `name` field is `kafka-payments`"},
+        {"id": "skill-md-model-invocable", "text": "/tmp/skill-out/SKILL.md frontmatter does NOT contain `disable-model-invocation: true`"},
+        {"id": "readme-exists-non-empty", "text": "/tmp/skill-out/README.md exists and is non-empty"},
+        {"id": "manifest-copied", "text": "/tmp/skill-out/scripts/manifest.yml is a verbatim copy of the input manifest"},
+        {"id": "cluster-md-broker-count-1", "text": "/tmp/skill-out/references/cluster.md includes the literal string 'Broker count: 1'"},
+        {"id": "cluster-md-broker-row", "text": "/tmp/skill-out/references/cluster.md's Brokers table includes a row for broker id 1 with address localhost:9092"},
+        {"id": "topics-md-all-three-sections", "text": "/tmp/skill-out/references/topics.md has a section header (e.g. `## payments.orders.v1`) for each of the three manifest topics"},
+        {"id": "topics-md-manifest-order", "text": "topics.md iterates topics in manifest order: payments.orders.v1 first, then payments.refunds.v1, then internal.audit.v1"},
+        {"id": "topics-md-orders-partitions-6", "text": "the payments.orders.v1 section reports `Partitions: 6`"},
+        {"id": "groups-md-both-sections", "text": "/tmp/skill-out/references/groups.md has section headers for both `payments-orders-projector` and `payments-refunds-replayer`"},
+        {"id": "groups-md-replayer-state", "text": "the payments-refunds-replayer section reports a State value (Empty, Stable, or similar) — not a literal `<...>` placeholder"},
+        {"id": "schemas-all-three", "text": "/tmp/skill-out/references/schemas/payments.orders.v1.json, payments.refunds.v1.json, and internal.audit.v1.json all exist; each is a JSON object containing at minimum `id`, `version`, `schema` fields"},
+        {"id": "wrappers-all-five-executable", "text": "all five generated wrappers (consume.sh, describe-topic.sh, describe-group.sh, lag.sh, reset-offsets.sh) under /tmp/skill-out/scripts/ exist and have the executable bit set"},
+        {"id": "common-sh-exists", "text": "/tmp/skill-out/scripts/_common.sh exists"},
+        {"id": "env-example-has-dev-block", "text": "/tmp/skill-out/scripts/.env.example contains a `# ---- context: dev ----` block (or equivalent header naming the dev context)"},
+        {"id": "no-unsubstituted-placeholders", "text": "no file under /tmp/skill-out contains any unsubstituted template token from the placeholder deny-list documented in SKILL.md Step 4 (`<team>`, `<env list>`, `<list of context names>`, `<top topics>`, `<bullet list>`, `<first-topic>`, `<first-group>`, `<this-directory>`, `<sasl_mechanism from manifest>`, `<UPPER-N>`, `<topic-N>`, `<group-N>`, `<ctx-N>`); bare `<UPPER>` is acceptable as illustrative copy in documentation surface"},
+        {"id": "smoke-test-succeeded", "text": "the assistant's transcript shows the Step 5 smoke test (describe-topic.sh against the first manifest topic) ran and succeeded — exit 0, non-empty JSON output — rather than being skipped or surfacing a failure"},
+        {"id": "consume-sh-smoke-succeeded", "text": "the transcript shows `consume.sh payments.refunds.v1 --context dev --from-beginning --max 1` ran against the live fixture, exited 0, and produced at least one non-empty message line of JSON output"},
+        {"id": "describe-group-sh-smoke-succeeded", "text": "the transcript shows `describe-group.sh payments-orders-projector --context dev` ran against the live fixture, exited 0, and produced non-empty JSON output describing the consumer group"},
+        {"id": "lag-sh-smoke-totallag-positive", "text": "the transcript shows `lag.sh payments-refunds-replayer --context dev` ran against the live fixture, exited 0, and reports totalLag > 0 for payments.refunds.v1 (the seed leaves this group lagging by 50 — the wrapper must reflect that, not return zero or fail)"},
+        {"id": "reset-offsets-sh-dry-run-succeeded", "text": "the transcript shows `reset-offsets.sh payments-refunds-replayer --topic payments.refunds.v1 --to-earliest --dry-run --context dev` ran against the live fixture, exited 0, and produced non-empty output describing the planned offset reset (no actual offset change since --dry-run)"}
+      ]
     }
   ]
 }

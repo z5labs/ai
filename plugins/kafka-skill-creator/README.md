@@ -40,7 +40,9 @@ Offset resets are non-destructive at the Kafka layer (they change a consumer's r
   - SASL/PLAIN — [#63](https://github.com/z5labs/ai/issues/63)
   - mTLS — [#64](https://github.com/z5labs/ai/issues/64)
   - OAUTHBEARER (OIDC) — [#65](https://github.com/z5labs/ai/issues/65)
-  - End-to-end eval against a containerized Kafka + Schema Registry — [#66](https://github.com/z5labs/ai/issues/66)
+  - CI workflow that runs the e2e fixture (script-level smoke, no model iteration) — [#77](https://github.com/z5labs/ai/issues/77)
+  - macOS support for the e2e fixture — [#78](https://github.com/z5labs/ai/issues/78)
+  - TLS coverage in the e2e fixture — [#79](https://github.com/z5labs/ai/issues/79)
 
 A manifest declaring an unsupported auth value is rejected with a one-line pointer to the matching deferred issue.
 
@@ -171,10 +173,25 @@ If you set `KAFKACTL_IMAGE` during generation, export the same value in any sess
 
 ## Development
 
-Lightweight evals live under `skills/kafka-skill-creator/evals/`:
+Evals live under `skills/kafka-skill-creator/evals/`:
 
 - `evals/test_introspect.sh` — shell-level tests for `introspect.sh`'s argument shape, env-var validation, and forwarded-env filter. Run with `bash evals/test_introspect.sh` from the skill directory; no Kafka, Schema Registry, or container runtime needed (the script exercises every refusal path before a container would be spawned, then uses a stubbed runtime to capture the positive-path invocation).
 - `evals/test_schema_registry_fetch.sh` — regression test for the bash snippet in `references/schema-registry-fetch.md` (the verbatim block the LLM extracts and runs at Step 2). Extracts the snippet from the markdown, runs it against a fake runtime, and asserts the documented contract: `KAFKA_DOCKER_ARGS` reaches argv, `-e SR_*` are forwarded by name, the password value never lands in argv, the curl image is positional. Run when modifying `references/schema-registry-fetch.md`.
-- `evals/evals.json` — skill-level behavioral evals exercising the `SKILL.md` instructions themselves (refusal paths, posture, output-path override, deterministic reference-doc templating).
+- `evals/evals.json` — skill-level evals: behavioral cases (refusal paths, posture, output-path override, deterministic reference-doc templating) plus the `e2e-real-cluster` case that drives the full skill against a live cluster.
 
-A full end-to-end eval loop with a containerized Kafka + Schema Registry fixture is tracked in [#66](https://github.com/z5labs/ai/issues/66).
+### End-to-end fixture
+
+`evals/e2e/` ships a `docker compose` (or `podman compose`) fixture with single-broker Apache Kafka in KRaft mode plus Karapace as a Confluent-SR-compatible registry. Both images are Apache 2.0 licensed, picked over Confluent's CSL-licensed equivalents so the fixture stays reproducible.
+
+```bash
+cd skills/kafka-skill-creator/evals/e2e
+./up.sh                  # bring up the cluster + seed
+source env.sh            # export CONTEXTS_DEV_*, KAFKA_DOCKER_ARGS
+
+# Drive the skill against the fixture:
+/kafka-skill-creator --manifest manifest.yml --output /tmp/skill-out
+
+./down.sh                # tear down
+```
+
+See `evals/e2e/README.md` for the full layout, what the seed creates, and known limitations. The fixture is Linux-only for now ([#78](https://github.com/z5labs/ai/issues/78)) and there's no CI job ([#77](https://github.com/z5labs/ai/issues/77)) — running the iteration loop is a local-only operation because the model token cost doesn't fit a per-PR job today.

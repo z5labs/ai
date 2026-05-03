@@ -127,6 +127,22 @@ build_env_args() {
   read -r -a EXTRA_RUNTIME_ARGS <<< "${KAFKA_DOCKER_ARGS:-}"
 }
 
+# kafkactl rejects `--context <name>` if the context isn't declared in
+# its config file; CONTEXTS_<NAME>_* env-var overlays only modify
+# already-declared contexts, they don't create them. Generate an empty-
+# bodied config.yml on the fly per invocation; env vars supply the
+# actual broker addresses, credentials, and SR settings at runtime.
+# Sets KAFKACTL_CONFIG_DIR for the caller to mount.
+prepare_kafkactl_config() {
+  local context="$1"
+  KAFKACTL_CONFIG_DIR="$(mktemp -d -t kafkactl-cfg-XXXXXX)"
+  trap 'rm -rf -- "$KAFKACTL_CONFIG_DIR"' EXIT
+  cat > "$KAFKACTL_CONFIG_DIR/config.yml" <<EOF
+contexts:
+  $context: {}
+EOF
+}
+
 # Validate a `--flag value` pair. With `set -u`, a bare `--flag` (no value)
 # would otherwise abort with an unbound-variable error from `$2`; these
 # helpers turn that into a controlled exit-2 with a usage line.
@@ -159,18 +175,21 @@ KAFKACTL_IMAGE="${KAFKACTL_IMAGE:-docker.io/deviceinsight/kafkactl:v5.18.0-scrat
 # fields that don't change between environments (sasl mechanism, tls mode,
 # schema registry auth) — secrets still come from .env at runtime. The
 # exports flow through build_env_args's forwarding filter into the kafkactl
-# container, where kafkactl's CONTEXTS_<NAME>_<FIELD> convention autocreates
-# each context with these fields set. There is no separate kafkactl config
-# file; everything lives in the environment.
+# container, where kafkactl's CONTEXTS_<NAME>_<FIELD> overlay populates
+# the context that prepare_kafkactl_config has declared in config.yml.
 #
-# Generation rule: emit one block per manifest context, substitute
-# SCRAM-SHA-512 with contexts[].sasl_mechanism, true/false for TLS_ENABLED
-# from cluster.tls (required -> true, none -> false), and emit the
-# SCHEMAREGISTRY_AUTH line only when manifest declares schema_registry.
+# Generation rule: emit one block per manifest context. Translate the
+# manifest's `sasl_mechanism` value into kafkactl's casing convention
+# at generation time: `SCRAM-SHA-256` -> `scram-sha256`, `SCRAM-SHA-512`
+# -> `scram-sha512`. kafkactl rejects the canonical Kafka spelling
+# (`SCRAM-SHA-512`) with "Unknown sasl mechanism" — the lowercase,
+# squashed-dash form is the only one it accepts. TLS_ENABLED is `true`
+# when cluster.tls is `required`, `false` when it is `none`. Emit the
+# SCHEMAREGISTRY_AUTH line only when the manifest declares schema_registry.
 
 # context: <ctx-1>
 export CONTEXTS_<UPPER-1>_SASL_ENABLED=true
-export CONTEXTS_<UPPER-1>_SASL_MECHANISM=<sasl_mechanism from manifest>
+export CONTEXTS_<UPPER-1>_SASL_MECHANISM=<scram-sha256|scram-sha512 — see translation rule above>
 export CONTEXTS_<UPPER-1>_TLS_ENABLED=<true|false>
 # export CONTEXTS_<UPPER-1>_SCHEMAREGISTRY_AUTH=basic   # only when SR configured
 
@@ -218,12 +237,16 @@ resolve_env_file
 validate_context_env "$CONTEXT"
 pick_runtime
 build_env_args
+prepare_kafkactl_config "$CONTEXT"
 
 exec "$RUNTIME" run --rm -i \
+  -v "$KAFKACTL_CONFIG_DIR/config.yml:/.config/kafkactl/config.yml:ro,z" \
   "${KAFKACTL_ENV_ARGS[@]}" "${EXTRA_RUNTIME_ARGS[@]}" \
   "$KAFKACTL_IMAGE" --context "$CONTEXT" \
   describe topic "$TOPIC" --output json
 ```
+
+The `:z` is the SELinux shared-relabel marker; ignored on systems without SELinux. Without it, Fedora/RHEL hosts hit "Permission denied" reading the config because the host's file context isn't accessible from the container's process context.
 
 `require_value` and `require_eq_value` come from `_common.sh` (sourced above the flag parser); the wrapper just defines `$USAGE` so those helpers print the right shape on a missing-value error.
 
@@ -232,4 +255,4 @@ The other four scripts swap:
 - **`describe-group.sh`** — `require_allowed "consumer-group" "$GROUP" "${ALLOWED_GROUPS[@]}"`; final exec is `... describe consumer-group "$GROUP" --output json`.
 - **`lag.sh`** — same as `describe-group.sh`, but pipe the kafkactl JSON output through `jq` to extract just lag-relevant fields. Bundle a `jq` filter inline; do not run kafkactl interactively for this case (the script's stdout is the lag JSON).
 - **`consume.sh`** — flag parser additionally accepts `--from-beginning`, `--max N` (translated to `--max-messages N` for kafkactl), `--partition P` (translated to `--partitions P`); `require_allowed "topic"`; final exec adds `consume "$TOPIC" --output json --exit` plus the flags above.
-- **`reset-offsets.sh`** — flag parser accepts `--topic <T>`, `--to-earliest`, `--to-latest`, `--to-offset N`, `--dry-run`; `require_allowed "consumer-group"` for `$GROUP` and `require_allowed "topic"` for `$TOPIC`; final exec is `reset offset --group "$GROUP" --topic "$TOPIC" --output json` plus exactly one `--to-*` selector and `--dry-run` if requested. **Forbidden flags** (do not pass through, do not accept on the wrapper's CLI): `--allow-active-members`, `--all-topics`, `--execute-yes`. The wrapper has no `--force` / `--bypass`.
+- **`reset-offsets.sh`** — flag parser accepts `--topic <T>`, `--to-earliest`, `--to-latest`, `--to-offset N`, `--dry-run`; `require_allowed "consumer-group"` for `$GROUP` and `require_allowed "topic"` for `$TOPIC`; final exec is `reset consumer-group-offset "$GROUP" --topic "$TOPIC" --output json` plus exactly one `--to-*` selector — `--oldest` for `--to-earliest`, `--newest` for `--to-latest`, `--offset N` for `--to-offset N`. **The group is positional, not `--group <GROUP>`.** Older drafts of this template used the flag form; kafkactl rejects it with `unknown flag: --group` on `reset consumer-group-offset` (which has aliases `cgo`, `offset`). kafkactl's default on this subcommand is dry-run; pass `--execute` to actually apply. The wrapper inverts that: pass `--execute` unless the wrapper's `--dry-run` flag is set. **Forbidden flags** (do not pass through, do not accept on the wrapper's CLI): `--allow-active-members`, `--all-topics`, `--execute-yes`. The wrapper has no `--force` / `--bypass`.
