@@ -163,7 +163,7 @@ If any individual call fails, `introspect.sh` writes an empty file for that targ
 
 If the manifest has a `cluster.schema_registry` block, fetch the latest schema for each topic's `<topic>-value` subject. Read `references/schema-registry-fetch.md` for the verbatim bash; the snippet relies on bash indirect expansion (`${!varname}`) plus docker's `-e VARNAME` form (no `=value` — docker reads the value from the host environment so it never lands in `docker run`'s argv) plus `curl -K -` (config-via-stdin so the password stays out of curl's argv inside the container).
 
-Inputs the snippet expects: `TEAM`, `CONTEXT`, `TOPICS=()` (bash array), and `RUNTIME` (the snippet auto-detects this with the same block `introspect.sh` uses).
+Inputs the snippet expects from the caller: `TEAM`, `CONTEXT`, `TOPICS=()` (bash array). The snippet itself sets `RUNTIME` (auto-detected via `command -v docker` / `podman`, overridable via `KAFKA_CONTAINER_RUNTIME`) and `EXTRA_ARGS` (word-split from `KAFKA_DOCKER_ARGS`); do not pre-set those.
 
 Persist each response **verbatim** as `<output>/references/schemas/<topic>.json` in Step 3 — the Schema Registry envelope already carries `id`, `version`, `schemaType`, and the schema string, so the model can read whichever piece it needs without a per-format dispatch step. Don't extract the inner `schema` string into format-specific files (`.avsc` / `.proto`); that's a future enhancement, and doing it inconsistently is the bigger trap.
 
