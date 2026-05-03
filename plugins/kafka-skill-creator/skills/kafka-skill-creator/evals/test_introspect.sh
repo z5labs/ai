@@ -651,6 +651,129 @@ else
   echo "PASS: no DSN-shaped arg appears in invocation"
 fi
 
+# --- Positive-path test: kafkactl compatibility shims -------------------------
+#
+# Two skill changes that only show up when the script actually reaches the
+# container invocation:
+#   1. SCRAM mechanism casing translation (SCRAM-SHA-{256,512} -> scram-sha{256,512})
+#      because kafkactl rejects the canonical Kafka spelling with
+#      "Unknown sasl mechanism".
+#   2. config.yml is minted in a temp dir and mounted into the kafkactl
+#      container, because kafkactl rejects `--context <name>` for contexts
+#      not pre-declared in a config file even when CONTEXTS_<NAME>_*
+#      env-var overlays cover every field.
+#
+# Both regressions broke live-cluster introspection silently before
+# (kafkactl errored with opaque messages, the script bubbled the failure
+# generically). Stub the runtime with a fake that dumps both argv AND the
+# kafkactl-shape env values it would see, so we can verify the translated
+# mechanism reaches the container's environment.
+
+FAKE_RUNTIME_COMPAT="$(mktemp)"
+INVOCATION_LOG_COMPAT="$(mktemp)"
+TMPOUT_COMPAT="$(mktemp -d "${TMPDIR:-/tmp}/kafka-introspect-XXXXXX")"
+trap 'rm -rf "$FAKE_RUNTIME" "$INVOCATION_LOG" "$TMPOUT" "$SANDBOX_BIN" "$FAKE_RUNTIME_COMPAT" "$INVOCATION_LOG_COMPAT" "$TMPOUT_COMPAT"' EXIT
+
+cat > "$FAKE_RUNTIME_COMPAT" <<'FAKE'
+#!/usr/bin/env bash
+{
+  for a in "$@"; do printf 'ARG %s\n' "$a"; done
+  # docker -e VAR (no =value) reads the value from the host's env at
+  # invocation time, so the value isn't in argv. Dump every kafkactl-shape
+  # env so tests can assert on what the container would have seen.
+  while IFS= read -r v; do
+    [ -z "$v" ] && continue
+    printf 'ENV %s=%s\n' "$v" "${!v}"
+  done < <(compgen -e | grep -E '^(CONTEXTS_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)' || true)
+  echo "---END---"
+} >> "$INVOCATION_LOG_COMPAT"
+cat > /dev/null
+exit 0
+FAKE
+chmod +x "$FAKE_RUNTIME_COMPAT"
+
+# Run introspect.sh once per mechanism, capture the first invocation each time.
+run_compat_invocation() {
+  local mechanism="$1"
+  : > "$INVOCATION_LOG_COMPAT"
+  env -i PATH="$PATH" HOME="$HOME" \
+    INVOCATION_LOG_COMPAT="$INVOCATION_LOG_COMPAT" \
+    bash -c "
+      export CONTEXTS_DEV_BROKERS='b1:9092'
+      export CONTEXTS_DEV_SASL_USERNAME=app
+      export CONTEXTS_DEV_SASL_PASSWORD=secret
+      export CONTEXTS_DEV_SASL_MECHANISM='$mechanism'
+      export KAFKA_CONTAINER_RUNTIME='$FAKE_RUNTIME_COMPAT'
+      bash '$INTROSPECT' --context dev --topic t1 --group g1 '$TMPOUT_COMPAT'
+    " > /dev/null 2>&1
+  awk '/---END---/{exit} {print}' "$INVOCATION_LOG_COMPAT"
+}
+
+assert_compat_line() {
+  local name="$1" pattern="$2" captured="$3"
+  if grep -qFx -- "$pattern" <<<"$captured"; then
+    PASS=$((PASS + 1))
+    echo "PASS: $name"
+  else
+    FAIL=$((FAIL + 1))
+    FAILURES+=("$name: expected line [$pattern] in invocation. Captured:
+$captured")
+    echo "FAIL: $name"
+  fi
+}
+
+assert_compat_grep() {
+  local name="$1" pattern="$2" captured="$3"
+  if grep -qE -- "$pattern" <<<"$captured"; then
+    PASS=$((PASS + 1))
+    echo "PASS: $name"
+  else
+    FAIL=$((FAIL + 1))
+    FAILURES+=("$name: expected pattern [$pattern] in invocation. Captured:
+$captured")
+    echo "FAIL: $name"
+  fi
+}
+
+# SCRAM-SHA-512 → scram-sha512
+captured_512="$(run_compat_invocation SCRAM-SHA-512)"
+assert_compat_line \
+  "translates SCRAM-SHA-512 to scram-sha512 for kafkactl" \
+  "ENV CONTEXTS_DEV_SASL_MECHANISM=scram-sha512" \
+  "$captured_512"
+
+# SCRAM-SHA-256 → scram-sha256
+captured_256="$(run_compat_invocation SCRAM-SHA-256)"
+assert_compat_line \
+  "translates SCRAM-SHA-256 to scram-sha256 for kafkactl" \
+  "ENV CONTEXTS_DEV_SASL_MECHANISM=scram-sha256" \
+  "$captured_256"
+
+# Already-lowercase passes through unchanged. (The shim accepts both
+# canonical and translated forms; an operator who's already exporting the
+# kafkactl form shouldn't have it re-mangled.)
+captured_passthrough="$(run_compat_invocation scram-sha512)"
+assert_compat_line \
+  "leaves already-lowercase scram-sha512 alone" \
+  "ENV CONTEXTS_DEV_SASL_MECHANISM=scram-sha512" \
+  "$captured_passthrough"
+
+# Unknown mechanism is left alone — kafkactl will surface its own error.
+# The shim is for casing, not for validation.
+captured_unknown="$(run_compat_invocation FUTUREMECH-XYZ)"
+assert_compat_line \
+  "leaves unknown SASL mechanisms unchanged for kafkactl to reject" \
+  "ENV CONTEXTS_DEV_SASL_MECHANISM=FUTUREMECH-XYZ" \
+  "$captured_unknown"
+
+# config.yml mount: every invocation must include a -v flag mounting a
+# config.yml at /.config/kafkactl/config.yml inside the container, with
+# the SELinux shared-relabel marker (`:z`) so Fedora/RHEL hosts work.
+assert_compat_grep \
+  "mounts config.yml at /.config/kafkactl/config.yml inside the container" \
+  '^ARG .*:/.config/kafkactl/config\.yml:ro,z$' \
+  "$captured_512"
+
 # --- Summary ------------------------------------------------------------------
 
 echo

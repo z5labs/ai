@@ -37,7 +37,10 @@ services:
       start_period: 30s
 
   karapace:
-    image: ghcr.io/aiven-open/karapace:latest
+    # Pinned for reproducibility — apache/kafka above is also pinned, and
+    # a moving Karapace tag could change SR API behavior under us without
+    # any repo change. Bump deliberately, not by drift.
+    image: ghcr.io/aiven-open/karapace:6.1.4
     container_name: kafka-skill-creator-e2e-karapace
     network_mode: host
     depends_on:

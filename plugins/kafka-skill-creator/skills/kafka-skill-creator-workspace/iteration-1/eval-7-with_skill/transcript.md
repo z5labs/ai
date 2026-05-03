@@ -128,6 +128,14 @@ All 18 eval assertions PASS (table below).
 
 1. **Deny-list pattern in SKILL.md Step 4** — `UPPER(-[0-9]+)?` was over-broad and false-fired on illustrative `<UPPER>` text in the generated SKILL.md (substituted from `references/generated-skill-md-skeleton.md` line 53). Fixed: changed to `UPPER-[0-9]+` (required digit suffix) and added a note to the explanatory comment listing `<UPPER>` alongside `<topic>`/`<group>`/`<ctx>` as legitimately appearing in documentation copy. Without this fix the verify step would always refuse, blocking every generation that uses the skeleton verbatim.
 
+## Post-iteration findings (from PR review feedback)
+
+The Copilot review on PR #84 flagged that the e2e eval only smoke-tested `describe-topic.sh` — the other four wrappers got existence/executable checks but were never exercised. Adding smoke-test assertions for the remaining four (consume.sh, describe-group.sh, lag.sh, reset-offsets.sh dry-run) surfaced a fourth real skill bug:
+
+2. **`reset-offsets.sh` template uses the wrong kafkactl invocation shape** — both `SKILL.md` Step 3 per-script spec and `references/generated-skill-scripts.md` documented the kafkactl call as `reset offset --group "$GROUP" --topic "$TOPIC"`. kafkactl actually wants the group as a *positional* argument (`reset consumer-group-offset GROUP --topic T`); passing `--group` yields `unknown flag: --group`. The original iteration-1 generation produced this broken wrapper; the bug went undetected because the existing assertions only checked that the file existed and was executable. The fix updates the SKILL.md per-script spec, the wrapper-template description in `generated-skill-scripts.md`, and the eval entry now exercises all five wrappers — assertion `reset-offsets-sh-dry-run-succeeded` would have caught this on first iteration. The committed `outputs/scripts/reset-offsets.sh` here still shows the broken form (audit snapshot of what was actually generated); a re-run would now produce the corrected invocation.
+
+The same review also surfaced fixture issues (seed.sh idempotency was claimed but not actually achieved; Karapace image was using `:latest`; SR-rotation guide referenced the wrong healthcheck; a SKILL.md skeleton sentence about "no separate kafkactl config file" was made stale by the kafkactl-context-creation fix). All addressed in the same PR-review fixup commit.
+
 ## Skill bugs surfaced (intentionally deferred to follow-ups)
 
 None new this iteration. The three deferred items already on file (#77 CI, #78 macOS, #79 TLS) are not in scope here.

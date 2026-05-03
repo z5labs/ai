@@ -52,7 +52,7 @@ The team operates against these contexts: <list of context names>.
 
 Each script reads an env file at runtime, resolved in this order (first match wins): `--env-file PATH` (per-invocation), `KAFKA_ENV_FILE` (whole-shell), `./.env` (cwd). There is no automatic `.env.<ctx>` lookup — the convention is to *name* per-environment files `.env.dev` / `.env.prod` / etc. and select one with `--env-file` or `KAFKA_ENV_FILE`. Each script also passes `--context <ctx>` to kafkactl, which selects which `CONTEXTS_<UPPER>_*` env vars (loaded from the env file) apply.
 
-Cluster shape (broker list, SASL mechanism, TLS, Schema Registry auth) is defined entirely through kafkactl's `CONTEXTS_<NAME>_*` env-var convention — the static fields come from `_common.sh`'s baked-in `export` block, the secrets come from the env file. There is no separate kafkactl config file; everything kafkactl needs is in the environment when the wrapper exec's the container.
+Cluster shape (broker list, SASL mechanism, TLS, Schema Registry auth) is defined entirely through kafkactl's `CONTEXTS_<NAME>_*` env-var convention — the static fields come from `_common.sh`'s baked-in `export` block, the secrets come from the env file. The wrapper does mint a one-line `config.yml` per invocation and mount it into the kafkactl container — kafkactl rejects `--context <name>` for contexts not pre-declared in a config file, even when the env-var overlays cover every field — but the config carries no addresses, credentials, or other operator-relevant settings; it's a stub for kafkactl's argv parser, not a thing the operator edits. Everything kafkactl actually uses is in the environment when the wrapper exec's the container.
 
 ### One-time setup
 

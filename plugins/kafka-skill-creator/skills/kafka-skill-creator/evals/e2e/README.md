@@ -110,10 +110,15 @@ script-level CI variant (no model in the loop) is tracked in
 The checked-in `karapace/authfile.json` was generated with:
 
 ```bash
-podman run --rm ghcr.io/aiven-open/karapace:latest \
+podman run --rm ghcr.io/aiven-open/karapace:6.1.4 \
   karapace_mkpasswd -u sruser -a scrypt sr-secret
 ```
 
-If you change the SR password, regenerate the file and update
-`env.sh`'s `CONTEXTS_DEV_SCHEMAREGISTRY_PASSWORD`, the broker
-healthcheck command, and the `seed.sh` SR_PASS default.
+If you change the SR password, regenerate the file and update three
+places that hardcode `sr-secret`:
+
+- `env.sh`'s `CONTEXTS_DEV_SCHEMAREGISTRY_PASSWORD`
+- the **karapace** healthcheck `curl -u sruser:sr-secret …` line in
+  `docker-compose.yml` (the broker healthcheck uses `admin.properties`
+  with the admin SCRAM creds, not the SR creds — different user)
+- `seed.sh`'s `SR_PASS` default

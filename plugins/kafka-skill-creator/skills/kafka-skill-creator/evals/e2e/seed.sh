@@ -6,8 +6,11 @@
 # have something to commit, and leaves one group with non-zero lag so the
 # generated `lag.sh` wrapper has something to bite into.
 #
-# Idempotent: re-running after a successful seed is a no-op (skip-existing
-# on topics, swallow 409 on schemas). After `down -v`, a fresh `up.sh`
+# Idempotent: re-running after a successful seed is a no-op. Topic create
+# skips if the topic exists; schema POST swallows 409; produce checks the
+# topic's current message count and only emits the missing tail (or skips
+# entirely if at-or-above target); drain checks the group's committed
+# offset and only consumes the delta. After `down -v`, a fresh `up.sh`
 # re-seeds from scratch.
 set -euo pipefail
 
@@ -113,14 +116,43 @@ register_schema() {
   esac
 }
 
+# Sum of newest offsets across every partition of a topic. Equals the
+# total number of messages the topic has ever held (modulo retention).
+# Returns 0 if the topic doesn't exist or has no partitions.
+topic_message_count() {
+  local topic="$1"
+  kafkactl describe topic "$topic" --output json 2>/dev/null \
+    | jq -r '[.Partitions[]?.newestOffset] | add // 0'
+}
+
+# Sum of committed offsets across every partition of a topic, for a
+# given consumer group. Equals the high-water mark the group has
+# acknowledged. Returns 0 if the group hasn't committed for this topic.
+group_committed_total() {
+  local group="$1" topic="$2"
+  kafkactl describe consumer-group "$group" --output json 2>/dev/null \
+    | jq -r --arg topic "$topic" '[.Topics[]? | select(.Name == $topic) | .Partitions[]?.consumerOffset] | add // 0'
+}
+
+# Idempotent produce: takes a TARGET ABSOLUTE message count, not a delta.
+# If the topic already has that many messages (or more), this is a no-op.
+# Otherwise produce only the missing tail. This keeps re-running seed.sh
+# (or up.sh after a down-less restart) a true no-op.
 produce_messages() {
-  local topic="$1" count="$2"
-  echo "  producing $count messages to $topic"
+  local topic="$1" target="$2"
+  local existing
+  existing=$(topic_message_count "$topic")
+  if [ "$existing" -ge "$target" ]; then
+    echo "  $topic already has $existing messages (≥ target $target), skipping produce"
+    return
+  fi
+  local first=$((existing + 1))
+  echo "  producing $((target - existing)) messages to $topic (offsets $first..$target)"
   # kafkactl auto-detects the topic's registered Avro schema and serializes
   # each line accordingly, so the per-line JSON has to match the schema.
   # Per-topic payload generators keep this fixture in sync with schemas/*.avsc.
   local i ts
-  for i in $(seq 1 "$count"); do
+  for i in $(seq "$first" "$target"); do
     ts="$(( 1700000000000 + i * 1000 ))"
     case "$topic" in
       payments.orders.v1)
@@ -145,13 +177,27 @@ produce_messages() {
   done | kafkactl produce "$topic"
 }
 
+# Idempotent drain: takes a TARGET ABSOLUTE committed offset, not a count.
+# If the group has already committed at least that high for this topic,
+# this is a no-op. Otherwise consume only the delta needed. Critical:
+# kafkactl --max-messages N is "stop after N received in this invocation",
+# not "stop at offset N", so we compute the delta explicitly — passing the
+# absolute target with no committed-offset accounting would loop forever
+# waiting for messages past the topic's tail.
 drain_group() {
-  local group="$1" topic="$2" max="$3"
-  echo "  draining $max messages for group $group from $topic"
-  # kafkactl rejects --group with --exit (mutually exclusive). With
-  # --max-messages it auto-stops after that count and the consumer
-  # group commits the offsets it read.
-  kafkactl consume "$topic" --group "$group" --from-beginning --max-messages "$max" >/dev/null
+  local group="$1" topic="$2" target="$3"
+  local committed
+  committed=$(group_committed_total "$group" "$topic")
+  if [ "$committed" -ge "$target" ]; then
+    echo "  group $group at offset $committed for $topic (≥ target $target), skipping drain"
+    return
+  fi
+  local need=$((target - committed))
+  echo "  draining $need messages for group $group from $topic (committed=$committed, target=$target)"
+  # kafkactl rejects --group with --exit (mutually exclusive). --from-beginning
+  # only applies when the group has no committed offset — on a re-run it
+  # silently resumes from `committed`.
+  kafkactl consume "$topic" --group "$group" --from-beginning --max-messages "$need" >/dev/null
 }
 
 echo "==> creating topics"
@@ -172,23 +218,25 @@ register_schema payments.orders.v1-value "$SCRIPT_DIR/schemas/payments.orders.v1
 register_schema payments.refunds.v1-value "$SCRIPT_DIR/schemas/payments.refunds.v1.avsc"
 register_schema internal.audit.v1-value "$SCRIPT_DIR/schemas/internal.audit.v1.avsc"
 
-echo "==> producing initial messages"
-# Plain-bytes produce — we don't go through SR for the seed payloads.
-# The skill exercises the SR fetch path through references/schemas/, which
-# only needs the schemas to be registered (above).
+echo "==> producing initial messages (target absolute counts; no-op if already met)"
+# Targets are absolute totals, not deltas. produce_messages skips when the
+# topic is already at-or-above the target, so a re-run after a successful
+# seed touches no offsets.
 produce_messages payments.orders.v1 100
 produce_messages payments.refunds.v1 100
 produce_messages internal.audit.v1 10
 
-echo "==> draining and committing consumer groups"
-# payments-orders-projector: drains everything → ends in Stable with lag 0.
+echo "==> draining and committing consumer groups (idempotent; skips if already committed)"
+# payments-orders-projector: drain to offset 100 → lag 0.
 drain_group payments-orders-projector payments.orders.v1 100
-# payments-refunds-replayer: drains current state, then more messages get
-# produced after the commit so its committed offset lags LEO.
+# payments-refunds-replayer: commits at 100, then we extend the topic to 150
+# below so the group's committed offset lags LEO.
 drain_group payments-refunds-replayer payments.refunds.v1 100
 
-echo "==> producing additional messages so payments-refunds-replayer has lag"
-produce_messages payments.refunds.v1 50
+echo "==> extending payments.refunds.v1 to 150 so payments-refunds-replayer has lag=50"
+# Target 150 absolute — the prior produce_messages call sat at 100. After this
+# step the topic has 150 messages but the group committed at 100, so lag=50.
+produce_messages payments.refunds.v1 150
 
 echo
 echo "seed complete."
