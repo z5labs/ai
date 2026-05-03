@@ -27,6 +27,7 @@ import argparse
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -43,15 +44,23 @@ def read_text(p: Path) -> str:
 
 
 def parse_env_file(path: Path) -> dict[str, str]:
+    # Parse shell-escaped KEY=VALUE assignments — `up.sh` emits values via
+    # `printf '%q'` so an `eval "$(bash up.sh)"` round-trip is safe; this
+    # parser uses `shlex.split(..., posix=True)` so it dequotes the same
+    # way bash would and stays consistent with the producer.
     out: dict[str, str] = {}
     for line in path.read_text().splitlines():
         line = line.strip()
-        if not line or line.startswith("#"):
+        if not line or line.startswith("#") or "=" not in line:
             continue
-        if "=" not in line:
+        try:
+            tokens = shlex.split(line, posix=True)
+        except ValueError:
             continue
-        k, _, v = line.partition("=")
-        out[k.strip()] = v.strip().strip('"').strip("'")
+        if not tokens or "=" not in tokens[0]:
+            continue
+        k, _, v = tokens[0].partition("=")
+        out[k.strip()] = v
     return out
 
 
