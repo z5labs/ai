@@ -132,6 +132,9 @@ require_value() {
 require_eq_value() {
   local arg="$1" value="${1#*=}"
   [ -n "$value" ] || { echo "error: ${arg%%=*} requires a non-empty value" >&2; echo "${USAGE:-}" >&2; exit 2; }
+  case "$value" in
+    -*) echo "error: ${arg%%=*} requires a value, got another flag: $value" >&2; echo "${USAGE:-}" >&2; exit 2 ;;
+  esac
 }
 
 KAFKACTL_IMAGE="${KAFKACTL_IMAGE:-docker.io/deviceinsight/kafkactl:v5.18.0-scratch}"

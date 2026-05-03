@@ -63,14 +63,21 @@ Build an in-memory manifest of the same shape as the file form and continue down
 
 `--output PATH` (alias `--out`) chooses where the generated skill is written. Defaults to `./.claude/skills/kafka-<team>/`. The primary use case for the override is a team building their own plugin: pointing `--output` at e.g. `plugins/team-payments/skills/kafka-payments/` lands the generated skill directly inside the plugin tree, no copy step.
 
-The path's parent directory must already exist; create the leaf directory yourself. If the leaf already exists, **delete it before writing** — overwrite is intentional, manifests drift and stale references mislead. Before deleting, validate that the resolved leaf segment is non-empty and not `/`, `.`, `..`, `~`, or `*` (basic sanity guards against catastrophic deletes from a malformed `--output`).
+The path's parent directory must already exist (the operator chose where the skill goes; the generator does not create arbitrary parent paths). The leaf directory itself is the generator's responsibility:
+
+- If it doesn't exist: create it.
+- If it does exist: delete it and recreate it. Overwrite is intentional — manifests drift, and stale allowlists / references mislead.
+
+Before deleting, validate that the resolved leaf segment is non-empty and not `/`, `.`, `..`, `~`, or `*` — basic sanity guards against catastrophic deletes from a malformed `--output`.
 
 ## Preconditions
 
 Stop and refuse if any of the following are unmet:
 
 1. **Container runtime** — `docker` or `podman` on `PATH` (auto-detected, or override via `KAFKA_CONTAINER_RUNTIME`).
-2. **Manifest validates** against `scripts/manifest.schema.json`. v1 hard-fails on `cluster.auth` values other than `SASL_SCRAM` and points at the matching deferred issue.
+2. **Manifest validates** against `scripts/manifest.schema.json`. v1 hard-fails on `cluster.auth` values other than `SASL_SCRAM` and points at the matching deferred issue. The schema annotates `default:` values for two optional fields, but JSON Schema's `default` is documentation, not validator behavior — fill them in explicitly after validation so two runs against the same manifest are deterministic regardless of whether the operator wrote the defaults out:
+   - `cluster.tls` defaults to `required` when omitted.
+   - `cluster.schema_registry.auth` defaults to `basic` when the `cluster.schema_registry` block is present and `auth` is omitted.
 3. **Context names are unique.** JSON Schema's `uniqueItems: true` only rejects fully-identical objects, so two contexts with the same `name` but different `sasl_mechanism` would slip past it and create an ambiguous env-var lookup (which `CONTEXTS_DEV_*` belongs to which `dev`?). After the schema validates, walk `contexts[]` and refuse with a named error if any `name` repeats.
 4. **Path-safety on `team`** — must match `^[A-Za-z0-9_-]+$`. The `--output` path itself is taken at face value (it's an explicit operator choice), but `team` flows into generated frontmatter and the default output path segment, so it stays restricted.
 5. **Per-context env vars are populated** for every context declared in the manifest. For each `<ctx>`, derive `<UPPER>` by uppercasing the name and replacing `-` with `_`, then check that all three are set and non-empty:
@@ -95,7 +102,7 @@ Stop and refuse if any of the following are unmet:
 
 1. Parse and validate inputs (manifest or flags); refuse on conflict or missing values per Preconditions.
 2. Resolve the output directory; validate path safety on the leaf.
-3. Validate per-context env vars (Precondition 4).
+3. Validate per-context env vars (Precondition 5).
 4. Run introspection against the **first** context declared in the manifest. The manifest is shared across environments; one context's introspection is enough for the references because schemas should match across environments. (If they don't, the team has a bigger problem than this skill.)
 5. Generate the skill files at the resolved output path.
 6. Verify the generated skill (file existence, no leftover `<...>` placeholders, scripts marked executable).
@@ -145,6 +152,9 @@ export SR_USER="${!sr_user_var}"
 export SR_PASS="${!sr_pass_var}"
 export TOPIC
 
+# introspect.sh creates topics/ and groups/ but not schemas/, so make it here.
+mkdir -p "/tmp/kafka-introspect-${TEAM}/schemas"
+
 for TOPIC in "${TOPICS[@]}"; do
   safe="$(printf '%s' "$TOPIC" | sed 's/[^A-Za-z0-9._-]/_/g')"
   # `-e SR_*` (no `=value`) tells docker to read each var from the host env
@@ -161,7 +171,7 @@ for TOPIC in "${TOPICS[@]}"; do
 done
 ```
 
-The response is the standard Schema Registry envelope — a `subject`, `version`, `id`, `schemaType` (`AVRO` / `PROTOBUF` / `JSON`), and `schema` string with the actual definition. You'll project these into `<output>/references/schemas/<topic>.<ext>` in Step 3 (extension chosen by `schemaType`).
+The response is the standard Schema Registry envelope — a `subject`, `version`, `id`, `schemaType` (`AVRO` / `PROTOBUF` / `JSON`), and `schema` string with the actual definition. **Persist it verbatim** as `<topic>.json` (one extension, regardless of `schemaType`) — both in `/tmp/.../schemas/` and, in Step 3, at `<output>/references/schemas/<topic>.json`. The verbatim envelope keeps the metadata (`id`, `version`, `schemaType`) alongside the schema body so the model can read whichever it needs without a per-format dispatch step in the generator. Don't extract the inner `schema` string into format-specific files (`.avsc` / `.proto`) — that's a future enhancement, and doing it inconsistently is the bigger trap.
 
 If Schema Registry returns 404 for a subject, skip it and note the absence in `references/topics.md` for that topic — partial coverage is better than aborting the whole generation.
 
@@ -171,7 +181,7 @@ Create these files under `<output>/` (the resolved output directory). Substitute
 
 ### `<output>/SKILL.md`
 
-The frontmatter `name` is what gets registered with Claude Code. The `description` is what determines triggering — name the team, mention the topic domain, and list the most prominent topic names so the model recognizes the right context.
+The frontmatter `name` is what gets registered with Claude Code. The `description` is what determines triggering — name the team, mention the topic domain, and list the **first up to 5 topics from the manifest's `topics:` list, in manifest order**, so the model recognizes the right context. Manifest order is the deterministic rule (operators control which topics surface in the triggering description by ordering them in the manifest); avoid subjective rules like "the most prominent" or "the most-used" because two runs against the same manifest must produce the same description.
 
 **Do NOT set `disable-model-invocation: true` on the generated skill.** The generated `kafka-<team>` skill is meant to fire automatically when its description matches the user's prose ("what's lag on the orders projector?", "peek at the last few payments.refunds.v1 messages"). Disabling model invocation would force the user to type `/kafka-<team>` explicitly to use it, which defeats the point of having a per-team skill that the model recognizes by topic context. The meta-generator (this `kafka-skill-creator`) is slash-only because *it* requires deliberate invocation; the *generated* skill should not inherit that property. Omit the field — Claude Code's default is "model-invocable" — rather than setting it to `false` (the field's name is a footgun; explicit `false` reads like an extra knob even though it's just the default).
 
