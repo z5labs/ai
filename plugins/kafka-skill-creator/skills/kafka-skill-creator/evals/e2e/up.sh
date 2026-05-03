@@ -7,10 +7,28 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# `jq` is used to read healthcheck status out of `compose ps --format json`.
+# Without it the polling loops silently see an empty status until they time
+# out 2-3 minutes later, which surfaces as a misleading "did not become
+# healthy" failure instead of a missing-dependency error. Fail fast.
+if ! command -v jq >/dev/null 2>&1; then
+  echo "error: 'jq' is required to parse compose healthcheck status" >&2
+  echo "       install jq (Fedora: dnf install jq, Debian: apt install jq, macOS: brew install jq)" >&2
+  exit 1
+fi
+
+# Detect compose runtime AND the underlying CLI in a single pass. Export
+# KAFKA_CONTAINER_RUNTIME so seed.sh (and any downstream tool that honors it)
+# uses the same one — without this, a host with both docker and podman
+# installed but only `podman compose` working would have up.sh start the
+# fixture under podman and seed.sh then try to talk to docker. seed.sh's
+# auto-detect prefers docker when both binaries exist.
 if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
   COMPOSE=(docker compose)
+  export KAFKA_CONTAINER_RUNTIME=docker
 elif command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
   COMPOSE=(podman compose)
+  export KAFKA_CONTAINER_RUNTIME=podman
 else
   echo "error: need either 'docker compose' or 'podman compose' on PATH" >&2
   exit 1
