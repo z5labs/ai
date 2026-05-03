@@ -1,0 +1,28 @@
+# Manifest used by the e2e fixture.
+#
+# The cluster shape here matches what docker-compose.yml stands up:
+#  - SASL_SCRAM (SCRAM-SHA-512) over cleartext SASL_PLAINTEXT
+#  - Karapace as a Confluent-SR-compatible registry with HTTP basic auth
+#  - One context, "dev", whose CONTEXTS_DEV_* env vars come from env.sh
+#
+# Topic and consumer-group names match what seed.sh creates.
+team: payments
+
+topics:
+  - payments.orders.v1
+  - payments.refunds.v1
+  - internal.audit.v1
+
+consumer_groups:
+  - payments-orders-projector
+  - payments-refunds-replayer
+
+cluster:
+  auth: SASL_SCRAM
+  tls: none
+  schema_registry:
+    auth: basic
+
+contexts:
+  - name: dev
+    sasl_mechanism: SCRAM-SHA-512

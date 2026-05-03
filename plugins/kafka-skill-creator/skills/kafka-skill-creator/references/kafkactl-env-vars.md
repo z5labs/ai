@@ -1,6 +1,6 @@
 # kafkactl env-var convention
 
-This skill — and every skill it generates — follows kafkactl's documented rule for translating its YAML config into environment variables. The rule lets the same per-context config field be supplied in three different ways without changing the consumer.
+This skill — and every skill it generates — follows kafkactl's documented rule for translating its YAML config into environment variables. The rule lets the same per-context config field be supplied via env var without changing the consumer.
 
 ## The rule
 
@@ -14,6 +14,27 @@ For any kafkactl config key under `contexts.<context>.<field>...`, the equivalen
 So the YAML field `contexts.dev.sasl.password` becomes `CONTEXTS_DEV_SASL_PASSWORD`.
 
 The default context (named `default`) supports a shorthand: drop the `CONTEXTS_DEFAULT_` prefix. `SASL_PASSWORD` and `CONTEXTS_DEFAULT_SASL_PASSWORD` mean the same thing. This skill's generated wrappers always pass `--context <ctx>` explicitly, so the shorthand isn't required, but the env-var filter forwards both shapes for parity with how operators may have set up their host environment.
+
+## kafkactl gotchas this skill works around
+
+Two things about kafkactl don't behave the way the env-var rule alone suggests, and both are load-bearing — the skill stops working without compensating for them. They were caught by the e2e fixture (#66); record them here so the next time someone goes to "simplify" the workarounds they understand why those workarounds exist.
+
+### 1. Env-var contexts must already exist in `config.yml`
+
+`CONTEXTS_<NAME>_*` env vars **overlay** existing contexts; they do **not** auto-create them. `kafkactl --context dev get topics` with `CONTEXTS_DEV_BROKERS=...` and no `dev` context in `config.yml` errors with `not a valid context: dev`. The env vars are silently ignored and the bare `BROKERS` shorthand routes everything into `default` instead.
+
+The skill compensates by generating a one-line `config.yml` with an empty-bodied entry per context (`contexts.<ctx>: {}`) into a temp dir and mounting it at `/.config/kafkactl/config.yml`. The env vars then populate the real broker, credentials, and SR settings on top. See `prepare_kafkactl_config` in the generated `_common.sh` and the equivalent block in `scripts/introspect.sh`.
+
+### 2. SASL mechanism casing
+
+The manifest schema declares SCRAM mechanisms in Kafka's canonical form, `SCRAM-SHA-256` and `SCRAM-SHA-512`. kafkactl rejects both with `Unknown sasl mechanism`. It accepts only the squashed-lowercase form: `scram-sha256`, `scram-sha512`.
+
+The skill compensates in two places:
+
+- `scripts/introspect.sh` re-exports `CONTEXTS_<UPPER>_SASL_MECHANISM` after translating the value at runtime — the manifest format reaches the script via the env var, the kafkactl format reaches the container.
+- The generated `_common.sh` emits the per-context `SASL_MECHANISM` export in kafkactl's casing directly. The translation happens at generation time, baked into the file the team checks in.
+
+Both paths are needed: introspection runs against operator-supplied env vars, the wrappers run from a generated file with values already known.
 
 ## Required keys for v1 (per context)
 

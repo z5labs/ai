@@ -128,7 +128,9 @@ Stop and refuse if any of the following are unmet:
 
 ## Step 1: Run introspection
 
-Before invoking `introspect.sh`, export the manifest's static cluster-shape values for the chosen context. The script treats `CONTEXTS_<NAME>_SASL_MECHANISM` as optional (kafkactl has a default) but kafkactl's default is not guaranteed to match this team's cluster — a SCRAM-SHA-256 broker would silently reject SCRAM-SHA-512 auth and the whole introspection would fail with an opaque error. Setting the manifest values explicitly ties the captured references to the same auth shape the generated wrappers will use:
+Before invoking `introspect.sh`, export the manifest's static cluster-shape values for the chosen context. The script treats `CONTEXTS_<NAME>_SASL_MECHANISM` as optional (kafkactl has a default) but kafkactl's default is not guaranteed to match this team's cluster — a SCRAM-SHA-256 broker would silently reject SCRAM-SHA-512 auth and the whole introspection would fail with an opaque error. Setting the manifest values explicitly ties the captured references to the same auth shape the generated wrappers will use.
+
+Use the manifest's verbatim mechanism value (`SCRAM-SHA-256` / `SCRAM-SHA-512`); `introspect.sh` re-exports it under the same env-var name in kafkactl's casing convention before invoking the container. The skill compensates for two kafkactl quirks documented in `references/kafkactl-env-vars.md`: (1) env-var contexts must already be declared in a `config.yml` file before overlays apply, so `introspect.sh` writes a one-line config to a temp dir and mounts it; (2) kafkactl's CLI accepts `scram-sha512` but not `SCRAM-SHA-512`, so the env-var value gets translated.
 
 ```bash
 upper="$(printf '%s' "$CONTEXT" | tr '[:lower:]' '[:upper:]')"
@@ -352,7 +354,7 @@ After writing files, check:
 - `<output>/scripts/.env.example` has one block per declared context
 - `<output>/scripts/manifest.yml` is a verbatim copy of the input manifest (or the in-memory manifest built from manual flags)
 - `<output>/references/cluster.md`, `<output>/references/topics.md`, and `<output>/references/groups.md` all exist and are non-empty
-- No file under `<output>/` contains an unsubstituted template token. Refuse if `grep -rE '<(team|env list|list of context names|top topics|bullet list|first-topic|first-group|this-directory|sasl_mechanism from manifest|UPPER(-[0-9]+)?|topic-[0-9]+|group-[0-9]+|ctx-[0-9]+)>' <output>/` returns any match — every entry in that pattern is a substitution placeholder from the skeleton templates that the generator must replace with real values. The regex is enumerated rather than open-ended (`<[a-z_-]+>`) on purpose: `<topic>`, `<group>`, `<ctx>`, `<flag-name>`, `<T>`, `<NAME>`, `<CTX>`, `<FIELD>` legitimately appear in generated USAGE strings and kafkactl env-var docs, so a blanket "any angle-bracket identifier" check would false-fire on the documentation surface of the wrappers.
+- No file under `<output>/` contains an unsubstituted template token. Refuse if `grep -rE '<(team|env list|list of context names|top topics|bullet list|first-topic|first-group|this-directory|sasl_mechanism from manifest|UPPER-[0-9]+|topic-[0-9]+|group-[0-9]+|ctx-[0-9]+)>' <output>/` returns any match — every entry in that pattern is a substitution placeholder from the skeleton templates that the generator must replace with real values. The regex is enumerated rather than open-ended (`<[a-z_-]+>`) on purpose: `<topic>`, `<group>`, `<ctx>`, `<flag-name>`, `<T>`, `<NAME>`, `<CTX>`, `<FIELD>`, and bare `<UPPER>` legitimately appear in generated USAGE strings and kafkactl env-var docs (e.g. "CONTEXTS_`<UPPER>`_* env vars" as illustrative copy in the generated SKILL.md), so a blanket "any angle-bracket identifier" check would false-fire on the documentation surface of the wrappers. The `UPPER-[0-9]+` shape (with required digit suffix) is the actual placeholder used in `_common.sh`'s per-context export blocks.
 
 ## Step 5: Smoke test
 
