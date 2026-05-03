@@ -1,0 +1,23 @@
+{
+  "eval_id": 1,
+  "eval_name": "refuse-when-multiple-vars-missing",
+  "prompt": "Run /postgres-skill-creator for me, my Postgres is at db.internal:5432.",
+  "assertions": [
+    {
+      "id": "refuses-to-proceed",
+      "text": "the assistant refuses rather than running the skill"
+    },
+    {
+      "id": "lists-all-missing-vars",
+      "text": "the refusal lists all five missing variables (PGHOST, PGPORT, PGUSER, PGDATABASE, PGPASSWORD) in a single message, not one at a time across multiple turns"
+    },
+    {
+      "id": "does-not-extract-host-port-from-prose",
+      "text": "the assistant does NOT take the 'db.internal:5432' from the user's prose and use it to set PGHOST/PGPORT itself or pass them as args \u2014 credentials and routing must come through the environment, not be extracted from chat"
+    },
+    {
+      "id": "instructs-export-or-helper",
+      "text": "the assistant tells the user how to fix this (export the vars directly, or use a credential helper)"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+            rel             | count 
+----------------------------+-------
+ analytics.events           |     3
+ public.active_users (view) |     2
+ public.order_items         |     4
+ public.orders              |     3
+ public.products            |     3
+ public.users               |     3
+(6 rows)
+

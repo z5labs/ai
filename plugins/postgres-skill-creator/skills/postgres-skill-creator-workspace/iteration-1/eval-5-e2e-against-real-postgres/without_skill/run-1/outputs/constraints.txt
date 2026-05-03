@@ -1,0 +1,18 @@
+            name             |  schema   |    table    |                             definition                             | type 
+-----------------------------+-----------+-------------+--------------------------------------------------------------------+------
+ events_user_id_fkey         | analytics | events      | FOREIGN KEY (user_id) REFERENCES users(id)                         | f
+ events_pkey                 | analytics | events      | PRIMARY KEY (id)                                                   | p
+ order_items_quantity_check  | public    | order_items | CHECK ((quantity > 0))                                             | c
+ order_items_order_fk        | public    | order_items | FOREIGN KEY (order_id, order_status) REFERENCES orders(id, status) | f
+ order_items_product_id_fkey | public    | order_items | FOREIGN KEY (product_id) REFERENCES products(id)                   | f
+ order_items_pkey            | public    | order_items | PRIMARY KEY (order_id, line_no)                                    | p
+ orders_user_id_fkey         | public    | orders      | FOREIGN KEY (user_id) REFERENCES users(id)                         | f
+ orders_pkey                 | public    | orders      | PRIMARY KEY (id)                                                   | p
+ orders_id_status_uniq       | public    | orders      | UNIQUE (id, status)                                                | u
+ products_price_cents_check  | public    | products    | CHECK ((price_cents >= 0))                                         | c
+ products_pkey               | public    | products    | PRIMARY KEY (id)                                                   | p
+ products_sku_key            | public    | products    | UNIQUE (sku)                                                       | u
+ users_pkey                  | public    | users       | PRIMARY KEY (id)                                                   | p
+ users_email_key             | public    | users       | UNIQUE (email)                                                     | u
+(14 rows)
+

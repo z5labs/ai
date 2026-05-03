@@ -1,0 +1,20 @@
+{
+  "reviews": [
+    {"run_id": "eval-0-with_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-0-without_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-1-with_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-1-without_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-2-with_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-2-without_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-3-with_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-3-without_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-4-with_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-4-without_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-5-with_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-5-without_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-6-with_skill", "feedback": "", "timestamp": ""},
+    {"run_id": "eval-6-without_skill", "feedback": "", "timestamp": ""}
+  ],
+  "status": "complete",
+  "notes": "User reviewed iteration-1 and gave no feedback — implicit accept. with_skill scored 100% (74/74), without_skill 52% (37/71), +48pp delta. SKILL.md is performing well; no changes needed for iteration-2."
+}

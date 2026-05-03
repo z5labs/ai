@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "passed": 14,
+    "failed": 1,
+    "total": 15,
+    "pass_rate": 0.9333333333333333
+  },
+  "expectations": [
+    {
+      "text": "SKILL.md exists and is non-empty (\u2265 500 bytes)",
+      "passed": true,
+      "evidence": "size: 4352"
+    },
+    {
+      "text": "SKILL.md frontmatter does NOT contain `disable-model-invocation: true`",
+      "passed": true,
+      "evidence": "absent"
+    },
+    {
+      "text": "SKILL.md frontmatter description names the dbname `evaldb` and at least one seeded table",
+      "passed": true,
+      "evidence": "dbname present: True; one of expected tables in skill_text: see size 4352"
+    },
+    {
+      "text": "README.md exists and is non-empty (\u2265 500 bytes)",
+      "passed": true,
+      "evidence": "size: 3809"
+    },
+    {
+      "text": "README.md has no unsubstituted `<...>` placeholders",
+      "passed": true,
+      "evidence": "matches: []"
+    },
+    {
+      "text": "references/tables.md contains a section heading for every seeded table (public.users, public.products, public.orders, public.order_items, analytics.events)",
+      "passed": true,
+      "evidence": "missing: []; size: 2165"
+    },
+    {
+      "text": "references/relationships.md contains arrow lines for every seeded FK",
+      "passed": false,
+      "evidence": "missing: ['order_items.order_id \u2192 orders.id', 'order_items.order_status \u2192 orders.status']; size: 845"
+    },
+    {
+      "text": "references/views.md exists and contains a section for `public.active_users` with the view's SQL definition",
+      "passed": true,
+      "evidence": "file exists: True; active_users in text: True; def recognizable: True"
+    },
+    {
+      "text": "references/enums.md exists and lists all four `order_status` labels",
+      "passed": true,
+      "evidence": "missing labels: []"
+    },
+    {
+      "text": "references/indexes.md exists and includes the user-defined indexes (schema-qualified)",
+      "passed": true,
+      "evidence": "missing: []; schema-qualified: True"
+    },
+    {
+      "text": "scripts/query.sh exists and is executable",
+      "passed": true,
+      "evidence": "executable bit: True"
+    },
+    {
+      "text": "scripts/query.sh has no unsubstituted `<host>`, `<port>`, `<user>`, or `<dbname>` placeholders",
+      "passed": true,
+      "evidence": "matches: []"
+    },
+    {
+      "text": "scripts/query.sh hardcodes `PGDATABASE=\"evaldb\"`",
+      "passed": true,
+      "evidence": "found PGDATABASE assignment"
+    },
+    {
+      "text": "running `bash query.sh \"SELECT count(*) FROM users\"` against the live fixture returns `3`",
+      "passed": true,
+      "evidence": "ok=True; output='count \\n-------\\n     3\\n(1 row)'"
+    },
+    {
+      "text": "scripts/.env.example exists and is non-empty",
+      "passed": true,
+      "evidence": "exists: True"
+    }
+  ]
+}

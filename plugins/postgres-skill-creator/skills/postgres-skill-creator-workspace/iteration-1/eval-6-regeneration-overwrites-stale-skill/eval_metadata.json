@@ -1,0 +1,47 @@
+{
+  "eval_id": 6,
+  "eval_name": "regeneration-overwrites-stale-skill",
+  "prompt": "Same env as before \u2014 all five libpq env vars are exported and point at the live PGDATABASE=evaldb fixture, PG_DOCKER_ARGS=--network=host is set. There's already an `./.claude/skills/pg-evaldb/` directory from a previous (now-stale) generation: it has a leftover sentinel file `references/_stale_marker` and the old `references/tables.md` ends with a line `STALE-FROM-PREVIOUS-RUN`. Run /postgres-skill-creator and overwrite it. Schemas drift, the skill is supposed to wipe and rewrite \u2014 confirm it actually does.",
+  "assertions": [
+    {
+      "id": "stale-sentinel-removed",
+      "text": "./.claude/skills/pg-evaldb/references/_stale_marker no longer exists \u2014 the directory was wiped on regeneration, not patched in place"
+    },
+    {
+      "id": "stale-tables-line-removed",
+      "text": "./.claude/skills/pg-evaldb/references/tables.md does NOT contain the substring `STALE-FROM-PREVIOUS-RUN` \u2014 the file was rewritten from introspection, not appended to"
+    },
+    {
+      "id": "skill-md-regenerated",
+      "text": "./.claude/skills/pg-evaldb/SKILL.md exists and is non-empty after regeneration"
+    },
+    {
+      "id": "readme-regenerated",
+      "text": "./.claude/skills/pg-evaldb/README.md exists and has no unsubstituted `<...>` placeholders after regeneration"
+    },
+    {
+      "id": "tables-md-regenerated",
+      "text": "./.claude/skills/pg-evaldb/references/tables.md exists, is non-empty, and contains all five seeded table headings (`public.users`, `public.products`, `public.orders`, `public.order_items`, `analytics.events`)"
+    },
+    {
+      "id": "relationships-md-regenerated",
+      "text": "./.claude/skills/pg-evaldb/references/relationships.md exists and is non-empty"
+    },
+    {
+      "id": "views-md-regenerated",
+      "text": "./.claude/skills/pg-evaldb/references/views.md exists and references `active_users`"
+    },
+    {
+      "id": "enums-md-regenerated",
+      "text": "./.claude/skills/pg-evaldb/references/enums.md exists and lists the four `order_status` labels"
+    },
+    {
+      "id": "indexes-md-regenerated",
+      "text": "./.claude/skills/pg-evaldb/references/indexes.md exists and is non-empty"
+    },
+    {
+      "id": "query-sh-regenerated-and-runnable",
+      "text": "./.claude/skills/pg-evaldb/scripts/query.sh exists, is executable, and `bash query.sh \"SELECT count(*) FROM users\"` against the fixture returns `3`"
+    }
+  ]
+}

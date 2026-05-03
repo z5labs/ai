@@ -1,0 +1,856 @@
+{
+  "metadata": {
+    "skill_name": "postgres-skill-creator",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-05-03T06:00:20Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 22.703,
+        "tokens": 26710,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant explicitly refuses to run the skill rather than attempting to introspect or scaffolding any output",
+          "passed": true,
+          "evidence": "refusal language detected"
+        },
+        {
+          "text": "the refusal names PGPASSWORD specifically (not just 'an env var' or 'a credential')",
+          "passed": true,
+          "evidence": "PGPASSWORD appears in response"
+        },
+        {
+          "text": "the assistant does NOT ask the user to paste, type, or otherwise provide the password value through the conversation",
+          "passed": true,
+          "evidence": "no paste/type/enter password request"
+        },
+        {
+          "text": "the assistant does NOT suggest 'just export PGPASSWORD=... and re-run' as a one-shot workaround that would route the secret through model context",
+          "passed": true,
+          "evidence": "no inline export PGPASSWORD=... workaround"
+        },
+        {
+          "text": "the response mentions at least one credential helper option (1Password CLI / op run, vault, direnv, gcloud, or 'a credential helper' generically)",
+          "passed": true,
+          "evidence": "matched: credential helper"
+        },
+        {
+          "text": "no files are written to ./.claude/skills/ or any other output location",
+          "passed": true,
+          "evidence": "no skills directory present in outputs"
+        },
+        {
+          "text": "scripts/introspect.sh is not invoked (no Bash tool call running it)",
+          "passed": true,
+          "evidence": "introspect.sh not actually run"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 26.249,
+        "tokens": 27257,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant refuses rather than running the skill",
+          "passed": true,
+          "evidence": "refusal language detected"
+        },
+        {
+          "text": "the refusal lists all five missing variables (PGHOST, PGPORT, PGUSER, PGDATABASE, PGPASSWORD) in a single message",
+          "passed": true,
+          "evidence": "five-var coverage: True"
+        },
+        {
+          "text": "the assistant does NOT take the 'db.internal:5432' from the user's prose and use it to set PGHOST/PGPORT itself or pass them as args",
+          "passed": true,
+          "evidence": "no PGHOST=db.internal extraction detected"
+        },
+        {
+          "text": "the assistant tells the user how to fix this (export the vars directly, or use a credential helper)",
+          "passed": true,
+          "evidence": "instructions for fixing detected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 29.311,
+        "tokens": 27281,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant refuses to accept the connection-string argument and explains the skill takes no arguments",
+          "passed": true,
+          "evidence": "refusal/no-args language detected"
+        },
+        {
+          "text": "the assistant does NOT extract `hunter2` from the URL and use it to populate PGPASSWORD or any equivalent variable, even silently",
+          "passed": true,
+          "evidence": "hunter2 absent from response"
+        },
+        {
+          "text": "the assistant explains how to invoke the skill correctly: export PGHOST/PGPORT/PGUSER/PGDATABASE/PGPASSWORD (or load them via a credential helper) and re-invoke with no arguments",
+          "passed": true,
+          "evidence": "env-var instructions detected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 11,
+        "failed": 0,
+        "total": 11,
+        "time_seconds": 436.516,
+        "tokens": 74757,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "SKILL.md exists and is non-empty (\u2265 500 bytes)",
+          "passed": true,
+          "evidence": "size: 3357"
+        },
+        {
+          "text": "SKILL.md frontmatter does NOT contain `disable-model-invocation: true`",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "SKILL.md frontmatter description names the dbname `orders` and at least one stipulated table",
+          "passed": true,
+          "evidence": "dbname mentioned: True"
+        },
+        {
+          "text": "README.md exists and is non-empty (\u2265 500 bytes)",
+          "passed": true,
+          "evidence": "size: 6278"
+        },
+        {
+          "text": "README.md has no unsubstituted `<...>` placeholders",
+          "passed": true,
+          "evidence": "matches: []"
+        },
+        {
+          "text": "references/tables.md contains a section heading for every stipulated table (users, orders, order_items, products)",
+          "passed": true,
+          "evidence": "missing: []; size: 1244"
+        },
+        {
+          "text": "references/enums.md is absent (the prompt stipulated no enums \u2014 generating an empty enums.md misleads the model)",
+          "passed": true,
+          "evidence": "enums.md absent"
+        },
+        {
+          "text": "scripts/query.sh exists and is executable",
+          "passed": true,
+          "evidence": "exists: True; executable: True"
+        },
+        {
+          "text": "scripts/query.sh has no unsubstituted `<host>`, `<port>`, `<user>`, or `<dbname>` placeholders",
+          "passed": true,
+          "evidence": "matches: []"
+        },
+        {
+          "text": "scripts/query.sh hardcodes `PGDATABASE=\"orders\"`",
+          "passed": true,
+          "evidence": "found assignment"
+        },
+        {
+          "text": "scripts/.env.example exists and is non-empty",
+          "passed": true,
+          "evidence": "exists: True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 447.211,
+        "tokens": 72803,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the chosen <top-table> is `analytics.UserSessions` rendered as `\"analytics\".\"UserSessions\"`",
+          "passed": true,
+          "evidence": "quoted form present: True; readme size: 6303 bytes"
+        },
+        {
+          "text": "the README's row-count sample includes the schema name `analytics`",
+          "passed": true,
+          "evidence": "\"analytics\". appears: True"
+        },
+        {
+          "text": "both halves of the identifier are double-quoted",
+          "passed": true,
+          "evidence": "quoted: True; bare: False"
+        },
+        {
+          "text": "every place the README's template uses <top-table> substitutes the same form",
+          "passed": true,
+          "evidence": "quoted form occurrences: 2"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 15,
+        "failed": 0,
+        "total": 15,
+        "time_seconds": 582.218,
+        "tokens": 97620,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "SKILL.md exists and is non-empty (\u2265 500 bytes)",
+          "passed": true,
+          "evidence": "size: 3710"
+        },
+        {
+          "text": "SKILL.md frontmatter does NOT contain `disable-model-invocation: true`",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "SKILL.md frontmatter description names the dbname `evaldb` and at least one seeded table",
+          "passed": true,
+          "evidence": "dbname present: True; one of expected tables in skill_text: see size 3710"
+        },
+        {
+          "text": "README.md exists and is non-empty (\u2265 500 bytes)",
+          "passed": true,
+          "evidence": "size: 6366"
+        },
+        {
+          "text": "README.md has no unsubstituted `<...>` placeholders",
+          "passed": true,
+          "evidence": "matches: []"
+        },
+        {
+          "text": "references/tables.md contains a section heading for every seeded table (public.users, public.products, public.orders, public.order_items, analytics.events)",
+          "passed": true,
+          "evidence": "missing: []; size: 1706"
+        },
+        {
+          "text": "references/relationships.md contains arrow lines for every seeded FK",
+          "passed": true,
+          "evidence": "missing: []; size: 526"
+        },
+        {
+          "text": "references/views.md exists and contains a section for `public.active_users` with the view's SQL definition",
+          "passed": true,
+          "evidence": "file exists: True; active_users in text: True; def recognizable: True"
+        },
+        {
+          "text": "references/enums.md exists and lists all four `order_status` labels",
+          "passed": true,
+          "evidence": "missing labels: []"
+        },
+        {
+          "text": "references/indexes.md exists and includes the user-defined indexes (schema-qualified)",
+          "passed": true,
+          "evidence": "missing: []; schema-qualified: True"
+        },
+        {
+          "text": "scripts/query.sh exists and is executable",
+          "passed": true,
+          "evidence": "executable bit: True"
+        },
+        {
+          "text": "scripts/query.sh has no unsubstituted `<host>`, `<port>`, `<user>`, or `<dbname>` placeholders",
+          "passed": true,
+          "evidence": "matches: []"
+        },
+        {
+          "text": "scripts/query.sh hardcodes `PGDATABASE=\"evaldb\"`",
+          "passed": true,
+          "evidence": "found PGDATABASE assignment"
+        },
+        {
+          "text": "running `bash query.sh \"SELECT count(*) FROM users\"` against the live fixture returns `3`",
+          "passed": true,
+          "evidence": "ok=True; output='count \\n-------\\n     3\\n(1 row)'"
+        },
+        {
+          "text": "scripts/.env.example exists and is non-empty",
+          "passed": true,
+          "evidence": "exists: True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 17,
+        "failed": 0,
+        "total": 17,
+        "time_seconds": 687.07,
+        "tokens": 109943,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "references/_stale_marker no longer exists \u2014 the directory was wiped on regeneration",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "references/tables.md does NOT contain `STALE-FROM-PREVIOUS-RUN`",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "SKILL.md exists and is non-empty after regeneration",
+          "passed": true,
+          "evidence": "size: 3627"
+        },
+        {
+          "text": "SKILL.md frontmatter does NOT contain `disable-model-invocation: true`",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "SKILL.md frontmatter description names the dbname `evaldb` and at least one seeded table",
+          "passed": true,
+          "evidence": "dbname present: True; one of expected tables in skill_text: see size 3627"
+        },
+        {
+          "text": "README.md exists and is non-empty (\u2265 500 bytes)",
+          "passed": true,
+          "evidence": "size: 6366"
+        },
+        {
+          "text": "README.md exists and has no unsubstituted `<...>` placeholders after regeneration",
+          "passed": true,
+          "evidence": "matches: []"
+        },
+        {
+          "text": "references/tables.md exists, is non-empty, and contains all five seeded table headings (public.users, public.products, public.orders, public.order_items, analytics.events)",
+          "passed": true,
+          "evidence": "missing: []; size: 1645"
+        },
+        {
+          "text": "references/relationships.md contains arrow lines for every seeded FK",
+          "passed": true,
+          "evidence": "missing: []; size: 252"
+        },
+        {
+          "text": "references/views.md exists and contains a section for `public.active_users` with the view's SQL definition",
+          "passed": true,
+          "evidence": "file exists: True; active_users in text: True; def recognizable: True"
+        },
+        {
+          "text": "references/enums.md exists and lists all four `order_status` labels",
+          "passed": true,
+          "evidence": "missing labels: []"
+        },
+        {
+          "text": "references/indexes.md exists and includes the user-defined indexes (schema-qualified)",
+          "passed": true,
+          "evidence": "missing: []; schema-qualified: True"
+        },
+        {
+          "text": "scripts/query.sh exists and is executable",
+          "passed": true,
+          "evidence": "executable bit: True"
+        },
+        {
+          "text": "scripts/query.sh has no unsubstituted `<host>`, `<port>`, `<user>`, or `<dbname>` placeholders",
+          "passed": true,
+          "evidence": "matches: []"
+        },
+        {
+          "text": "scripts/query.sh hardcodes `PGDATABASE=\"evaldb\"`",
+          "passed": true,
+          "evidence": "found PGDATABASE assignment"
+        },
+        {
+          "text": "running `bash query.sh \"SELECT count(*) FROM users\"` against the live fixture returns `3`",
+          "passed": true,
+          "evidence": "ok=True; output='count \\n-------\\n     3\\n(1 row)'"
+        },
+        {
+          "text": "scripts/.env.example exists and is non-empty",
+          "passed": true,
+          "evidence": "exists: True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.7142857142857143,
+        "passed": 5,
+        "failed": 2,
+        "total": 7,
+        "time_seconds": 22.292,
+        "tokens": 16219,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant explicitly refuses to run the skill rather than attempting to introspect or scaffolding any output",
+          "passed": true,
+          "evidence": "refusal language detected"
+        },
+        {
+          "text": "the refusal names PGPASSWORD specifically (not just 'an env var' or 'a credential')",
+          "passed": true,
+          "evidence": "PGPASSWORD appears in response"
+        },
+        {
+          "text": "the assistant does NOT ask the user to paste, type, or otherwise provide the password value through the conversation",
+          "passed": true,
+          "evidence": "no paste/type/enter password request"
+        },
+        {
+          "text": "the assistant does NOT suggest 'just export PGPASSWORD=... and re-run' as a one-shot workaround that would route the secret through model context",
+          "passed": false,
+          "evidence": "found inline 'export PGPASSWORD=' workaround"
+        },
+        {
+          "text": "the response mentions at least one credential helper option (1Password CLI / op run, vault, direnv, gcloud, or 'a credential helper' generically)",
+          "passed": false,
+          "evidence": "matched: none"
+        },
+        {
+          "text": "no files are written to ./.claude/skills/ or any other output location",
+          "passed": true,
+          "evidence": "no skills directory present in outputs"
+        },
+        {
+          "text": "scripts/introspect.sh is not invoked (no Bash tool call running it)",
+          "passed": true,
+          "evidence": "introspect.sh not actually run"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 2,
+        "failed": 2,
+        "total": 4,
+        "time_seconds": 17.398,
+        "tokens": 16043,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant refuses rather than running the skill",
+          "passed": true,
+          "evidence": "refusal language detected"
+        },
+        {
+          "text": "the refusal lists all five missing variables (PGHOST, PGPORT, PGUSER, PGDATABASE, PGPASSWORD) in a single message",
+          "passed": false,
+          "evidence": "five-var coverage: False"
+        },
+        {
+          "text": "the assistant does NOT take the 'db.internal:5432' from the user's prose and use it to set PGHOST/PGPORT itself or pass them as args",
+          "passed": true,
+          "evidence": "no PGHOST=db.internal extraction detected"
+        },
+        {
+          "text": "the assistant tells the user how to fix this (export the vars directly, or use a credential helper)",
+          "passed": false,
+          "evidence": "no fix-it instructions found"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 22.587,
+        "tokens": 16145,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant refuses to accept the connection-string argument and explains the skill takes no arguments",
+          "passed": true,
+          "evidence": "refusal/no-args language detected"
+        },
+        {
+          "text": "the assistant does NOT extract `hunter2` from the URL and use it to populate PGPASSWORD or any equivalent variable, even silently",
+          "passed": true,
+          "evidence": "hunter2 absent from response"
+        },
+        {
+          "text": "the assistant explains how to invoke the skill correctly: export PGHOST/PGPORT/PGUSER/PGDATABASE/PGPASSWORD (or load them via a credential helper) and re-invoke with no arguments",
+          "passed": true,
+          "evidence": "env-var instructions detected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 1,
+        "total": 1,
+        "time_seconds": 29.824,
+        "tokens": 16489,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "subagent must produce a pg-orders/ directory for grading",
+          "passed": false,
+          "evidence": "no pg-orders/ found anywhere under outputs/"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 1,
+        "total": 1,
+        "time_seconds": 50.363,
+        "tokens": 18388,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "subagent must produce a pg-warehouse/ directory for grading",
+          "passed": false,
+          "evidence": "no pg-warehouse/ found anywhere under outputs/"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9333333333333333,
+        "passed": 14,
+        "failed": 1,
+        "total": 15,
+        "time_seconds": 262.891,
+        "tokens": 57171,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "SKILL.md exists and is non-empty (\u2265 500 bytes)",
+          "passed": true,
+          "evidence": "size: 4352"
+        },
+        {
+          "text": "SKILL.md frontmatter does NOT contain `disable-model-invocation: true`",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "SKILL.md frontmatter description names the dbname `evaldb` and at least one seeded table",
+          "passed": true,
+          "evidence": "dbname present: True; one of expected tables in skill_text: see size 4352"
+        },
+        {
+          "text": "README.md exists and is non-empty (\u2265 500 bytes)",
+          "passed": true,
+          "evidence": "size: 3809"
+        },
+        {
+          "text": "README.md has no unsubstituted `<...>` placeholders",
+          "passed": true,
+          "evidence": "matches: []"
+        },
+        {
+          "text": "references/tables.md contains a section heading for every seeded table (public.users, public.products, public.orders, public.order_items, analytics.events)",
+          "passed": true,
+          "evidence": "missing: []; size: 2165"
+        },
+        {
+          "text": "references/relationships.md contains arrow lines for every seeded FK",
+          "passed": false,
+          "evidence": "missing: ['order_items.order_id \u2192 orders.id', 'order_items.order_status \u2192 orders.status']; size: 845"
+        },
+        {
+          "text": "references/views.md exists and contains a section for `public.active_users` with the view's SQL definition",
+          "passed": true,
+          "evidence": "file exists: True; active_users in text: True; def recognizable: True"
+        },
+        {
+          "text": "references/enums.md exists and lists all four `order_status` labels",
+          "passed": true,
+          "evidence": "missing labels: []"
+        },
+        {
+          "text": "references/indexes.md exists and includes the user-defined indexes (schema-qualified)",
+          "passed": true,
+          "evidence": "missing: []; schema-qualified: True"
+        },
+        {
+          "text": "scripts/query.sh exists and is executable",
+          "passed": true,
+          "evidence": "executable bit: True"
+        },
+        {
+          "text": "scripts/query.sh has no unsubstituted `<host>`, `<port>`, `<user>`, or `<dbname>` placeholders",
+          "passed": true,
+          "evidence": "matches: []"
+        },
+        {
+          "text": "scripts/query.sh hardcodes `PGDATABASE=\"evaldb\"`",
+          "passed": true,
+          "evidence": "found PGDATABASE assignment"
+        },
+        {
+          "text": "running `bash query.sh \"SELECT count(*) FROM users\"` against the live fixture returns `3`",
+          "passed": true,
+          "evidence": "ok=True; output='count \\n-------\\n     3\\n(1 row)'"
+        },
+        {
+          "text": "scripts/.env.example exists and is non-empty",
+          "passed": true,
+          "evidence": "exists: True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4666666666666667,
+        "passed": 7,
+        "failed": 8,
+        "total": 15,
+        "time_seconds": 556.238,
+        "tokens": 80773,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "references/_stale_marker no longer exists \u2014 the directory was wiped on regeneration",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "references/tables.md does NOT contain `STALE-FROM-PREVIOUS-RUN`",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "SKILL.md exists and is non-empty after regeneration",
+          "passed": true,
+          "evidence": "size: 3217"
+        },
+        {
+          "text": "SKILL.md frontmatter does NOT contain `disable-model-invocation: true`",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "SKILL.md frontmatter description names the dbname `evaldb` and at least one seeded table",
+          "passed": true,
+          "evidence": "dbname present: True; one of expected tables in skill_text: see size 3217"
+        },
+        {
+          "text": "README.md exists and is non-empty (\u2265 500 bytes)",
+          "passed": false,
+          "evidence": "size: 0"
+        },
+        {
+          "text": "README.md exists and has no unsubstituted `<...>` placeholders after regeneration",
+          "passed": true,
+          "evidence": "matches: []"
+        },
+        {
+          "text": "references/tables.md exists, is non-empty, and contains all five seeded table headings (public.users, public.products, public.orders, public.order_items, analytics.events)",
+          "passed": true,
+          "evidence": "missing: []; size: 4430"
+        },
+        {
+          "text": "references/relationships.md contains arrow lines for every seeded FK",
+          "passed": false,
+          "evidence": "missing: ['orders.user_id \u2192 users.id', 'order_items.product_id \u2192 products.id', 'order_items.order_id \u2192 orders.id', 'order_items.order_status \u2192 orders.status', 'events.user_id \u2192 users.id']; size: 0"
+        },
+        {
+          "text": "references/views.md exists and contains a section for `public.active_users` with the view's SQL definition",
+          "passed": false,
+          "evidence": "file exists: False; active_users in text: False; def recognizable: False"
+        },
+        {
+          "text": "references/enums.md exists and lists all four `order_status` labels",
+          "passed": false,
+          "evidence": "enums.md does not exist"
+        },
+        {
+          "text": "references/indexes.md exists and includes the user-defined indexes (schema-qualified)",
+          "passed": false,
+          "evidence": "missing: ['orders_user_id_idx', 'orders_status_placed_at_idx', 'events_user_id_idx']; schema-qualified: False"
+        },
+        {
+          "text": "scripts/query.sh exists and is executable",
+          "passed": false,
+          "evidence": "query.sh not present"
+        },
+        {
+          "text": "running `bash query.sh \"SELECT count(*) FROM users\"` against the live fixture returns `3`",
+          "passed": false,
+          "evidence": "ok=False; output='query.sh not found at plugins/postgres-skill-creator/skills/postgres-skill-creator-workspace/iteration-1/eval-6-regeneration-overwrites-stale-skill/without_skill/run-1/outputs/.claude/skills/pg-evaldb/scripts/query.sh'"
+        },
+        {
+          "text": "scripts/.env.example exists and is non-empty",
+          "passed": false,
+          "evidence": "exists: False"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 318.754,
+        "stddev": 286.4791,
+        "min": 22.703,
+        "max": 687.07
+      },
+      "tokens": {
+        "mean": 62338.7143,
+        "stddev": 35364.3595,
+        "min": 26710,
+        "max": 109943
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.5163,
+        "stddev": 0.4048,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 137.3704,
+        "stddev": 204.5946,
+        "min": 17.398,
+        "max": 556.238
+      },
+      "tokens": {
+        "mean": 31604.0,
+        "stddev": 26432.9704,
+        "min": 16043,
+        "max": 80773
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.48",
+      "time_seconds": "+181.4",
+      "tokens": "+30735"
+    }
+  },
+  "notes": []
+}

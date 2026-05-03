@@ -135,9 +135,49 @@ If you set `PSQL_IMAGE` during generation, export the same value in any session 
 
 ## Development
 
-Lightweight evals live under `skills/postgres-skill-creator/evals/`:
+All paths in this section are relative to this plugin's directory (`plugins/postgres-skill-creator/`). From a repo-root checkout, `cd plugins/postgres-skill-creator` first.
 
-- `evals/test_introspect.sh` — shell-level tests for `introspect.sh`'s env-var validation and argument signature. Run with `bash evals/test_introspect.sh` from the skill directory; no Postgres or container runtime needed (the script exits before reaching `psql` when env vars are missing or the arg shape is wrong).
-- `evals/evals.json` — skill-level eval that exercises the "refuse and instruct when env vars are missing" behavior of the SKILL.md instructions themselves.
+The eval suite lives under `skills/postgres-skill-creator/evals/`. It has two layers — cheap shell tests that don't need a database, and a fixture-driven suite that brings up a real Postgres in a container.
 
-A full end-to-end eval loop with a containerized Postgres fixture is tracked in [#61](https://github.com/z5labs/ai/issues/61).
+### Layer 1 — `introspect.sh` shell tests (no fixture)
+
+```bash
+bash skills/postgres-skill-creator/evals/test_introspect.sh
+```
+
+Covers the credential-routing contract from [#42](https://github.com/z5labs/ai/issues/42): `introspect.sh` accepts exactly one argument (the output dir), refuses with a single complete missing-list when any of the five required libpq env vars is unset, points users at credential helpers, and forwards the right `-e` env-var set to the runtime (libpq vars in, internal config vars out). Exits before reaching `psql`, so neither Postgres nor a container runtime is required.
+
+### Layer 2 — fixture-driven skill evals (`evals/evals.json`)
+
+`evals/evals.json` holds seven evals:
+
+- **Refusal contracts** (id 0–2): the skill refuses cleanly when `PGPASSWORD` is unset, when several env vars are unset, or when a connection string is passed positionally (the `hunter2` URL test). These run cheaply against a model — no fixture needed.
+- **Lightweight happy-path** (id 3–4): the skill produces a complete `pg-<dbname>/` skill from a stipulated schema, with a non-placeholder README, model-invocable frontmatter, and a deterministically-ranked schema-qualified-and-quoted top table. These also run without a fixture (the schema is described in the prompt).
+- **End-to-end against real Postgres** (id 5): the skill runs against the live containerized fixture, and the grader actually executes the *generated* `query.sh` against the same fixture and verifies a known-row-count smoke test. This is the assertion that closes the manual-smoke gap deferred in #42.
+- **Regeneration** (id 6): a stale `pg-evaldb/` directory with a sentinel file is pre-seeded; the skill is run again; the grader verifies the directory was wiped and rewritten, not patched.
+
+#### Bringing the fixture up
+
+```bash
+eval "$(bash skills/postgres-skill-creator/evals/fixtures/postgres/up.sh)"
+```
+
+`up.sh` starts a `postgres:17-alpine` container seeded by `init.sql` (two schemas, five tables, a composite FK, a cross-schema FK, a view, an enum, indexes, comments) on a free ephemeral port and prints `KEY=VALUE` lines covering `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE`/`PG_FIXTURE_NAME`/`PG_DOCKER_ARGS`. `eval` exports them into the current shell. `bash down.sh` (or `bash down.sh <name>`) tears down. See `evals/fixtures/postgres/README.md` for the schema details.
+
+#### Grading run output
+
+`evals/grade.py` walks an iteration directory (`postgres-skill-creator-workspace/iteration-N/`) and writes `grading.json` next to each subagent's `outputs/`. Pass `--fixture-env <env-file>` so the e2e and regeneration graders can run the generated `query.sh` against the live fixture:
+
+```bash
+bash skills/postgres-skill-creator/evals/fixtures/postgres/up.sh > /tmp/pg-fixture.env
+python skills/postgres-skill-creator/evals/grade.py \
+  skills/postgres-skill-creator-workspace/iteration-1 \
+  --fixture-env /tmp/pg-fixture.env
+bash skills/postgres-skill-creator/evals/fixtures/postgres/down.sh
+```
+
+#### Running a full skill-creator iteration
+
+The end-to-end iteration loop (spawning subagents, capturing timing, grading, generating the eval viewer for human review) runs through the [skill-creator](https://github.com/anthropics/agent-skills/tree/main/example-skills/skill-creator) skill itself rather than a single shell command — start a Claude Code session in this repo and invoke the skill-creator with a pointer to `skills/postgres-skill-creator/`. The most recent iteration workspace is committed under `skills/postgres-skill-creator-workspace/iteration-N/` for the audit trail.
+
+Out-of-scope follow-ups: negative network-path evals ([#74](https://github.com/z5labs/ai/issues/74)), cross-PG-major-version coverage ([#75](https://github.com/z5labs/ai/issues/75)), description-optimization loop for slash-only skills ([#76](https://github.com/z5labs/ai/issues/76)).
