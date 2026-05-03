@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 15,
+    "failed": 0,
+    "total": 15
+  },
+  "expectations": [
+    {
+      "text": "text-fresh/kvr/testdata/sample.kvr exists",
+      "passed": true,
+      "evidence": "fixture path=/home/carson/github.com/z5labs/ai/.claude/worktrees/issue-22/plugins/file-library/skills/add-fixture-workspace/iteration-1/eval-0-text-fresh-first-fixture/with_skill/run-1/outputs/kvr/testdata/sample.kvr, exists=True"
+    },
+    {
+      "text": "text-fresh/kvr/testdata/sample.kvr is byte-identical to the original sample.kvr",
+      "passed": true,
+      "evidence": "fixture 326B, original 326B, equal=True"
+    },
+    {
+      "text": "text-fresh/kvr/testdata/ directory exists (was not present in the fixture)",
+      "passed": true,
+      "evidence": "testdata dir=/home/carson/github.com/z5labs/ai/.claude/worktrees/issue-22/plugins/file-library/skills/add-fixture-workspace/iteration-1/eval-0-text-fresh-first-fixture/with_skill/run-1/outputs/kvr/testdata, exists=True"
+    },
+    {
+      "text": "printer_test.go contains a new function named TestRoundTripFromTestdata",
+      "passed": true,
+      "evidence": "len(TestRoundTripFromTestdata body)=612"
+    },
+    {
+      "text": "TestRoundTripFromTestdata reads the fixture via os.ReadFile and a path under testdata/",
+      "passed": true,
+      "evidence": "os.ReadFile in body=True, testdata in body=True"
+    },
+    {
+      "text": "TestRoundTripFromTestdata asserts AST equality (require.Equal on two *File values), not byte equality",
+      "passed": true,
+      "evidence": "require.Equal(...first..second...) found=True"
+    },
+    {
+      "text": "Parse(file) \u2192 Print \u2192 Parse(buf) \u2192 require.Equal(first, second) shape",
+      "passed": true,
+      "evidence": "Parse count=2, Print present=True"
+    },
+    {
+      "text": "TestRoundTripFromTestdata is table-driven with a testCases slice and t.Run subtests",
+      "passed": true,
+      "evidence": "testCases in body=True, t.Run in body=True"
+    },
+    {
+      "text": "TestRoundTripFromTestdata calls t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "t.Parallel() count=2"
+    },
+    {
+      "text": "uses github.com/stretchr/testify/require",
+      "passed": true,
+      "evidence": "testify import=True"
+    },
+    {
+      "text": "go build ./... succeeds in text-fresh/kvr/",
+      "passed": true,
+      "evidence": "build clean"
+    },
+    {
+      "text": "go test -race ./... passes in text-fresh/kvr/",
+      "passed": true,
+      "evidence": "ok  \tkvr\t(cached)"
+    },
+    {
+      "text": "TestPrinter and TestPrinterRoundTrip in printer_test.go are unchanged",
+      "passed": true,
+      "evidence": "TestPrinter equal=True, TestPrinterRoundTrip equal=True"
+    },
+    {
+      "text": "tokenizer.go, parser.go, printer.go are unchanged from the fixture",
+      "passed": true,
+      "evidence": "edited files: none"
+    },
+    {
+      "text": "SPEC.md is unchanged from the fixture",
+      "passed": true,
+      "evidence": "SPEC.md equal=True"
+    }
+  ]
+}

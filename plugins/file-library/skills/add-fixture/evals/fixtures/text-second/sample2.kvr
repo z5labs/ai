@@ -1,0 +1,13 @@
+# nested-block sample harvested from a customer config
+record string ENV = "production"
+
+block FEATURES {
+    record string AUTH_V2     = "enabled";
+    record string DARK_MODE   = "disabled";
+    record string EXPERIMENTS = "alpha,beta,gamma";
+}
+
+block LIMITS {
+    record string MAX_CONNECTIONS = "256";
+    record string TIMEOUT_SECONDS = "30";
+}
