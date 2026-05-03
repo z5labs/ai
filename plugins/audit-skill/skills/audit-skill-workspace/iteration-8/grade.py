@@ -42,6 +42,51 @@ def diff_files(a: Path, b: Path) -> bool:
     return a.read_bytes() == b.read_bytes()
 
 
+def strip_quoted(text: str) -> str:
+    """Remove fenced and inline backtick spans so target text the auditor
+    cites in code-style quotes (e.g. `` `Low` `` or a fenced excerpt) does
+    not pollute label checks. Double-quoted spans are intentionally NOT
+    stripped: real severity labels can appear inside double quotes
+    (e.g. `Triage: "P0"` or `- "Critical:" gh pr create ...`), and
+    stripping them would create false negatives. The label-shape regex
+    below handles double-quoted prose by relying on context instead."""
+    text = re.sub(r"```.*?```", "", text, flags=re.S)
+    text = re.sub(r"`[^`\n]*`", "", text)
+    return text
+
+
+# Severity-tier labels are only flagged in label-shaped contexts so that
+# bare prose mentions of a severity word (e.g. a quoted heading like
+# "High-level workflow" or quoted target text like "P0 incident handler")
+# do not register as the auditor using severity tiers. P0/P1 codes are
+# treated the same way as the named tiers — no bare match — so that quoted
+# target text containing them does not trip the check either.
+#
+# Recognised shapes (TIER = Critical/High/Medium/Low/P0/P1):
+#   - "<TIER>:" / "<TIER> —" / "<TIER> –" with optional ** wrappers
+#     around the word (e.g. "Critical:", "**P0:**", "**Critical**:")
+#   - ":<TIER>" prefix form, allowing whitespace, ** wrappers, and quote
+#     characters between the colon and the tier
+#     (e.g. "Severity: High", "Priority: **High**", 'Triage: "P0"')
+#   - "<TIER> <noun>" suffix form, where noun ∈ {severity, priority, risk,
+#     impact, finding, issue, tier} (singular or plural), with optional
+#     ** wrappers between the tier and the noun
+#     (e.g. "High severity", "**High** priority", "Critical findings",
+#     "P0 incidents" if "incident" were in the noun set — currently isn't)
+_TIER = r"(?:Critical|High|Medium|Low|P[01])"
+_NOUN = r"(?:severity|priority|risk|impact|finding|issue|tier)s?"
+# The negative lookahead `(?![-\w])` after the tier in the colon-prefix
+# alternative prevents matches like "differently: high-level" (compound
+# word continuation) while still allowing "Triage: P0", `Severity: "High"`,
+# etc. where the tier is a standalone token.
+SEVERITY_LABEL_RE = re.compile(
+    rf"\b{_TIER}[\s*]*[:—–]"
+    rf"|:[\s*\"']*{_TIER}\b(?![-\w])"
+    rf"|\b{_TIER}[\s*]+{_NOUN}\b",
+    re.IGNORECASE,
+)
+
+
 def count_findings(report: str) -> dict:
     """Count findings under each objective heading. Returns {objective: count}."""
     sections = {}
@@ -98,7 +143,7 @@ def grade_eval(eval_id: int, config: str) -> dict:
     file_line_refs = len(re.findall(r"`?[A-Za-z0-9_./\-]+\.md:\d+", report))
     findings_with_citations = file_line_refs
     findings_total = total_findings
-    severity_words = re.search(r"\b(Critical|High|Medium|Low|P0|P1)\b", report)
+    severity_words = SEVERITY_LABEL_RE.search(strip_quoted(report))
 
     expectations = []
     for a in metadata["assertions"]:
