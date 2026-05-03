@@ -54,17 +54,32 @@ mkdir -p "/tmp/kafka-introspect-${TEAM}/schemas"
 
 for TOPIC in "${TOPICS[@]}"; do
   safe="$(printf '%s' "$TOPIC" | sed 's/[^A-Za-z0-9._-]/_/g')"
+  out_path="/tmp/kafka-introspect-${TEAM}/schemas/${safe}.json"
+
+  # Stage the response in a temp file and only mv it to the final path on
+  # success. Plain `> $out_path` would truncate the destination *before*
+  # the curl call ran, so a 404 (or any other failure) would leave behind
+  # an empty file that downstream rendering can't distinguish from a
+  # successfully-fetched empty schema. With this shape, "file exists"
+  # reliably means "schema was fetched".
+  tmp_out="$(mktemp "${TMPDIR:-/tmp}/sr-fetch.XXXXXX")"
+
   # `-e SR_*` (no `=value`) tells docker to read each var from the host env
   # and forward it to the container. Argv only carries the var NAME.
   # Inside the container, `curl -K -` reads `--user` from stdin so the
   # password never lands in argv there either.
-  "$RUNTIME" run --rm -i \
-    -e SR_URL -e SR_USER -e SR_PASS -e TOPIC \
-    "$CURL_IMAGE" \
-    sh -c 'printf "user = %s:%s\n" "$SR_USER" "$SR_PASS" \
-           | curl -sf -K - "$SR_URL/subjects/$TOPIC-value/versions/latest"' \
-    > "/tmp/kafka-introspect-${TEAM}/schemas/${safe}.json" \
-    || echo "warning: schema fetch failed for $TOPIC; continuing" >&2
+  if "$RUNTIME" run --rm -i \
+       -e SR_URL -e SR_USER -e SR_PASS -e TOPIC \
+       "$CURL_IMAGE" \
+       sh -c 'printf "user = %s:%s\n" "$SR_USER" "$SR_PASS" \
+              | curl -sf -K - "$SR_URL/subjects/$TOPIC-value/versions/latest"' \
+       > "$tmp_out"
+  then
+    mv -- "$tmp_out" "$out_path"
+  else
+    rm -f -- "$tmp_out"
+    echo "warning: schema fetch failed for $TOPIC; skipping (no file written)" >&2
+  fi
 done
 ```
 

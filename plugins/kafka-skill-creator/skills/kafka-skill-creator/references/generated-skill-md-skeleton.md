@@ -50,11 +50,15 @@ Attempting to invoke any of the scripts with a topic or group outside this list 
 
 The team operates against these contexts: <list of context names>.
 
-Each script reads a `.env.<ctx>` file at runtime (resolution order: `--env-file PATH` → `KAFKA_ENV_FILE` → `./.env`) and passes `--context <ctx>` to kafkactl. Cluster shape (broker list, SASL mechanism, TLS, Schema Registry auth) is defined entirely through kafkactl's `CONTEXTS_<NAME>_*` env-var convention — the static fields come from `_common.sh`'s baked-in `export` block, the secrets come from the `.env.<ctx>` file. There is no separate kafkactl config file; everything kafkactl needs is in the environment when the wrapper exec's the container.
+Each script reads an env file at runtime, resolved in this order (first match wins): `--env-file PATH` (per-invocation), `KAFKA_ENV_FILE` (whole-shell), `./.env` (cwd). There is no automatic `.env.<ctx>` lookup — the convention is to *name* per-environment files `.env.dev` / `.env.prod` / etc. and select one with `--env-file` or `KAFKA_ENV_FILE`. Each script also passes `--context <ctx>` to kafkactl, which selects which `CONTEXTS_<UPPER>_*` env vars (loaded from the env file) apply.
+
+Cluster shape (broker list, SASL mechanism, TLS, Schema Registry auth) is defined entirely through kafkactl's `CONTEXTS_<NAME>_*` env-var convention — the static fields come from `_common.sh`'s baked-in `export` block, the secrets come from the env file. There is no separate kafkactl config file; everything kafkactl needs is in the environment when the wrapper exec's the container.
 
 ### One-time setup
 
-    cp .claude/skills/kafka-<team>/scripts/.env.example .env.dev
+Run from this skill's directory (whatever path the generator wrote it to):
+
+    cp scripts/.env.example .env.dev
     # edit .env.dev — set CONTEXTS_DEV_BROKERS, CONTEXTS_DEV_SASL_USERNAME, CONTEXTS_DEV_SASL_PASSWORD,
     # and (if the team uses Schema Registry) CONTEXTS_DEV_SCHEMAREGISTRY_*.
 
@@ -65,11 +69,13 @@ Repeat for each context. Add the chosen filename(s) to `.gitignore` so secrets d
 
 ### Per-invocation usage
 
-    bash .claude/skills/kafka-<team>/scripts/describe-topic.sh <topic> --context dev
-    bash .claude/skills/kafka-<team>/scripts/lag.sh <group> --context prod --env-file .env.prod
-    bash .claude/skills/kafka-<team>/scripts/reset-offsets.sh <group> --topic <topic> --to-earliest --dry-run --context staging
+Paths below are relative to this skill's directory. If you're invoking from elsewhere, use the full path the generator wrote (e.g. `./.claude/skills/kafka-<team>/scripts/...`, or `plugins/team-<team>/skills/kafka-<team>/scripts/...` if the skill lives in a plugin tree).
 
-If `--context` doesn't match a context the loaded `.env` populated, kafkactl's lookup fails closed (the env vars for that context aren't set, so kafkactl won't authenticate). Same fail-closed property postgres-skill-creator relies on.
+    bash scripts/describe-topic.sh <topic> --context dev
+    bash scripts/lag.sh <group> --context prod --env-file .env.prod
+    bash scripts/reset-offsets.sh <group> --topic <topic> --to-earliest --dry-run --context staging
+
+If `--context` doesn't match a context the loaded env file populated, kafkactl's lookup fails closed (the env vars for that context aren't set, so kafkactl won't authenticate). Same fail-closed property postgres-skill-creator relies on.
 
 ## Reference docs
 

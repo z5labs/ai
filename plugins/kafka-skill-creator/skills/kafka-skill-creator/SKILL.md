@@ -68,7 +68,11 @@ The path's parent directory must already exist (the operator chose where the ski
 - If it doesn't exist: create it.
 - If it does exist: delete it and recreate it. Overwrite is intentional — manifests drift, and stale allowlists / references mislead.
 
-Before deleting, validate that the resolved leaf segment is non-empty and not `/`, `.`, `..`, `~`, or `*` — basic sanity guards against catastrophic deletes from a malformed `--output`.
+Before deleting, validate the path against three layers of guards. Same shape `introspect.sh` uses for its `--output` argument; the rationale and patterns are documented at length there.
+
+1. **Reject literal danger shapes.** Refuse if the leaf segment is empty, `/`, `.`, `..`, `~`, or `*`, or if `--output` itself is empty / leading-whitespace.
+2. **Reject paths whose components include `..`** (e.g. `--output /tmp/a/../../etc`). `rm -rf` resolves the path before deletion, so a `..` segment slipping past the leaf check would still let the wipe land on a parent directory. Match `..` at any position: leading (`../foo`), trailing (`foo/..`), middle (`foo/../bar`).
+3. **No leaf-prefix requirement here.** Unlike `introspect.sh`'s scratch dir (which always starts with `kafka-introspect-`), `--output` is a deliberate operator choice that may legitimately be `./.claude/skills/kafka-payments/`, `plugins/team-payments/skills/kafka-payments/`, or anywhere else. The two guards above plus path-safety on `team` (Precondition 4) are the safety net; the operator owns the rest.
 
 ### Optional environment overrides
 
