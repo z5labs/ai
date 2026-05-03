@@ -78,7 +78,8 @@
         {"id": "generated-skill-is-model-invocable", "text": "the generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true` — the team-level skill is meant to fire on natural-language prompts, not require a slash command"},
         {"id": "generated-readme-exists", "text": "a README.md is written at the output root with sample uses for each wrapper (consume.sh / describe-topic.sh / describe-group.sh / lag.sh / reset-offsets.sh), so an engineer can use the skill without opening SKILL.md"},
         {"id": "smoke-test-failure-surfaced", "text": "if the smoke test fails (broker unreachable), the assistant surfaces the failure rather than claiming success"},
-        {"id": "reminds-about-plugin-json", "text": "the reporting mentions that the operator may need to register the new skill in the plugin's plugin.json since --output landed inside a plugin tree"}
+        {"id": "reminds-about-plugin-json", "text": "the reporting mentions that the operator may need to register the new skill in the plugin's plugin.json since --output landed inside a plugin tree"},
+        {"id": "no-unsubstituted-template-tokens", "text": "no file under the output directory contains an unsubstituted template token from the deny-list — `<team>`, `<env list>`, `<list of context names>`, `<top topics>`, `<bullet list>`, `<first-topic>`, `<first-group>`, `<this-directory>`, `<sasl_mechanism from manifest>`, `<UPPER>`/`<UPPER-N>`, `<topic-N>`, `<group-N>`, `<ctx-N>` — every one of these is a substitution placeholder that must be replaced with a real value at generation time. (`<topic>`, `<group>`, `<ctx>`, `<flag-name>`, `<T>`, `<NAME>`, `<CTX>`, `<FIELD>` MAY appear in generated USAGE strings and kafkactl env-var docs and are NOT failures.)"}
       ]
     },
     {

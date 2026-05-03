@@ -352,7 +352,7 @@ After writing files, check:
 - `<output>/scripts/.env.example` has one block per declared context
 - `<output>/scripts/manifest.yml` is a verbatim copy of the input manifest (or the in-memory manifest built from manual flags)
 - `<output>/references/cluster.md`, `<output>/references/topics.md`, and `<output>/references/groups.md` all exist and are non-empty
-- No file under `<output>/` contains an unsubstituted `<...>` placeholder (grep for `<` followed by an identifier-shape — there will be matches in markdown table headers and SQL-style placeholders that are intentional, so check by regex `<[a-z_-]+>` and audit hits)
+- No file under `<output>/` contains an unsubstituted template token. Refuse if `grep -rE '<(team|env list|list of context names|top topics|bullet list|first-topic|first-group|this-directory|sasl_mechanism from manifest|UPPER(-[0-9]+)?|topic-[0-9]+|group-[0-9]+|ctx-[0-9]+)>' <output>/` returns any match — every entry in that pattern is a substitution placeholder from the skeleton templates that the generator must replace with real values. The regex is enumerated rather than open-ended (`<[a-z_-]+>`) on purpose: `<topic>`, `<group>`, `<ctx>`, `<flag-name>`, `<T>`, `<NAME>`, `<CTX>`, `<FIELD>` legitimately appear in generated USAGE strings and kafkactl env-var docs, so a blanket "any angle-bracket identifier" check would false-fire on the documentation surface of the wrappers.
 
 ## Step 5: Smoke test
 
