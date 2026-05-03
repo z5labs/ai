@@ -6,7 +6,8 @@ A Claude Code plugin that introspects a Postgres database and generates a projec
 
 After running, you get a skill at `./.claude/skills/pg-<dbname>/` containing:
 
-- `SKILL.md` — schema-specific triggering description and a quickstart for running queries.
+- `SKILL.md` — what Claude reads when the skill triggers. Model-invocable by default (no `disable-model-invocation`) so it fires on natural-language prompts like "how many rows in `orders` last week?", not just on `/pg-<dbname>` slash invocations.
+- `README.md` — human-facing quickstart with copy-paste samples for `query.sh` (smoke test, real-table count, multi-statement via stdin, per-environment via `--env-file`), the `.env`-per-environment workflow, the credential-helper pointer, and the regeneration command. This is the file an engineer reads when onboarding to a project that uses the skill.
 - `scripts/query.sh` — wrapper that runs `psql` inside a container, with the dbname baked in and host/port/user/password loaded from a `.env` file.
 - `scripts/.env.example` — the keys `query.sh` understands, with the generation-time values pre-filled as commented defaults.
 - `references/` — Markdown reference files describing tables, foreign-key relationships, views, indexes, and (when present) enums.

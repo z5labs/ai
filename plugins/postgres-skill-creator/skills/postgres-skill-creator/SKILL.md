@@ -67,7 +67,17 @@ Create these files under `./.claude/skills/pg-<dbname>/` (where `<dbname>` is th
 
 ### `SKILL.md`
 
-Use this skeleton; substitute the `<...>` placeholders with real content. The frontmatter `description` is what determines triggering, so make it specific to this database — name the database, mention that it's for ad-hoc reads/writes, and list a few of the most prominent table names (top 3–5 by column count or by appearing in the most foreign keys).
+Use this skeleton; substitute the `<...>` placeholders with real content. The frontmatter `description` is what determines triggering, so make it specific to this database — name the database, mention that it's for ad-hoc reads/writes, and list the **top 3–5 prominent tables** (computed once from introspection by the deterministic rule below).
+
+**Top-table ranking (deterministic).** Both the SKILL.md `<top tables>` list above and the README's `<top tables>` / `<top-table>` substitutions use the same ranked list. Compute it once per generation by sorting all tables in `tables.tsv` by:
+
+1. **FK reference row count DESC** — count rows in `foreign_keys.tsv` where `(ref_schema, ref_table)` equals this table. Hub tables (the ones lots of other tables reference) rank highest because they're the most useful orientation signal for an engineer skimming the README. Composite foreign keys contribute multiple rows (one per referenced column) since `foreign_keys.tsv` carries no constraint identifier — that's fine semantically because a multi-column-composite-FK target is in fact a higher-traffic join target than a single-column one. If you ever need to count *distinct* FK constraints rather than referenced columns, that's a deeper change to the introspection output, not the ranking rule.
+2. **Column count DESC** — break ties from rule 1 by table width.
+3. **`(schema, table_name)` ASC** — lexicographic, final tie-breaker.
+
+Take the top 5 (or fewer if the schema has fewer than 5 tables) for `<top tables>`. The single first entry is `<top-table>`. Allowing "either column count or FK references" would let two runs over the same schema produce different output, which makes the generated skill's diff/audit story brittle — pick this rule and stick to it.
+
+**Do NOT set `disable-model-invocation: true` on the generated skill.** The generated `pg-<dbname>` skill is meant to fire automatically when its description matches the user's prose ("how many rows in `orders` last week?", "which users haven't logged in in 30 days?"). Disabling model invocation would force the user to type `/pg-<dbname>` explicitly to use it, which defeats the point of having a per-database skill that the model recognizes by table-name context. The meta-generator (this `postgres-skill-creator`) is slash-only because *it* requires deliberate invocation; the *generated* skill should not inherit that property. Omit the field — Claude Code's default is "model-invocable" — rather than setting it to `false` (the field's name is a footgun; explicit `false` reads like an extra knob even though it's just the default).
 
 ```markdown
 ---
@@ -299,6 +309,19 @@ A commented template the user copies to a real `.env` (or per-environment `.env.
 # forwarded to psql inside the container.
 ```
 
+### `README.md`
+
+A human-facing README the engineer reads when they open the `pg-<dbname>/` directory or onboard a new teammate. SKILL.md is written for Claude when triggering; the README is for the human who's about to use the skill.
+
+Read `references/generated-readme-skeleton.md` for the verbatim template. Substitute the `<...>` placeholders with real values from introspection at generation time:
+
+- `<dbname>` — the value of `PGDATABASE`
+- `<top tables>` — the same 3–5 ranked tables you put in the SKILL.md frontmatter description, computed once by the **Top-table ranking** rule above. Render each as a bare `table` name (the description is prose, not SQL).
+- `<top-table>` — the **first** entry of `<top tables>`, formatted for SQL as a **schema-qualified, double-quoted identifier**: `"<schema>"."<table>"`. The README's row-count sample is supposed to be runnable copy-paste, so it must work for any introspected name — including non-`public` schemas, identifiers that need quoting (mixed case, spaces, reserved words like `Order`), and duplicate table names across schemas. A bare `users` would fail on `analytics."UserSessions"`-shaped tables; always-quote is safe because Postgres treats `"users"` and `users` as the same object when the stored name is lowercase.
+- `<table count>`, `<view count>`, `<enum count>` — totals from introspection (drop the enums clause entirely if `enums.tsv` was empty)
+
+The README must include working samples for `query.sh` (smoke test, real-table count, multi-statement via stdin, per-environment via `--env-file`), the one-time `.env` setup, the credential-helper pointer, and the regeneration command — those are the things engineers ask first when they open the skill directory.
+
 ### `references/tables.md`
 
 For each table, a section like:
@@ -361,6 +384,9 @@ Only create this file if `enums.tsv` is non-empty.
 
 After writing files, check:
 - `.claude/skills/pg-<dbname>/SKILL.md` exists and is non-empty
+- `.claude/skills/pg-<dbname>/SKILL.md`'s frontmatter does **not** contain `disable-model-invocation: true` (the generated skill must be model-invocable so it fires on natural-language prompts)
+- `.claude/skills/pg-<dbname>/README.md` exists and is non-empty
+- `.claude/skills/pg-<dbname>/README.md` has no unsubstituted `<...>` placeholders — `grep -E '<dbname>|<top tables?>|<top-table>|<table count>|<view count>|<enum count>'` should return nothing. The README is assembled from a placeholder-heavy template, so a generation bug can easily leave a literal like `<table count>` in the opening paragraph; verifying README existence alone won't catch that
 - `.claude/skills/pg-<dbname>/scripts/query.sh` is executable
 - `.claude/skills/pg-<dbname>/scripts/.env.example` exists
 - At least `references/tables.md` and `references/relationships.md` exist
