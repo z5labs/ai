@@ -1,0 +1,8 @@
+Refused per add-fixture SKILL.md collision rule.
+
+- Colliding path: kvr/testdata/sample.kvr already exists (247 bytes, content begins "# this is the EXISTING fixture (already pinned by a previous run)").
+- Incoming source: sample.kvr (364 bytes, content begins "# this is the NEW file the user is trying to add"). Bytes differ from the existing fixture.
+- Why refused: SKILL.md is explicit — "Refuse on collision; never overwrite... There is no --force, no merge, no skip-if-identical." The user's offer to "pick something that won't clobber" does not authorize the skill to silently invent an alternate filename; the skill requires the user to choose a non-colliding name or remove the existing fixture first.
+- No filesystem changes made. kvr/testdata/sample.kvr is untouched. kvr/printer_test.go is untouched.
+
+Next step for the user: either rename the incoming file to a non-colliding fixture name (e.g. sample_v2.kvr) and re-run, or delete kvr/testdata/sample.kvr first if the new bytes are meant to replace the pin.

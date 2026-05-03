@@ -1,0 +1,10 @@
+# this is the NEW file the user is trying to add
+# its filename collides with an existing fixture in testdata/sample.kvr
+# the skill must refuse, not overwrite — these bytes are intentionally different
+record string NEW_INCOMING = "v2"
+
+block CHANGED {
+    record string FOO = "new";
+    record string BAR = "different";
+    record string NEW_FIELD = "added";
+}

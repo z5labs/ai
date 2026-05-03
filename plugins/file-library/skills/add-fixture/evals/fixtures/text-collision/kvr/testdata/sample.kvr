@@ -1,0 +1,8 @@
+# this is the EXISTING fixture (already pinned by a previous run)
+# it is different from the file the user is now trying to add
+record string ALREADY_PINNED = "v1"
+
+block STABLE {
+    record string FOO = "old";
+    record string BAR = "stable";
+}

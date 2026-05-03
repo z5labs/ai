@@ -1,0 +1,18 @@
+{
+  "eval_id": 3,
+  "eval_name": "text-collision-refusal",
+  "prompt": "Add `./text-collision/sample.kvr` as a fixture for the kvr package at `./text-collision/kvr`. The package already has a `testdata/sample.kvr` from a previous run; the file I'm adding has the same basename but different bytes — use the same name in testdata/ if that's how the skill works, or pick something that won't clobber the existing one.",
+  "assertions": [
+    {"id": "existing-fixture-bytes-unchanged", "text": "text-collision/kvr/testdata/sample.kvr is byte-identical to the original fixture's testdata/sample.kvr (was not overwritten)"},
+    {"id": "no-new-fixture-files", "text": "text-collision/kvr/testdata/ contains exactly one file (the pre-existing sample.kvr); no new fixture file was added under any name"},
+    {"id": "incoming-source-untouched", "text": "text-collision/sample.kvr (the user's incoming file) is byte-identical to the original — neither moved nor modified"},
+    {"id": "test-file-unchanged", "text": "text-collision/kvr/printer_test.go is unchanged from the fixture (no test entry added, no test reshaped)"},
+    {"id": "agent-reports-collision", "text": "The agent's final response explicitly identifies the collision"},
+    {"id": "agent-instructs-remediation", "text": "The agent's final response tells the user how to resolve it"},
+    {"id": "agent-did-not-pick-alternate-name", "text": "The agent did NOT silently invent an alternate fixture name and proceed"},
+    {"id": "no-source-edits", "text": "tokenizer.go, parser.go, printer.go are unchanged from the fixture"},
+    {"id": "no-spec-edits", "text": "SPEC.md is unchanged from the fixture"},
+    {"id": "go-build-passes", "text": "go build ./... still succeeds (refusal does not corrupt the package)"},
+    {"id": "go-test-passes", "text": "go test -race ./... still passes"}
+  ]
+}
