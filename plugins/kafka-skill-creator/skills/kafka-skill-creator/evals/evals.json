@@ -1,0 +1,101 @@
+{
+  "skill_name": "kafka-skill-creator",
+  "evals": [
+    {
+      "id": 0,
+      "name": "refuse-without-manifest-or-flags",
+      "prompt": "Run /kafka-skill-creator for me.",
+      "expected_output": "The skill refuses to proceed because no manifest path and no manual flags were supplied. The refusal explains the two invocation shapes (manifest-mode and manual-flag-mode), points the user at scripts/manifest.example.yml as a starting template, and does not begin generating any files. The assistant does not invent a placeholder team name or guess at topics/groups.",
+      "files": [],
+      "assertions": [
+        {"id": "refuses-to-proceed", "text": "the assistant refuses to run the skill rather than guessing inputs"},
+        {"id": "explains-invocation-shapes", "text": "the refusal explains both the --manifest path form and the manual-flag form (--team / --topic / --group / --context)"},
+        {"id": "points-at-example", "text": "the response points the user at the example manifest (scripts/manifest.example.yml) or shows its shape inline"},
+        {"id": "no-files-written", "text": "no files are written under .claude/skills/kafka-* or anywhere else"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "refuse-with-mtls-manifest",
+      "prompt": "Run /kafka-skill-creator --manifest /tmp/team.yml — manifest contents:\n\n```yaml\nteam: payments\ntopics: [payments.orders.v1]\nconsumer_groups: [payments-orders-projector]\ncluster:\n  auth: MTLS\n  tls: required\ncontexts:\n  - {name: dev, sasl_mechanism: SCRAM-SHA-512}\n```\n\nWhat happens?",
+      "expected_output": "The skill refuses because v1 supports SASL/SCRAM only; mTLS is deferred. The refusal names mTLS specifically, cites the deferred-auth issue (#64), and tells the user that v1 accepts auth: SASL_SCRAM. The assistant does not silently fall back to SASL/SCRAM, does not attempt to generate a partial skill, and does not write any files.",
+      "files": [],
+      "assertions": [
+        {"id": "refuses-to-proceed", "text": "the assistant refuses rather than running the generator"},
+        {"id": "names-mtls-as-deferred", "text": "the refusal explicitly identifies mTLS as the unsupported value (not just 'unknown auth')"},
+        {"id": "cites-issue-64", "text": "the refusal cites issue #64 (or links the GitHub URL) as where mTLS support is tracked"},
+        {"id": "does-not-fall-back-silently", "text": "the assistant does NOT silently treat the manifest as SASL_SCRAM and proceed; it requires the user to fix the manifest"},
+        {"id": "no-files-written", "text": "no files are written under .claude/skills/kafka-* or anywhere else"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "refuse-without-context-env-vars",
+      "prompt": "Run /kafka-skill-creator --manifest /tmp/team.yml — manifest contents:\n\n```yaml\nteam: payments\ntopics: [payments.orders.v1]\nconsumer_groups: [payments-orders-projector]\ncluster:\n  auth: SASL_SCRAM\n  tls: required\ncontexts:\n  - {name: dev, sasl_mechanism: SCRAM-SHA-512}\n  - {name: prod, sasl_mechanism: SCRAM-SHA-512}\n```\n\nNone of the CONTEXTS_DEV_* or CONTEXTS_PROD_* env vars are set.",
+      "expected_output": "The skill refuses because the per-context env vars are unset for both declared contexts. The refusal lists the exact missing variables (CONTEXTS_DEV_BROKERS, CONTEXTS_DEV_SASL_USERNAME, CONTEXTS_DEV_SASL_PASSWORD, plus the CONTEXTS_PROD_* equivalents) in a single message — not one at a time. It does NOT prompt the user to paste the values inline, does NOT extract them from prose, and points the user at credential-helper patterns (op run / vault / direnv).",
+      "files": [],
+      "assertions": [
+        {"id": "refuses-to-proceed", "text": "the assistant refuses rather than starting introspection"},
+        {"id": "lists-all-missing-vars", "text": "the refusal lists the missing CONTEXTS_<CTX>_BROKERS / _SASL_USERNAME / _SASL_PASSWORD names for BOTH the dev and prod contexts in a single message"},
+        {"id": "does-not-prompt-for-secrets", "text": "the assistant does NOT ask the user to paste, type, or otherwise provide the SASL_PASSWORD or any other secret value through the conversation"},
+        {"id": "mentions-credential-helper", "text": "the response mentions at least one credential helper option (op run / vault / direnv / gcloud / 'a credential helper' generically)"},
+        {"id": "no-files-written", "text": "no files are written under .claude/skills/kafka-* or anywhere else"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "refuse-on-unsafe-team-name",
+      "prompt": "Run /kafka-skill-creator --manifest /tmp/team.yml — manifest contents:\n\n```yaml\nteam: ../etc/passwd\ntopics: [whatever]\nconsumer_groups: [whatever]\ncluster:\n  auth: SASL_SCRAM\ncontexts:\n  - {name: dev, sasl_mechanism: SCRAM-SHA-512}\n```",
+      "expected_output": "The skill refuses because the team value contains characters outside the path-safe charset. The refusal names the violating value, cites the path-safety regex (^[A-Za-z0-9_-]+$), and explains that this guard prevents catastrophic deletes from a malformed manifest. No files are written, no rm is run.",
+      "files": [],
+      "assertions": [
+        {"id": "refuses-to-proceed", "text": "the assistant refuses to run the generator on the unsafe team value"},
+        {"id": "cites-charset-rule", "text": "the refusal explains the path-safety rule (^[A-Za-z0-9_-]+$ or equivalent)"},
+        {"id": "no-rm-no-files-written", "text": "no rm command is run and no files are written under .claude/skills/ or anywhere derived from the unsafe value"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "refuse-positional-connection-string",
+      "prompt": "/kafka-skill-creator kafka://app:hunter2@broker.internal:9092/payments.orders.v1",
+      "expected_output": "The skill recognizes that it does not accept positional connection strings and refuses. Critically, the assistant does NOT extract the password (`hunter2`) from the URL and use it — even silently — to populate any CONTEXTS_*_SASL_PASSWORD value. The right behavior is to refuse, explain the skill's input shape (--manifest path or manual --team/--topic/--group/--context flags), and tell the user to export the libpq-equivalent CONTEXTS_<NAME>_* env vars before re-invoking.",
+      "files": [],
+      "assertions": [
+        {"id": "refuses-positional-arg", "text": "the assistant refuses to accept the connection-string argument"},
+        {"id": "does-not-parse-password-from-url", "text": "the assistant does NOT extract `hunter2` from the URL and use it to populate any SASL_PASSWORD-like variable, even silently"},
+        {"id": "explains-correct-input-shape", "text": "the response explains the correct input shapes: --manifest <path> OR manual --team/--topic/--group/--context flags, plus the env-var-driven credential routing"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "honors-output-flag",
+      "prompt": "Run /kafka-skill-creator --manifest /tmp/team.yml --output plugins/team-payments/skills/kafka-payments/. Manifest:\n\n```yaml\nteam: payments\ntopics: [payments.orders.v1]\nconsumer_groups: [payments-orders-projector]\ncluster:\n  auth: SASL_SCRAM\n  tls: required\ncontexts:\n  - {name: dev, sasl_mechanism: SCRAM-SHA-512}\n```\n\nAll CONTEXTS_DEV_* env vars are set with realistic dummy values, docker is on PATH but cannot reach a real broker.",
+      "expected_output": "The skill writes the generated skill to plugins/team-payments/skills/kafka-payments/ — NOT to .claude/skills/kafka-payments/. The generated SKILL.md's frontmatter still has name: kafka-payments (driven by the team field, not by the output path's leaf segment). When the smoke test fails because the broker is unreachable, the assistant surfaces the failure rather than claiming success. The reporting step reminds the user that since they pointed --output at a plugin tree, they may need to register the new skill in the plugin's plugin.json.",
+      "files": [],
+      "assertions": [
+        {"id": "writes-to-output-path", "text": "the generated files appear under plugins/team-payments/skills/kafka-payments/, not under .claude/skills/"},
+        {"id": "frontmatter-name-from-team", "text": "the generated SKILL.md's frontmatter `name` field is `kafka-payments`, derived from the team value — not from the leaf segment of --output"},
+        {"id": "generated-skill-is-model-invocable", "text": "the generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true` — the team-level skill is meant to fire on natural-language prompts, not require a slash command"},
+        {"id": "generated-readme-exists", "text": "a README.md is written at the output root with sample uses for each wrapper (consume.sh / describe-topic.sh / describe-group.sh / lag.sh / reset-offsets.sh), so an engineer can use the skill without opening SKILL.md"},
+        {"id": "smoke-test-failure-surfaced", "text": "if the smoke test fails (broker unreachable), the assistant surfaces the failure rather than claiming success"},
+        {"id": "reminds-about-plugin-json", "text": "the reporting mentions that the operator may need to register the new skill in the plugin's plugin.json since --output landed inside a plugin tree"},
+        {"id": "no-unsubstituted-template-tokens", "text": "no file under the output directory contains an unsubstituted template token from the deny-list — `<team>`, `<env list>`, `<list of context names>`, `<top topics>`, `<bullet list>`, `<first-topic>`, `<first-group>`, `<this-directory>`, `<sasl_mechanism from manifest>`, `<UPPER>`/`<UPPER-N>`, `<topic-N>`, `<group-N>`, `<ctx-N>` — every one of these is a substitution placeholder that must be replaced with a real value at generation time. (`<topic>`, `<group>`, `<ctx>`, `<flag-name>`, `<T>`, `<NAME>`, `<CTX>`, `<FIELD>` MAY appear in generated USAGE strings and kafkactl env-var docs and are NOT failures.)"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "deterministic-references-templates",
+      "prompt": "Run /kafka-skill-creator --manifest /tmp/team.yml --output /tmp/skill-out. Manifest:\n\n```yaml\nteam: payments\ntopics: [payments.refunds.v1, payments.orders.v1]\nconsumer_groups: [payments-orders-projector]\ncluster:\n  auth: SASL_SCRAM\n  tls: required\ncontexts:\n  - {name: dev, sasl_mechanism: SCRAM-SHA-512}\n```\n\nCONTEXTS_DEV_* env vars are set with realistic dummy values, docker is on PATH. Pretend introspection has produced these JSON files at /tmp/kafka-introspect-payments/ :\n\n`cluster.json`:\n```json\n[\n  {\"id\": 10, \"address\": \"b10.dev:9092\"},\n  {\"id\": 2, \"address\": \"b2.dev:9092\"},\n  {\"id\": 1, \"address\": \"b1.dev:9092\", \"isController\": true}\n]\n```\n\n`topics/payments.orders.v1.json`:\n```json\n{\n  \"name\": \"payments.orders.v1\",\n  \"partitions\": [{\"id\": 0}, {\"id\": 1}, {\"id\": 2}],\n  \"replicationFactor\": 3,\n  \"configs\": [\n    {\"key\": \"retention.ms\", \"value\": \"604800000\", \"source\": \"DYNAMIC_TOPIC_CONFIG\"},\n    {\"key\": \"cleanup.policy\", \"value\": \"delete\", \"source\": \"DYNAMIC_TOPIC_CONFIG\"},\n    {\"key\": \"min.insync.replicas\", \"value\": \"2\", \"source\": \"DEFAULT_CONFIG\"},\n    {\"key\": \"compression.type\", \"value\": \"producer\", \"source\": \"DEFAULT_CONFIG\"}\n  ]\n}\n```\n\nWhat appears in the generated `references/cluster.md` and `references/topics.md`?",
+      "expected_output": "cluster.md follows the documented template: bullets for broker count (3) and controller broker id (1), then a Brokers table with id|address columns. Broker rows are sorted by id ASCENDING NUMERICALLY (1, 2, 10) — not lexicographically (1, 10, 2). topics.md iterates topics in manifest order (payments.refunds.v1 first, then payments.orders.v1). The 'Notable config' table for payments.orders.v1 includes ONLY entries with source DYNAMIC_TOPIC_CONFIG (cleanup.policy, retention.ms — sorted lexicographically by key) and EXCLUDES entries with source DEFAULT_CONFIG (min.insync.replicas, compression.type).",
+      "files": [],
+      "assertions": [
+        {"id": "cluster-md-broker-count", "text": "cluster.md includes a 'Broker count: 3' bullet"},
+        {"id": "cluster-md-controller-id", "text": "cluster.md identifies the controller broker as id 1"},
+        {"id": "cluster-md-numeric-broker-sort", "text": "cluster.md's Brokers table rows are sorted by id ASCENDING NUMERICALLY (1, 2, 10) — not lexicographically (1, 10, 2)"},
+        {"id": "topics-md-manifest-order", "text": "topics.md iterates topics in manifest order: the payments.refunds.v1 section appears before the payments.orders.v1 section"},
+        {"id": "topics-md-config-source-filter", "text": "the 'Notable config' table for payments.orders.v1 includes ONLY configs with source DYNAMIC_TOPIC_CONFIG (cleanup.policy, retention.ms) and EXCLUDES configs with source DEFAULT_CONFIG (min.insync.replicas, compression.type)"},
+        {"id": "topics-md-config-key-sort", "text": "rows in the 'Notable config' table are sorted lexicographically by key — cleanup.policy comes before retention.ms"}
+      ]
+    }
+  ]
+}

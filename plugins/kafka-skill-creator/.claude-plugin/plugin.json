@@ -1,0 +1,8 @@
+{
+  "name": "kafka-skill-creator",
+  "description": "Generate a per-team Kafka research skill (kafka-<team>) from a manifest, baking owned topics, consumer groups, and Schema Registry definitions into a project-level skill for self-service investigation",
+  "version": "0.1.0",
+  "author": {
+    "name": "z5labs"
+  }
+}

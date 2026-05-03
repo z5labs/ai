@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://z5labs.dev/kafka-skill-creator/manifest.schema.json",
+  "title": "kafka-skill-creator manifest (v1)",
+  "description": "Declares the Kafka topics, consumer groups, cluster shape, and per-environment contexts owned by a team. The generator turns a valid manifest into a kafka-<team> skill. v1 supports SASL/SCRAM and Schema Registry basic auth only; mTLS (#64), SASL/PLAIN (#63), and OAUTHBEARER (#65) are tracked separately.",
+  "type": "object",
+  "required": ["team", "topics", "consumer_groups", "cluster", "contexts"],
+  "additionalProperties": false,
+  "properties": {
+    "team": {
+      "type": "string",
+      "description": "Team identifier. Drives the generated skill name (kafka-<team>). Restricted to a path-safe character set so it can be used as a single path segment without escaping.",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "topics": {
+      "type": "array",
+      "description": "Topics this team owns. Becomes the topic allowlist embedded in every generated script — scripts refuse to operate on names not in this list.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9._-]+$"
+      }
+    },
+    "consumer_groups": {
+      "type": "array",
+      "description": "Consumer groups this team owns. Becomes the group allowlist embedded in describe-group.sh, lag.sh, and reset-offsets.sh.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9._-]+$"
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "description": "Cluster-wide shape. Per-environment values (broker addresses, credentials) live in .env.<context> at runtime, not here.",
+      "required": ["auth"],
+      "additionalProperties": false,
+      "properties": {
+        "auth": {
+          "type": "string",
+          "description": "Authentication mechanism. v1 accepts SASL_SCRAM only; other values are rejected with a pointer to the tracking issue.",
+          "enum": ["SASL_SCRAM"]
+        },
+        "tls": {
+          "type": "string",
+          "description": "TLS posture for client connections. 'required' means the broker terminates TLS and the client must use it; 'none' is for cleartext SASL on a trusted network. Note: 'required' here is server-auth only — mutual TLS (client certs) is tracked in #64.",
+          "enum": ["required", "none"],
+          "default": "required"
+        },
+        "schema_registry": {
+          "type": "object",
+          "description": "Optional Schema Registry block. Omit if the team's topics aren't schema-versioned. URL is supplied per-context via the .env file.",
+          "additionalProperties": false,
+          "properties": {
+            "auth": {
+              "type": "string",
+              "description": "Schema Registry auth. v1: 'basic' (HTTP Basic auth using CONTEXTS_<CTX>_SCHEMAREGISTRY_USERNAME and CONTEXTS_<CTX>_SCHEMAREGISTRY_PASSWORD per context, sent over HTTPS) or 'none' (anonymous, e.g. for a dev-only SR).",
+              "enum": ["basic", "none"],
+              "default": "basic"
+            }
+          }
+        }
+      }
+    },
+    "contexts": {
+      "type": "array",
+      "description": "One entry per environment (dev / staging / prod / ...). Names appear verbatim in `kafkactl --context <name>` calls and as the uppercased + hyphen-to-underscore-normalized segment in `CONTEXTS_<NAME>_*` env vars. Per-`name` uniqueness is NOT expressible in JSON Schema draft 2020-12: uniqueItems only rejects fully-identical objects (so two contexts could share a `name` if their `sasl_mechanism` differs), and the env-var normalization means `dev-1` and `dev_1` collide on the same `CONTEXTS_DEV_1_*` prefix even though the raw strings differ. The generator validates uniqueness AFTER normalization (uppercase + `-` → `_`) before proceeding.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "sasl_mechanism"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Context name. Must be a valid kafkactl context identifier and must round-trip through uppercasing for env-var lookup (so no leading digits, no dots).",
+            "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "sasl_mechanism": {
+            "type": "string",
+            "description": "SCRAM variant used by this environment.",
+            "enum": ["SCRAM-SHA-256", "SCRAM-SHA-512"]
+          }
+        }
+      }
+    }
+  }
+}
