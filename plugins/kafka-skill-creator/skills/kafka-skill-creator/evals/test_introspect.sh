@@ -379,6 +379,41 @@ else
   echo "FAIL: trailing slash on a symlink output-dir doesn't follow into the target"
 fi
 
+# Re-create the symlink and re-test with MULTIPLE trailing slashes. Two
+# discriminators matter together:
+#   (a) the sentinel must survive — same hazard as the single-slash case;
+#       any trailing slash forces `rm -rf` to dereference, not just one.
+#   (b) the script must EXIT 0, meaning it actually reached the wipe and
+#       the wipe operated on the link itself. A single-strip implementation
+#       (`${OUT%/}` once) on `kafka-introspect-foo///` leaves the leaf
+#       check seeing an empty string after one strip — the script refuses
+#       with exit 2, the rm never runs, and the sentinel survives by
+#       *accident* of the refusal. The exit-0 assertion is what catches
+#       that false-pass: the loop-strip fix must accept `///` as a clean
+#       path, not refuse it on the leaf check.
+ln -s "$SENTINEL_DIR" "$SYMLINK_PATH"   # the wipe above correctly removed the link itself; recreate for the next case
+echo "marker" > "$SENTINEL_FILE"
+
+multislash_exit=0
+env -i PATH="$PATH" HOME="$HOME" bash -c "
+  $ALL_DEV
+  export KAFKA_CONTAINER_RUNTIME='$SYMLINK_FAKE_RUNTIME'
+  bash '$INTROSPECT' --context dev '${SYMLINK_PATH}///' > /dev/null 2>&1
+" || multislash_exit=$?
+
+if [ -f "$SENTINEL_FILE" ] && [ "$multislash_exit" -eq 0 ]; then
+  PASS=$((PASS + 1))
+  echo "PASS: multiple trailing slashes on a symlink output-dir are accepted and don't follow into the target"
+else
+  FAIL=$((FAIL + 1))
+  if [ ! -f "$SENTINEL_FILE" ]; then
+    FAILURES+=("symlink target was deleted via multi-trailing-slash bypass! Sentinel $SENTINEL_FILE no longer exists. The trailing-slash strip must loop until no trailing / remains.")
+  else
+    FAILURES+=("multi-trailing-slash path was refused (exit $multislash_exit) instead of being de-trailed and accepted. A single-strip implementation passes the sentinel check by accident — the script must accept '$SYMLINK_PATH///' and exit 0 after the wipe.")
+  fi
+  echo "FAIL: multiple trailing slashes on a symlink output-dir are accepted and don't follow into the target"
+fi
+
 rm -rf -- "$SENTINEL_DIR" "$LINK_PARENT" "$SYMLINK_FAKE_RUNTIME"
 
 # --- Context-name validation --------------------------------------------------

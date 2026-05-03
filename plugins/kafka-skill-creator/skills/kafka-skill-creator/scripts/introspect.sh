@@ -235,12 +235,22 @@ esac
 # the `--` end-of-options marker is GNU-only and BSD/macOS basename
 # rejects it, which would break the very macOS-default-Bash environment
 # the script otherwise targets. The `--` end-of-options marker isn't
-# needed here either way: parameter expansion (`${OUT%/}` and `${...##*/}`)
-# treats `-` like any other character, and a caller who slips a dash-
-# prefixed OUT past the argparse loop via the `--` end-of-options
-# marker (e.g. `... --context dev -- -evil`) still hits the leaf-prefix
-# refusal below, since no leaf starting with `-` matches `kafka-introspect-*`.
-out_no_trail="${OUT%/}"   # strip a single trailing slash if present
+# needed here either way: parameter expansion treats `-` like any other
+# character, and a caller who slips a dash-prefixed OUT past the
+# argparse loop via the `--` end-of-options marker (e.g. `... --context
+# dev -- -evil`) still hits the leaf-prefix refusal below, since no
+# leaf starting with `-` matches `kafka-introspect-*`.
+#
+# Loop the trailing-slash strip rather than `${OUT%/}` once: a caller
+# who passes `.../kafka-introspect-foo///` would otherwise leave OUT
+# ending in `//`, and `rm -rf path//` still dereferences the symlink
+# (any trailing slash forces deref, not just one). Iterating until no
+# trailing slash remains makes the symlink-safety guarantee hold for
+# any number of slashes.
+out_no_trail="$OUT"
+while [ "${out_no_trail%/}" != "$out_no_trail" ]; do
+  out_no_trail="${out_no_trail%/}"
+done
 out_leaf="${out_no_trail##*/}"
 case "$out_leaf" in
   kafka-introspect-?*) ;;
