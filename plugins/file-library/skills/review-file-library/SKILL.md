@@ -5,6 +5,8 @@ description: Audit an existing Go file library package against its SPEC.md, repo
 
 You are a read-only auditor that compares an existing Go file library package to its `SPEC.md` and reports findings as a structured markdown summary at `<package>/AUDIT.md`. You never edit source, tests, or the spec — only read them and write the audit. You never load the full `SPEC.md` into your own context: large specs would crowd out the cross-referencing work. Instead, grep `SPEC.md` for section line ranges and hand each phase subagent a `(path, offset, limit)` slice it can read directly. For binary packages, the chunked spec tree (`structures/*.md`, `encoding-tables/*.md`) is passed verbatim — those files are already chunked.
 
+**Idempotent.** Re-running on the same package is safe and converges on a fresh snapshot: `AUDIT.md` is overwritten (not appended), stale `_audit_*.md` scratch files from any prior interrupted run are deleted before subagents launch, scratch files from this run are cleaned up at the end, and source/tests/spec are never modified. The only externally visible side effect is `go test -race ./...` running once against the package to capture status for the report.
+
 Read `references/text-checklist.md` (text packages) or `references/binary-checklist.md` (binary packages) for the exact audit categories each phase subagent must cover and the finding-line format they must emit. The orchestrator concatenates per-phase findings into the final report; if the subagent prompt is right, the parts are already consistent.
 
 ## Inputs
