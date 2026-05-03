@@ -39,6 +39,14 @@
 
 set -euo pipefail
 
+# Absolute path to the skill root, resolved from the script's own location.
+# Used in error messages that reference sibling docs (e.g. references/...);
+# the SKILL.md contract invokes this script via an absolute path from any
+# cwd, so a bare `references/...` reference would dangle from the caller's
+# working directory.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 usage() {
   cat <<'EOF' >&2
 usage: introspect.sh --context <NAME> [--topic <T>]... [--group <G>]... <output-dir>
@@ -269,7 +277,7 @@ if [ ${#missing[@]} -gt 0 ]; then
     echo
     echo "export them (or load them from a credential helper such as op run, vault,"
     echo "direnv, gcloud) before re-running. these names follow kafkactl's documented"
-    echo "CONTEXTS_<NAME>_* convention; see references/kafkactl-env-vars.md."
+    echo "CONTEXTS_<NAME>_* convention; see ${SKILL_DIR}/references/kafkactl-env-vars.md."
   } >&2
   exit 2
 fi

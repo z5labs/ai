@@ -300,7 +300,7 @@ assert_test \
 # in-a-clean-dir shape is the only portable way to get a docker-less PATH.
 SANDBOX_BIN="$(mktemp -d "${TMPDIR:-/tmp}/kafka-introspect-test-bin-XXXXXX")"
 trap 'rm -rf -- "$SANDBOX_BIN"' EXIT
-for cmd in bash sh tr printf cat mkdir rm grep sed paste env; do
+for cmd in bash sh tr printf cat mkdir rm grep sed paste env dirname; do
   src="$(command -v "$cmd" 2>/dev/null || true)"
   [ -n "$src" ] && ln -sf "$src" "$SANDBOX_BIN/$cmd"
 done
@@ -403,6 +403,22 @@ else
   FAILURES+=("refusal must mention credential helpers (op run / vault / direnv). Output:
 $helper_output")
   echo "FAIL: refusal mentions credential-helper path"
+fi
+
+# The kafkactl-env-vars.md reference must resolve to a real file. SKILL.md
+# invokes this script via an absolute path from arbitrary cwds, so a bare
+# relative `references/...` would dangle. Extract the path from the error
+# message and assert it exists on disk — the strongest possible assertion
+# that the operator can actually follow the pointer.
+docref_path="$(grep -oE '/[^ ]*references/kafkactl-env-vars\.md' <<<"$helper_output" | head -n1)"
+if [ -n "$docref_path" ] && [ -f "$docref_path" ]; then
+  PASS=$((PASS + 1))
+  echo "PASS: refusal references kafkactl-env-vars.md by an existing absolute path"
+else
+  FAIL=$((FAIL + 1))
+  FAILURES+=("refusal must reference kafkactl-env-vars.md as an absolute path that exists on disk. Extracted: '$docref_path'. Output:
+$helper_output")
+  echo "FAIL: refusal references kafkactl-env-vars.md by an existing absolute path"
 fi
 
 # --- Context normalization (hyphens → underscores in env-var lookup) ---------
