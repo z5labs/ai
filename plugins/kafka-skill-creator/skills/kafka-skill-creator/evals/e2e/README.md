@@ -54,10 +54,12 @@ lag), and registers an Avro schema per topic against Karapace.
 | `payments.refunds.v1`  |          3 | `cleanup.policy=compact`             |
 | `internal.audit.v1`    |          1 | none — exercises empty-overrides path|
 
-| Consumer group               | State after seed                           |
-|------------------------------|--------------------------------------------|
-| `payments-orders-projector`  | Stable, fully consumed (lag 0)             |
-| `payments-refunds-replayer`  | Stable, lag > 0 (50 msgs after last commit)|
+| Consumer group               | State after seed                            |
+|------------------------------|---------------------------------------------|
+| `payments-orders-projector`  | Empty, fully consumed (lag 0)               |
+| `payments-refunds-replayer`  | Empty, lag = 50 (50 msgs after last commit) |
+
+`State: Empty` is correct for both groups — `seed.sh` drains each one with `kafkactl consume --max-messages N` and the consumer exits cleanly, so the group has no active members. The `lag-sh-smoke-totallag-positive` eval assertion (id 7 in `evals/evals.json`) verifies the replayer's lag against the live cluster directly rather than relying on the group state.
 
 ## Why these choices
 
