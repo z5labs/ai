@@ -43,14 +43,35 @@ def diff_files(a: Path, b: Path) -> bool:
 
 
 def strip_quoted(text: str) -> str:
-    """Remove backtick-quoted and double-quoted spans so target text the
-    report cites verbatim (e.g. `` `Low` `` or "High-level workflow") does
-    not pollute label checks such as the severity-tier regex. Auditors are
-    expected to wrap any verbatim target reference in one of those forms."""
+    """Remove fenced and inline backtick spans so target text the auditor
+    cites in code-style quotes (e.g. `` `Low` `` or a fenced excerpt) does
+    not pollute label checks. Double-quoted spans are intentionally NOT
+    stripped: real severity labels can appear inside double quotes
+    (e.g. `Triage: "P0"` or `- "Critical:" gh pr create ...`), and
+    stripping them would create false negatives. The label-shape regex
+    below handles double-quoted prose by relying on context instead."""
     text = re.sub(r"```.*?```", "", text, flags=re.S)
     text = re.sub(r"`[^`\n]*`", "", text)
-    text = re.sub(r'"[^"\n]*"', "", text)
     return text
+
+
+# Severity-tier labels are only flagged in label-shaped contexts so that
+# bare prose mentions of a severity word (e.g. a quoted heading like
+# "High-level workflow") do not register as the auditor using severity
+# tiers. Recognised shapes:
+#   - "Critical:" / "High —" / "Medium –" (label punctuation, optional
+#     **bold** wrappers around the word)
+#   - "Severity: Critical" / "Priority: High" (prefix form)
+#   - "High severity" / "Critical findings" / "Medium risk" (suffix form)
+#   - bare P0 / P1 (unambiguous priority codes; word boundaries still apply
+#     so identifiers like processP0Records are not matched)
+SEVERITY_LABEL_RE = re.compile(
+    r"\b(?:Critical|High|Medium|Low)[\s*]*[:—–]"
+    r"|\b(?:severity|priority|risk|impact)\s*:\s*(?:Critical|High|Medium|Low)\b"
+    r"|\b(?:Critical|High|Medium|Low)\s+(?:severity|priority|risk|impact|finding|issue|tier)s?\b"
+    r"|\bP[01]\b",
+    re.IGNORECASE,
+)
 
 
 def count_findings(report: str) -> dict:
@@ -109,7 +130,7 @@ def grade_eval(eval_id: int, config: str) -> dict:
     file_line_refs = len(re.findall(r"`?[A-Za-z0-9_./\-]+\.md:\d+", report))
     findings_with_citations = file_line_refs
     findings_total = total_findings
-    severity_words = re.search(r"\b(Critical|High|Medium|Low|P0|P1)\b", strip_quoted(report))
+    severity_words = SEVERITY_LABEL_RE.search(strip_quoted(report))
 
     expectations = []
     for a in metadata["assertions"]:
