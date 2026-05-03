@@ -1,0 +1,5 @@
+ schema |     name     | type |           enum_values            
+--------+--------------+------+----------------------------------
+ public | order_status | e    | {pending,paid,shipped,cancelled}
+(1 row)
+

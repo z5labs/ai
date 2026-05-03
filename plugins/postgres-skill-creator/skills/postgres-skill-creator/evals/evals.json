@@ -75,6 +75,49 @@
         {"id": "top-table-is-double-quoted", "text": "both halves of the identifier are double-quoted: `\"analytics\".\"UserSessions\"`. The bare form `analytics.UserSessions` would fail because Postgres folds unquoted identifiers to lowercase, so it would look up `analytics.usersessions` — which doesn't exist (the stored name is `UserSessions`). Single quotes (`'analytics'.'UserSessions'`) would also be wrong — those are string literals in SQL, not identifiers."},
         {"id": "readme-substitutes-real-quoted-form-everywhere", "text": "every place the README's template uses `<top-table>` (the row-count sample under \"Quick row count from a real table\" AND the per-environment `--env-file` sample) substitutes the same `\"analytics\".\"UserSessions\"` form — not a mix of quoted in one place and bare in another"}
       ]
+    },
+    {
+      "id": 5,
+      "name": "e2e-against-real-postgres",
+      "prompt": "All five libpq env vars are exported in my shell and point at a live Postgres I want you to introspect: PGHOST=127.0.0.1, PGPORT and PGPASSWORD set, PGUSER=evaluser, PGDATABASE=evaldb. PG_DOCKER_ARGS=--network=host is also set so the containerized psql can reach the DB on host loopback. Run /postgres-skill-creator and let it actually talk to the database — do not stub, mock, or assume the introspection results. The seeded schema has tables (`users`, `products`, `orders`, `order_items`) under schema `public` plus `events` under schema `analytics`, foreign keys between them (including a composite FK from `order_items` to `orders` on `(id, status)` and a cross-schema FK from `analytics.events.user_id` to `public.users.id`), one view `public.active_users`, and one enum `order_status`. Generate the skill and tell me where it ended up.",
+      "expected_output": "A complete `pg-evaldb/` skill at `./.claude/skills/pg-evaldb/` produced from real introspection (not stubbed). All seven introspection topics are reflected in the references: `tables.md` lists every seeded table from both schemas, `relationships.md` lists every seeded FK in arrow form (including the cross-schema one and the composite one), `views.md` carries the `active_users` definition, `enums.md` lists the four `order_status` labels, `indexes.md` carries the user-defined indexes (schema-qualified). `query.sh` is executable, has all `<host>|<port>|<user>|<dbname>` placeholders substituted with real values from the env, and actually runs against the fixture (the grader executes `bash query.sh \"SELECT count(*) FROM users\"` and verifies it returns the seeded row count of 3). README.md has no unsubstituted `<...>` placeholders. SKILL.md has no `disable-model-invocation: true`.",
+      "files": [],
+      "assertions": [
+        {"id": "skill-md-exists-non-empty", "text": "./.claude/skills/pg-evaldb/SKILL.md exists and is non-empty (≥ 500 bytes)"},
+        {"id": "skill-md-no-disable-model-invocation", "text": "./.claude/skills/pg-evaldb/SKILL.md frontmatter does NOT contain `disable-model-invocation: true` — the generated per-DB skill is meant to fire on natural-language prompts"},
+        {"id": "skill-md-description-mentions-dbname-and-table", "text": "./.claude/skills/pg-evaldb/SKILL.md's frontmatter description names the dbname `evaldb` and at least one seeded table (`users`, `orders`, `order_items`, `products`, or `events`)"},
+        {"id": "readme-exists-non-empty", "text": "./.claude/skills/pg-evaldb/README.md exists and is non-empty (≥ 500 bytes)"},
+        {"id": "readme-no-placeholder-residue", "text": "./.claude/skills/pg-evaldb/README.md has no unsubstituted `<...>` placeholders — `grep -E '<dbname>|<top tables?>|<top-table>|<table count>|<view count>|<enum count>'` returns nothing"},
+        {"id": "tables-md-lists-every-seeded-table", "text": "./.claude/skills/pg-evaldb/references/tables.md contains a section heading for every seeded table: `public.users`, `public.products`, `public.orders`, `public.order_items`, `analytics.events`. A missing table means an introspection-result row was dropped between TSV and rendered Markdown"},
+        {"id": "relationships-md-lists-seeded-fks", "text": "./.claude/skills/pg-evaldb/references/relationships.md contains arrow lines for every seeded FK: `public.orders.user_id → public.users.id`, `public.order_items.product_id → public.products.id`, `public.order_items.order_id → public.orders.id`, `public.order_items.order_status → public.orders.status`, `analytics.events.user_id → public.users.id`. Wording may vary slightly (the schema may be omitted on the right side, or arrows may use `->`), but the source/target table+column pairs must all appear"},
+        {"id": "views-md-includes-active-users", "text": "./.claude/skills/pg-evaldb/references/views.md exists and contains a section for `public.active_users` with the view's SQL definition (recognizable by the substring `LEFT JOIN orders` or `count(o.id)`)"},
+        {"id": "enums-md-lists-order-status-labels", "text": "./.claude/skills/pg-evaldb/references/enums.md exists and lists all four `order_status` labels: `pending`, `paid`, `shipped`, `cancelled`"},
+        {"id": "indexes-md-includes-user-indexes", "text": "./.claude/skills/pg-evaldb/references/indexes.md exists and includes the user-defined indexes — at least `orders_user_id_idx`, `orders_status_placed_at_idx`, and `events_user_id_idx`. Schema-qualification per SKILL.md (`public.orders: …` not bare `orders: …`)"},
+        {"id": "query-sh-executable", "text": "./.claude/skills/pg-evaldb/scripts/query.sh exists and is executable (has the +x bit)"},
+        {"id": "query-sh-no-placeholder-residue", "text": "./.claude/skills/pg-evaldb/scripts/query.sh has no unsubstituted `<host>`, `<port>`, `<user>`, or `<dbname>` placeholders — `grep -E '<host>|<port>|<user>|<dbname>'` returns nothing"},
+        {"id": "query-sh-hardcodes-evaldb", "text": "./.claude/skills/pg-evaldb/scripts/query.sh hardcodes `PGDATABASE=\"evaldb\"` (or the equivalent assignment) — the dbname is bound at generation time per SKILL.md"},
+        {"id": "query-sh-runs-against-fixture", "text": "running `bash query.sh \"SELECT count(*) FROM users\"` against the live fixture returns `3` (the seeded user row count). This is the assertion that closes the deferred manual-smoke gap from #42 — proves the *generated* skill works, not just that files were written"},
+        {"id": "env-example-exists", "text": "./.claude/skills/pg-evaldb/scripts/.env.example exists and is non-empty"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "regeneration-overwrites-stale-skill",
+      "prompt": "Same env as before — all five libpq env vars are exported and point at the live PGDATABASE=evaldb fixture, PG_DOCKER_ARGS=--network=host is set. There's already an `./.claude/skills/pg-evaldb/` directory from a previous (now-stale) generation: it has a leftover sentinel file `references/_stale_marker` and the old `references/tables.md` ends with a line `STALE-FROM-PREVIOUS-RUN`. Run /postgres-skill-creator and overwrite it. Schemas drift, the skill is supposed to wipe and rewrite — confirm it actually does.",
+      "expected_output": "After the run, `./.claude/skills/pg-evaldb/` is the fresh output of a generation against the current fixture. The pre-existing `references/_stale_marker` file is gone (proves the directory was wiped, not patched), the `STALE-FROM-PREVIOUS-RUN` line in `references/tables.md` is gone (proves the file was rewritten, not appended to), and the full set of expected files is present (SKILL.md, README.md, scripts/query.sh, references/tables.md, references/relationships.md, references/views.md, references/enums.md, references/indexes.md). `query.sh` works against the fixture (same row-count smoke test as the e2e eval).",
+      "files": [],
+      "assertions": [
+        {"id": "stale-sentinel-removed", "text": "./.claude/skills/pg-evaldb/references/_stale_marker no longer exists — the directory was wiped on regeneration, not patched in place"},
+        {"id": "stale-tables-line-removed", "text": "./.claude/skills/pg-evaldb/references/tables.md does NOT contain the substring `STALE-FROM-PREVIOUS-RUN` — the file was rewritten from introspection, not appended to"},
+        {"id": "skill-md-regenerated", "text": "./.claude/skills/pg-evaldb/SKILL.md exists and is non-empty after regeneration"},
+        {"id": "readme-regenerated", "text": "./.claude/skills/pg-evaldb/README.md exists and has no unsubstituted `<...>` placeholders after regeneration"},
+        {"id": "tables-md-regenerated", "text": "./.claude/skills/pg-evaldb/references/tables.md exists, is non-empty, and contains all five seeded table headings (`public.users`, `public.products`, `public.orders`, `public.order_items`, `analytics.events`)"},
+        {"id": "relationships-md-regenerated", "text": "./.claude/skills/pg-evaldb/references/relationships.md exists and is non-empty"},
+        {"id": "views-md-regenerated", "text": "./.claude/skills/pg-evaldb/references/views.md exists and references `active_users`"},
+        {"id": "enums-md-regenerated", "text": "./.claude/skills/pg-evaldb/references/enums.md exists and lists the four `order_status` labels"},
+        {"id": "indexes-md-regenerated", "text": "./.claude/skills/pg-evaldb/references/indexes.md exists and is non-empty"},
+        {"id": "query-sh-regenerated-and-runnable", "text": "./.claude/skills/pg-evaldb/scripts/query.sh exists, is executable, and `bash query.sh \"SELECT count(*) FROM users\"` against the fixture returns `3`"}
+      ]
     }
   ]
 }

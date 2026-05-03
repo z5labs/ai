@@ -1,0 +1,65 @@
+{
+  "summary": {
+    "passed": 11,
+    "failed": 0,
+    "total": 11,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "SKILL.md exists and is non-empty (\u2265 500 bytes)",
+      "passed": true,
+      "evidence": "size: 3357"
+    },
+    {
+      "text": "SKILL.md frontmatter does NOT contain `disable-model-invocation: true`",
+      "passed": true,
+      "evidence": "absent"
+    },
+    {
+      "text": "SKILL.md frontmatter description names the dbname `orders` and at least one stipulated table",
+      "passed": true,
+      "evidence": "dbname mentioned: True"
+    },
+    {
+      "text": "README.md exists and is non-empty (\u2265 500 bytes)",
+      "passed": true,
+      "evidence": "size: 6278"
+    },
+    {
+      "text": "README.md has no unsubstituted `<...>` placeholders",
+      "passed": true,
+      "evidence": "matches: []"
+    },
+    {
+      "text": "references/tables.md contains a section heading for every stipulated table (users, orders, order_items, products)",
+      "passed": true,
+      "evidence": "missing: []; size: 1244"
+    },
+    {
+      "text": "references/enums.md is absent (the prompt stipulated no enums \u2014 generating an empty enums.md misleads the model)",
+      "passed": true,
+      "evidence": "enums.md absent"
+    },
+    {
+      "text": "scripts/query.sh exists and is executable",
+      "passed": true,
+      "evidence": "exists: True; executable: True"
+    },
+    {
+      "text": "scripts/query.sh has no unsubstituted `<host>`, `<port>`, `<user>`, or `<dbname>` placeholders",
+      "passed": true,
+      "evidence": "matches: []"
+    },
+    {
+      "text": "scripts/query.sh hardcodes `PGDATABASE=\"orders\"`",
+      "passed": true,
+      "evidence": "found assignment"
+    },
+    {
+      "text": "scripts/.env.example exists and is non-empty",
+      "passed": true,
+      "evidence": "exists: True"
+    }
+  ]
+}

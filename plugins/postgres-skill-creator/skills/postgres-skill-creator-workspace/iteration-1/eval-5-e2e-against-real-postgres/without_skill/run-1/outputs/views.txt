@@ -1,0 +1,11 @@
+ schema |  view_name   |                 definition                  
+--------+--------------+---------------------------------------------
+ public | active_users |  SELECT u.id,                              +
+        |              |     u.email,                               +
+        |              |     count(o.id) AS order_count             +
+        |              |    FROM users u                            +
+        |              |      LEFT JOIN orders o ON o.user_id = u.id+
+        |              |   GROUP BY u.id, u.email                   +
+        |              |  HAVING count(o.id) > 0;
+(1 row)
+

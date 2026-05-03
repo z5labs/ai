@@ -1,0 +1,85 @@
+{
+  "summary": {
+    "passed": 7,
+    "failed": 8,
+    "total": 15,
+    "pass_rate": 0.4666666666666667
+  },
+  "expectations": [
+    {
+      "text": "references/_stale_marker no longer exists \u2014 the directory was wiped on regeneration",
+      "passed": true,
+      "evidence": "absent"
+    },
+    {
+      "text": "references/tables.md does NOT contain `STALE-FROM-PREVIOUS-RUN`",
+      "passed": true,
+      "evidence": "absent"
+    },
+    {
+      "text": "SKILL.md exists and is non-empty after regeneration",
+      "passed": true,
+      "evidence": "size: 3217"
+    },
+    {
+      "text": "SKILL.md frontmatter does NOT contain `disable-model-invocation: true`",
+      "passed": true,
+      "evidence": "absent"
+    },
+    {
+      "text": "SKILL.md frontmatter description names the dbname `evaldb` and at least one seeded table",
+      "passed": true,
+      "evidence": "dbname present: True; one of expected tables in skill_text: see size 3217"
+    },
+    {
+      "text": "README.md exists and is non-empty (\u2265 500 bytes)",
+      "passed": false,
+      "evidence": "size: 0"
+    },
+    {
+      "text": "README.md exists and has no unsubstituted `<...>` placeholders after regeneration",
+      "passed": true,
+      "evidence": "matches: []"
+    },
+    {
+      "text": "references/tables.md exists, is non-empty, and contains all five seeded table headings (public.users, public.products, public.orders, public.order_items, analytics.events)",
+      "passed": true,
+      "evidence": "missing: []; size: 4430"
+    },
+    {
+      "text": "references/relationships.md contains arrow lines for every seeded FK",
+      "passed": false,
+      "evidence": "missing: ['orders.user_id \u2192 users.id', 'order_items.product_id \u2192 products.id', 'order_items.order_id \u2192 orders.id', 'order_items.order_status \u2192 orders.status', 'events.user_id \u2192 users.id']; size: 0"
+    },
+    {
+      "text": "references/views.md exists and contains a section for `public.active_users` with the view's SQL definition",
+      "passed": false,
+      "evidence": "file exists: False; active_users in text: False; def recognizable: False"
+    },
+    {
+      "text": "references/enums.md exists and lists all four `order_status` labels",
+      "passed": false,
+      "evidence": "enums.md does not exist"
+    },
+    {
+      "text": "references/indexes.md exists and includes the user-defined indexes (schema-qualified)",
+      "passed": false,
+      "evidence": "missing: ['orders_user_id_idx', 'orders_status_placed_at_idx', 'events_user_id_idx']; schema-qualified: False"
+    },
+    {
+      "text": "scripts/query.sh exists and is executable",
+      "passed": false,
+      "evidence": "query.sh not present"
+    },
+    {
+      "text": "running `bash query.sh \"SELECT count(*) FROM users\"` against the live fixture returns `3`",
+      "passed": false,
+      "evidence": "ok=False; output='query.sh not found at plugins/postgres-skill-creator/skills/postgres-skill-creator-workspace/iteration-1/eval-6-regeneration-overwrites-stale-skill/without_skill/run-1/outputs/.claude/skills/pg-evaldb/scripts/query.sh'"
+    },
+    {
+      "text": "scripts/.env.example exists and is non-empty",
+      "passed": false,
+      "evidence": "exists: False"
+    }
+  ]
+}

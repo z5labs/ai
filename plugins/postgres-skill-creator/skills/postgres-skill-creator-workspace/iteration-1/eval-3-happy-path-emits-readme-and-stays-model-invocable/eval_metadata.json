@@ -1,0 +1,55 @@
+{
+  "eval_id": 3,
+  "eval_name": "happy-path-emits-readme-and-stays-model-invocable",
+  "prompt": "All five libpq env vars (PGHOST, PGPORT, PGUSER, PGDATABASE=orders, PGPASSWORD) are exported in my shell. Run /postgres-skill-creator. Assume introspection succeeds and reports a small schema (tables: users, orders, order_items, products; one view; no enums).",
+  "assertions": [
+    {
+      "id": "generated-readme-exists",
+      "text": "a README.md is written at ./.claude/skills/pg-orders/README.md (the skill root, not under scripts/ or references/), and is non-empty"
+    },
+    {
+      "id": "readme-substitutes-dbname",
+      "text": "the generated README.md substitutes the real dbname `orders` into the title/heading and sample uses, not leaving `<dbname>` as a literal placeholder"
+    },
+    {
+      "id": "readme-substitutes-real-table",
+      "text": "the generated README.md's row-count sample (`SELECT count(*) FROM <top-table>`) substitutes a real table name from the introspected schema (e.g. `users`, `orders`, `order_items`, or `products`), not leaving `<top-table>` as a literal placeholder"
+    },
+    {
+      "id": "readme-has-no-placeholder-residue",
+      "text": "the generated README.md has NO unsubstituted `<...>` placeholders anywhere \u2014 running `grep -E '<dbname>|<top tables?>|<top-table>|<table count>|<view count>|<enum count>'` against the file returns nothing. This catches generation bugs that fill in some placeholders (e.g. the prominent `<dbname>` in the heading and `<top-table>` in the sample) but leave others (e.g. `<table count>`, `<view count>`, or the `<top tables>` list in the schema-summary paragraph) literally in the file. The README is assembled from a placeholder-heavy template, so partial substitution is the most likely failure mode and the per-placeholder assertions above don't cover it on their own."
+    },
+    {
+      "id": "readme-covers-query-sh-samples",
+      "text": "the README.md includes copy-paste samples for query.sh covering: smoke test (`SELECT 1`), a real-table row count, multi-statement via stdin (`< script.sql`), and per-environment via `--env-file`"
+    },
+    {
+      "id": "readme-anchors-setup-at-project-root",
+      "text": "the README.md's one-time setup uses the full project-root-anchored source path (`cp .claude/skills/pg-orders/scripts/.env.example .env`), NOT the in-skill-relative `cp scripts/.env.example .env`. The latter would land `.env` and `.gitignore` *inside* the generated `pg-orders/` directory, where the next `/postgres-skill-creator` run would wipe them."
+    },
+    {
+      "id": "smoke-test-runnable-from-documented-setup",
+      "text": "the README.md's flow is internally consistent: the one-time setup creates a file the smoke test can actually find. Specifically, the setup must produce `./.env` (the wrapper's default-resolution match) so that the smoke test (`bash .claude/skills/pg-orders/scripts/query.sh \"SELECT 1\"`) \u2014 which has no `--env-file` flag and no `PG_ENV_FILE` mention \u2014 picks up the user's credentials. A README that creates only `.env.dev` (or only per-env files) without also passing `--env-file .env.dev` to the smoke test would leave the user's first command falling through to the wrapper's baked-in defaults (with empty `PGPASSWORD`) and failing."
+    },
+    {
+      "id": "readme-mentions-credential-helper",
+      "text": "the README.md describes the credential-helper workflow (`op run --env-file=\u2026 -- claude`, or equivalent for `vault` / `direnv` / `gcloud`) as the recommended way to populate the libpq env vars in locked-down environments \u2014 not just the plain `.env` file path. AND the section covers both invocation flows: (a) `op run --env-file=\u2026 -- claude` for Claude-mediated runs, and (b) `op run --env-file=\u2026 -- bash .../query.sh \"...\"` (or equivalent wrap-each-invocation form) for direct shell use. Showing only `-- claude` would mislead users following the rest of the README's `bash \u2026/query.sh \u2026` samples \u2014 those run in the user's shell, not the Claude subprocess, so the env from `op run -- claude` doesn't reach them."
+    },
+    {
+      "id": "readme-mentions-regeneration",
+      "text": "the README.md documents the regeneration command and that it overwrites the directory in place"
+    },
+    {
+      "id": "readme-elides-empty-enums-clause",
+      "text": "since the introspected schema has no enums, the generated README.md does NOT mention enums anywhere. Specifically: (a) the schema-summary line at the top has no `enums` or `<enum count>` text (no `0 enums`, no literal placeholder); (b) the Schema-lookup section has no `references/enums.md` bullet; (c) the Where-things-live section's `references/` bullet does NOT include `enums` in its list of snapshots. The skeleton's substitution rules call out all three sites \u2014 missing any of them advertises content that doesn't exist on disk."
+    },
+    {
+      "id": "generated-skill-is-model-invocable",
+      "text": "the generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true` \u2014 the per-database skill is meant to fire on natural-language prompts, not require a slash command"
+    },
+    {
+      "id": "verify-step-checks-readme-and-model-invocable",
+      "text": "the assistant's verify step (Step 3) explicitly checks both that README.md exists and that the generated SKILL.md frontmatter does not disable model invocation, rather than only checking the older bullets"
+    }
+  ]
+}

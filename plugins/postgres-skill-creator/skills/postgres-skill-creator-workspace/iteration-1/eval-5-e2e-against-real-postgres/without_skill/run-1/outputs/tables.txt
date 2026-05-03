@@ -1,0 +1,10 @@
+ table_schema |  table_name  | table_type 
+--------------+--------------+------------
+ analytics    | events       | BASE TABLE
+ public       | active_users | VIEW
+ public       | order_items  | BASE TABLE
+ public       | orders       | BASE TABLE
+ public       | products     | BASE TABLE
+ public       | users        | BASE TABLE
+(6 rows)
+

@@ -1,0 +1,15 @@
+  schema   |    table    |            index            |                                            def                                             | is_pk | is_unique 
+-----------+-------------+-----------------------------+--------------------------------------------------------------------------------------------+-------+-----------
+ analytics | events      | events_pkey                 | CREATE UNIQUE INDEX events_pkey ON analytics.events USING btree (id)                       | t     | t
+ analytics | events      | events_user_id_idx          | CREATE INDEX events_user_id_idx ON analytics.events USING btree (user_id)                  | f     | f
+ public    | order_items | order_items_pkey            | CREATE UNIQUE INDEX order_items_pkey ON public.order_items USING btree (order_id, line_no) | t     | t
+ public    | orders      | orders_id_status_uniq       | CREATE UNIQUE INDEX orders_id_status_uniq ON public.orders USING btree (id, status)        | f     | t
+ public    | orders      | orders_pkey                 | CREATE UNIQUE INDEX orders_pkey ON public.orders USING btree (id)                          | t     | t
+ public    | orders      | orders_status_placed_at_idx | CREATE INDEX orders_status_placed_at_idx ON public.orders USING btree (status, placed_at)  | f     | f
+ public    | orders      | orders_user_id_idx          | CREATE INDEX orders_user_id_idx ON public.orders USING btree (user_id)                     | f     | f
+ public    | products    | products_pkey               | CREATE UNIQUE INDEX products_pkey ON public.products USING btree (id)                      | t     | t
+ public    | products    | products_sku_key            | CREATE UNIQUE INDEX products_sku_key ON public.products USING btree (sku)                  | f     | t
+ public    | users       | users_email_key             | CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)                    | f     | t
+ public    | users       | users_pkey                  | CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)                            | t     | t
+(11 rows)
+

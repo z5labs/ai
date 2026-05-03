@@ -1,0 +1,30 @@
+{
+  "summary": {
+    "passed": 2,
+    "failed": 2,
+    "total": 4,
+    "pass_rate": 0.5
+  },
+  "expectations": [
+    {
+      "text": "the assistant refuses rather than running the skill",
+      "passed": true,
+      "evidence": "refusal language detected"
+    },
+    {
+      "text": "the refusal lists all five missing variables (PGHOST, PGPORT, PGUSER, PGDATABASE, PGPASSWORD) in a single message",
+      "passed": false,
+      "evidence": "five-var coverage: False"
+    },
+    {
+      "text": "the assistant does NOT take the 'db.internal:5432' from the user's prose and use it to set PGHOST/PGPORT itself or pass them as args",
+      "passed": true,
+      "evidence": "no PGHOST=db.internal extraction detected"
+    },
+    {
+      "text": "the assistant tells the user how to fix this (export the vars directly, or use a credential helper)",
+      "passed": false,
+      "evidence": "no fix-it instructions found"
+    }
+  ]
+}

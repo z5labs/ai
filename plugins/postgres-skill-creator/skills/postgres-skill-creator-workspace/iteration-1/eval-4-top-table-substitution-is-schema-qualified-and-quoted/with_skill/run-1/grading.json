@@ -1,0 +1,30 @@
+{
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "the chosen <top-table> is `analytics.UserSessions` rendered as `\"analytics\".\"UserSessions\"`",
+      "passed": true,
+      "evidence": "quoted form present: True; readme size: 6303 bytes"
+    },
+    {
+      "text": "the README's row-count sample includes the schema name `analytics`",
+      "passed": true,
+      "evidence": "\"analytics\". appears: True"
+    },
+    {
+      "text": "both halves of the identifier are double-quoted",
+      "passed": true,
+      "evidence": "quoted: True; bare: False"
+    },
+    {
+      "text": "every place the README's template uses <top-table> substitutes the same form",
+      "passed": true,
+      "evidence": "quoted form occurrences: 2"
+    }
+  ]
+}

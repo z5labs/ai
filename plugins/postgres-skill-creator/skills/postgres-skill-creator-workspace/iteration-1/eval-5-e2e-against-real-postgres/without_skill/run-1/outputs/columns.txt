@@ -1,0 +1,29 @@
+  schema   |    table     |    column    |        data_type         | not_null |                   default                    
+-----------+--------------+--------------+--------------------------+----------+----------------------------------------------
+ analytics | events       | id           | bigint                   | t        | nextval('analytics.events_id_seq'::regclass)
+ analytics | events       | user_id      | bigint                   | f        | 
+ analytics | events       | event_type   | text                     | t        | 
+ analytics | events       | payload      | jsonb                    | t        | '{}'::jsonb
+ analytics | events       | occurred_at  | timestamp with time zone | t        | now()
+ public    | active_users | id           | bigint                   | f        | 
+ public    | active_users | email        | text                     | f        | 
+ public    | active_users | order_count  | bigint                   | f        | 
+ public    | order_items  | order_id     | bigint                   | t        | 
+ public    | order_items  | line_no      | integer                  | t        | 
+ public    | order_items  | order_status | order_status             | t        | 
+ public    | order_items  | product_id   | bigint                   | t        | 
+ public    | order_items  | quantity     | integer                  | t        | 
+ public    | orders       | id           | bigint                   | t        | nextval('orders_id_seq'::regclass)
+ public    | orders       | user_id      | bigint                   | t        | 
+ public    | orders       | status       | order_status             | t        | 'pending'::order_status
+ public    | orders       | placed_at    | timestamp with time zone | t        | now()
+ public    | products     | id           | bigint                   | t        | nextval('products_id_seq'::regclass)
+ public    | products     | sku          | text                     | t        | 
+ public    | products     | name         | text                     | t        | 
+ public    | products     | price_cents  | bigint                   | t        | 
+ public    | users        | id           | bigint                   | t        | nextval('users_id_seq'::regclass)
+ public    | users        | email        | text                     | t        | 
+ public    | users        | full_name    | text                     | f        | 
+ public    | users        | created_at   | timestamp with time zone | t        | now()
+(25 rows)
+
