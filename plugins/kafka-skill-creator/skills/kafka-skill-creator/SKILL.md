@@ -70,6 +70,19 @@ The path's parent directory must already exist (the operator chose where the ski
 
 Before deleting, validate that the resolved leaf segment is non-empty and not `/`, `.`, `..`, `~`, or `*` — basic sanity guards against catastrophic deletes from a malformed `--output`.
 
+### Optional environment overrides
+
+These env vars adjust runtime behavior of both the generator (`introspect.sh` + the SR fetch step) and the generated wrappers. None are required; the defaults work for a developer with `docker` on their PATH and outbound access to Docker Hub.
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `KAFKA_CONTAINER_RUNTIME` | Force `docker` or `podman` rather than auto-detecting. | auto-detect |
+| `KAFKACTL_IMAGE` | Container image for kafkactl invocations. Pin a different version, or point at a private registry mirror. | `docker.io/deviceinsight/kafkactl:v5.18.0-scratch` |
+| `CURL_IMAGE` | Container image for the Schema Registry fetch step. Same override semantics as `KAFKACTL_IMAGE`. | `docker.io/curlimages/curl:8.11.1` |
+| `KAFKA_DOCKER_ARGS` | Extra arguments appended to every `docker run` / `podman run` invocation. Common case on Linux when brokers are on `localhost`: `--network=host`. | empty |
+
+Set these before invoking `/kafka-skill-creator` so introspection runs against the same image / runtime / network options the generated wrappers will use. The generated wrappers honor the same vars at runtime, so a private-registry pin set during generation should be re-exported in any session that uses the generated skill.
+
 ## Preconditions
 
 Stop and refuse if any of the following are unmet:
@@ -149,6 +162,21 @@ If the manifest has a `cluster.schema_registry` block, fetch the latest schema f
 The trick is bash indirect expansion (`${!varname}` looks up the env var whose name is held in `$varname`) plus docker's `-e VARNAME` form (no `=value` — docker reads the value from the *host* environment, so it never lands in `docker run`'s argv):
 
 ```bash
+# --- inputs the model is responsible for setting before this snippet runs ---
+# TEAM      — the manifest's `team` field, validated path-safe in Precondition 4.
+# CONTEXT   — the same context name used in Step 1 (the manifest's first context).
+# TOPICS=() — bash array of the manifest's `topics:` values (one entry per topic).
+# RUNTIME   — `docker` or `podman`, picked by the same auto-detect block
+#             introspect.sh uses; honor KAFKA_CONTAINER_RUNTIME if set.
+
+# Pick the container runtime the same way introspect.sh does. `command -v`
+# is more portable than `which` and doesn't fork a subshell on a hit.
+if [ -n "${KAFKA_CONTAINER_RUNTIME:-}" ]; then RUNTIME="$KAFKA_CONTAINER_RUNTIME"
+elif command -v docker >/dev/null 2>&1; then RUNTIME=docker
+elif command -v podman >/dev/null 2>&1; then RUNTIME=podman
+else echo "neither docker nor podman found on PATH" >&2; exit 1
+fi
+
 CURL_IMAGE="${CURL_IMAGE:-docker.io/curlimages/curl:8.11.1}"
 
 # Derive the per-context var names. <UPPER> is the context name uppercased
@@ -196,84 +224,16 @@ Create these files under `<output>/` (the resolved output directory). Substitute
 
 ### `<output>/SKILL.md`
 
-The frontmatter `name` is what gets registered with Claude Code. The `description` is what determines triggering and is generated from a fixed template — substitution only, no paraphrasing. Two runs against the same manifest must produce byte-identical descriptions.
-
-The substitutions are:
+Read `references/generated-skill-md-skeleton.md` for the verbatim template. The substitution rules:
 
 - `<team>` — the manifest's `team` field, verbatim.
 - `<top topics>` — the **first up to 5** entries from the manifest's `topics:` list, in manifest order, joined by `", "`. Operators control which topics surface in the triggering description by ordering them in the manifest; this is the deterministic rule. Don't apply subjective rules like "most prominent" or "most-used".
-- `<env list>` — the manifest's `contexts[].name` values, in manifest order, joined by `" / "` (e.g. `dev / staging / prod`).
+- `<env list>` and `<list of context names>` — the manifest's `contexts[].name` values, in manifest order, joined by `" / "` (e.g. `dev / staging / prod`).
+- `<bullet list>` for owned topics and groups — one `- ` line per item.
+
+The description is generated from a fixed template — substitution only, no paraphrasing. Two runs against the same manifest must produce byte-identical descriptions. Don't paraphrase the trigger copy for "tone", don't add team-specific color, don't drop the "even if they don't say 'Kafka' explicitly" clause to make it shorter — the wording is what triggers reliably.
 
 **Do NOT set `disable-model-invocation: true` on the generated skill.** The generated `kafka-<team>` skill is meant to fire automatically when its description matches the user's prose ("what's lag on the orders projector?", "peek at the last few payments.refunds.v1 messages"). Disabling model invocation would force the user to type `/kafka-<team>` explicitly to use it, which defeats the point of having a per-team skill that the model recognizes by topic context. The meta-generator (this `kafka-skill-creator`) is slash-only because *it* requires deliberate invocation; the *generated* skill should not inherit that property. Omit the field — Claude Code's default is "model-invocable" — rather than setting it to `false` (the field's name is a footgun; explicit `false` reads like an extra knob even though it's just the default).
-
-```markdown
----
-name: kafka-<team>
-description: Read-only investigation of the <team> team's Kafka topics (<top topics>) and consumer groups across <env list>. Use whenever the user asks to peek at messages, check consumer-group lag, describe a topic's config, or reset an offset for a <team>-owned topic, even if they don't say "Kafka" explicitly. Non-destructive only — does not produce, alter, or delete.
----
-
-This skill knows the <team> team's Kafka topics and consumer groups, and provides fixed-shape wrappers for investigation tasks. Posture is **non-destructive**: reads and offset resets only. No produce, no topic create/alter/delete, no consumer-group delete.
-
-## What this skill is for
-
-- Peek at recent messages on a topic (consume.sh)
-- Describe a topic's config / partition layout / schema (describe-topic.sh)
-- Describe a consumer group's members, subscriptions, lag (describe-group.sh, lag.sh)
-- Reset offsets for a consumer group, with --dry-run (reset-offsets.sh)
-
-## What this skill does NOT do
-
-- Produce messages, including for "test data" or "smoke tests"
-- Create / alter / delete topics
-- Delete consumer groups
-- Change ACLs or cluster config
-- Operate on topics or groups not owned by this team (see manifest.yml)
-
-## Owned topics and consumer groups
-
-This skill operates only on the team's owned set, embedded in each script's allowlist:
-
-- Topics: <bullet list>
-- Consumer groups: <bullet list>
-
-Attempting to invoke any of the scripts with a topic or group outside this list is refused at script entry. To extend the list, edit the team's `manifest.yml` and re-run `/kafka-skill-creator --manifest …` — do **not** edit the embedded array in scripts directly, it gets overwritten on regeneration.
-
-## Environments
-
-The team operates against these contexts: <list of context names>.
-
-Each script reads a `.env.<ctx>` file at runtime (resolution order: `--env-file PATH` → `KAFKA_ENV_FILE` → `./.env`) and passes `--context <ctx>` to kafkactl. Cluster shape (broker list, SASL mechanism, TLS, Schema Registry auth) is defined entirely through kafkactl's `CONTEXTS_<NAME>_*` env-var convention — the static fields come from `_common.sh`'s baked-in `export` block, the secrets come from the `.env.<ctx>` file. There is no separate kafkactl config file; everything kafkactl needs is in the environment when the wrapper exec's the container.
-
-### One-time setup
-
-    cp .claude/skills/kafka-<team>/scripts/.env.example .env.dev
-    # edit .env.dev — set CONTEXTS_DEV_BROKERS, CONTEXTS_DEV_SASL_USERNAME, CONTEXTS_DEV_SASL_PASSWORD,
-    # and (if the team uses Schema Registry) CONTEXTS_DEV_SCHEMAREGISTRY_*.
-
-Repeat for each context. Add the chosen filename(s) to `.gitignore` so secrets don't get committed:
-
-    /.env
-    /.env.*
-
-### Per-invocation usage
-
-    bash .claude/skills/kafka-<team>/scripts/describe-topic.sh <topic> --context dev
-    bash .claude/skills/kafka-<team>/scripts/lag.sh <group> --context prod --env-file .env.prod
-    bash .claude/skills/kafka-<team>/scripts/reset-offsets.sh <group> --topic <topic> --to-earliest --dry-run --context staging
-
-If `--context` doesn't match a context the loaded `.env` populated, kafkactl's lookup fails closed (the env vars for that context aren't set, so kafkactl won't authenticate). Same fail-closed property postgres-skill-creator relies on.
-
-## Reference docs
-
-- `references/cluster.md` — broker list, controller, cluster id (snapshot at generation time)
-- `references/topics.md` — per-topic config, partitions, schema reference
-- `references/groups.md` — per-group subscriptions and members
-- `references/schemas/<topic>.json` — Schema Registry latest-version dumps (when configured)
-
-These are written **once at generation time**. Re-run `/kafka-skill-creator` when topics drift or new groups appear.
-```
-
-The description copy above is the canonical template. Don't paraphrase it for "tone", don't add team-specific color, don't drop the "even if they don't say 'Kafka' explicitly" clause to make it shorter — the wording is what triggers reliably. Substitution only.
 
 ### `<output>/scripts/_common.sh`, `<output>/scripts/describe-topic.sh`, and the four sibling wrappers
 
