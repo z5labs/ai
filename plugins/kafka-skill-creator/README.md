@@ -174,6 +174,7 @@ If you set `KAFKACTL_IMAGE` during generation, export the same value in any sess
 Lightweight evals live under `skills/kafka-skill-creator/evals/`:
 
 - `evals/test_introspect.sh` — shell-level tests for `introspect.sh`'s argument shape, env-var validation, and forwarded-env filter. Run with `bash evals/test_introspect.sh` from the skill directory; no Kafka, Schema Registry, or container runtime needed (the script exercises every refusal path before a container would be spawned, then uses a stubbed runtime to capture the positive-path invocation).
-- `evals/evals.json` — skill-level behavioral evals exercising the `SKILL.md` instructions themselves (refusal paths, posture, output-path override).
+- `evals/test_schema_registry_fetch.sh` — regression test for the bash snippet in `references/schema-registry-fetch.md` (the verbatim block the LLM extracts and runs at Step 2). Extracts the snippet from the markdown, runs it against a fake runtime, and asserts the documented contract: `KAFKA_DOCKER_ARGS` reaches argv, `-e SR_*` are forwarded by name, the password value never lands in argv, the curl image is positional. Run when modifying `references/schema-registry-fetch.md`.
+- `evals/evals.json` — skill-level behavioral evals exercising the `SKILL.md` instructions themselves (refusal paths, posture, output-path override, deterministic reference-doc templating).
 
 A full end-to-end eval loop with a containerized Kafka + Schema Registry fixture is tracked in [#66](https://github.com/z5labs/ai/issues/66).
