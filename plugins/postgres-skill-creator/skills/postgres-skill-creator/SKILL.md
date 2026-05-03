@@ -104,7 +104,7 @@ If any query fails, look at the script's error output and either fix the query i
 
 ## Step 2: Write the generated skill
 
-Create these files under `<output>/` (the resolved output directory from the Inputs section above). Before using `<dbname>` in any frontmatter / generated content or deleting any directory, validate that `PGDATABASE` is non-empty and matches `^[A-Za-z0-9_-]+$`. If validation fails, stop and ask the user to re-export `PGDATABASE` with a path-safe value; do not delete any directory. (`--output`'s path-safety is enforced separately by the three-layer guard in the Inputs section — both checks must pass before the wipe.) If the validated target directory already exists, **delete it first** — overwrite is intentional, schemas drift and stale references mislead.
+Create these files under `<output>/` (the resolved output directory from the Inputs section above). Before using `<dbname>` in any frontmatter / generated content or deleting any directory, validate that `PGDATABASE` is non-empty and matches `^[A-Za-z0-9_-]+$`. If validation fails, stop and ask the user to re-export `PGDATABASE` with a path-safe value; do not delete any directory. (`--output`'s path-safety is enforced separately by the four-layer guard in the Inputs section — both checks must pass before the wipe.) If the validated target directory already exists, **delete it first** — overwrite is intentional, schemas drift and stale references mislead.
 
 ### `SKILL.md`
 
