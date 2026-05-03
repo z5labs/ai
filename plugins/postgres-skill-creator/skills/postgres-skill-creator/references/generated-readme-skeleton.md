@@ -5,8 +5,8 @@ The README that ships inside every generated `pg-<dbname>/`. Read this file when
 Substitute every `<...>` placeholder with real values from introspection at generation time so the examples are runnable copy-paste. In particular:
 
 - `<dbname>` — the value of `PGDATABASE` (also the leaf segment of the output path, `pg-<dbname>/`)
-- `<top tables>` — the same 3–5 prominent table names you put in the SKILL.md frontmatter description (highest column count or most-referenced by FKs)
-- `<top-table>` — the single most prominent table from `<top tables>`, used in the sample-use code blocks so the count example is runnable copy-paste
+- `<top tables>` — the same 3–5 ranked tables you used in the SKILL.md frontmatter description, computed by the deterministic **Top-table ranking** rule defined in SKILL.md (FK in-degree DESC → column count DESC → `(schema, table_name)` ASC). Render each as a bare `table` name — this is prose for humans, not SQL.
+- `<top-table>` — the **first** entry of `<top tables>`, formatted for SQL as a **schema-qualified, double-quoted identifier**: `"<schema>"."<table>"`. The README's row-count sample is supposed to be runnable copy-paste, so a bare `users` won't do — it would fail on `analytics."UserSessions"`-shaped tables, on duplicate names across schemas, and on identifiers that need quoting (mixed case, spaces, reserved words). Always-quote is safe because Postgres treats `"users"` and `users` as the same object when the stored name is lowercase.
 - `<table count>`, `<view count>`, `<enum count>` — totals from the introspection output
 
 When `enums.tsv` is empty, the generator does not write `references/enums.md`. The README must not advertise content that doesn't exist, so in that case strip every enum mention from the template before writing — there are three of them:

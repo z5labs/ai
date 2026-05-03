@@ -60,6 +60,19 @@
         {"id": "generated-skill-is-model-invocable", "text": "the generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true` — the per-database skill is meant to fire on natural-language prompts, not require a slash command"},
         {"id": "verify-step-checks-readme-and-model-invocable", "text": "the assistant's verify step (Step 3) explicitly checks both that README.md exists and that the generated SKILL.md frontmatter does not disable model invocation, rather than only checking the older bullets"}
       ]
+    },
+    {
+      "id": 4,
+      "name": "top-table-substitution-is-schema-qualified-and-quoted",
+      "prompt": "All five libpq env vars are exported (PGDATABASE=warehouse, etc.). Run /postgres-skill-creator. Assume introspection succeeds and reports: schema `public` with tables `events` (4 cols, 0 inbound FKs); schema `analytics` with table `UserSessions` (12 cols, 3 inbound FKs from `public.events.session_id`, `public.events.parent_session_id`, `crm.touchpoints.session_id`) and table `cohort_assignments` (6 cols, 0 inbound FKs); schema `crm` with table `touchpoints` (8 cols, 0 inbound FKs). No views, no enums.",
+      "expected_output": "By the deterministic top-table ranking (FK in-degree DESC → column count DESC → (schema, table_name) ASC), `analytics.UserSessions` ranks first (3 inbound FKs, beating everything else at 0). The generated README's row-count sample must substitute `<top-table>` as the schema-qualified, double-quoted identifier `\"analytics\".\"UserSessions\"` so the example is runnable as-is — the unqualified `UserSessions` (or worse, lowercase `usersessions`) would fail because Postgres folds unquoted identifiers to lowercase and the stored name is mixed-case.",
+      "files": [],
+      "assertions": [
+        {"id": "top-table-uses-deterministic-ranking", "text": "the chosen `<top-table>` is `analytics.UserSessions` — the unique highest by FK in-degree (3 inbound FKs vs. 0 for every other table). The generator must NOT pick a different table (e.g. cohort_assignments by alphabetical ordering, or touchpoints by being in `crm` schema) — the ranking rule defined in SKILL.md is FK in-degree DESC, then column count DESC, then (schema, table_name) ASC, with no alternative."},
+        {"id": "top-table-is-schema-qualified", "text": "the README's row-count sample includes the schema name `analytics` (`SELECT count(*) FROM \"analytics\".\"UserSessions\"`), NOT a bare `\"UserSessions\"` or `UserSessions`. Without the schema qualifier the query would resolve via `search_path`, which on a fresh psql session is `\"$user\", public` — there is no `analytics` in the default search_path, so the unqualified form would fail with `relation \"UserSessions\" does not exist`."},
+        {"id": "top-table-is-double-quoted", "text": "both halves of the identifier are double-quoted: `\"analytics\".\"UserSessions\"`. The bare form `analytics.UserSessions` would fail because Postgres folds unquoted identifiers to lowercase, so it would look up `analytics.usersessions` — which doesn't exist (the stored name is `UserSessions`). Single quotes (`'analytics'.'UserSessions'`) would also be wrong — those are string literals in SQL, not identifiers."},
+        {"id": "readme-substitutes-real-quoted-form-everywhere", "text": "every place the README's template uses `<top-table>` (the row-count sample under \"Quick row count from a real table\" AND the per-environment `--env-file` sample) substitutes the same `\"analytics\".\"UserSessions\"` form — not a mix of quoted in one place and bare in another"}
+      ]
     }
   ]
 }

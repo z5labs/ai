@@ -67,7 +67,15 @@ Create these files under `./.claude/skills/pg-<dbname>/` (where `<dbname>` is th
 
 ### `SKILL.md`
 
-Use this skeleton; substitute the `<...>` placeholders with real content. The frontmatter `description` is what determines triggering, so make it specific to this database — name the database, mention that it's for ad-hoc reads/writes, and list a few of the most prominent table names (top 3–5 by column count or by appearing in the most foreign keys).
+Use this skeleton; substitute the `<...>` placeholders with real content. The frontmatter `description` is what determines triggering, so make it specific to this database — name the database, mention that it's for ad-hoc reads/writes, and list the **top 3–5 prominent tables** (computed once from introspection by the deterministic rule below).
+
+**Top-table ranking (deterministic).** Both the SKILL.md `<top tables>` list above and the README's `<top tables>` / `<top-table>` substitutions use the same ranked list. Compute it once per generation by sorting all tables in `tables.tsv` by:
+
+1. **FK in-degree DESC** — count, from `foreign_keys.tsv`'s `(ref_schema, ref_table)` columns, how many distinct FKs point AT this table. Hub tables (the ones lots of other tables reference) rank highest because they're the most useful orientation signal for an engineer skimming the README.
+2. **Column count DESC** — break in-degree ties by table width.
+3. **`(schema, table_name)` ASC** — lexicographic, final tie-breaker.
+
+Take the top 5 (or fewer if the schema has fewer than 5 tables) for `<top tables>`. The single first entry is `<top-table>`. Allowing "either column count or FK references" would let two runs over the same schema produce different output, which makes the generated skill's diff/audit story brittle — pick this rule and stick to it.
 
 **Do NOT set `disable-model-invocation: true` on the generated skill.** The generated `pg-<dbname>` skill is meant to fire automatically when its description matches the user's prose ("how many rows in `orders` last week?", "which users haven't logged in in 30 days?"). Disabling model invocation would force the user to type `/pg-<dbname>` explicitly to use it, which defeats the point of having a per-database skill that the model recognizes by table-name context. The meta-generator (this `postgres-skill-creator`) is slash-only because *it* requires deliberate invocation; the *generated* skill should not inherit that property. Omit the field — Claude Code's default is "model-invocable" — rather than setting it to `false` (the field's name is a footgun; explicit `false` reads like an extra knob even though it's just the default).
 
@@ -308,8 +316,8 @@ A human-facing README the engineer reads when they open the `pg-<dbname>/` direc
 Read `references/generated-readme-skeleton.md` for the verbatim template. Substitute the `<...>` placeholders with real values from introspection at generation time:
 
 - `<dbname>` — the value of `PGDATABASE`
-- `<top tables>` — the same 3–5 prominent table names you put in the SKILL.md frontmatter description
-- `<top-table>` — the single most prominent of those, used in the row-count sample so it's runnable copy-paste
+- `<top tables>` — the same 3–5 ranked tables you put in the SKILL.md frontmatter description, computed once by the **Top-table ranking** rule above. Render each as a bare `table` name (the description is prose, not SQL).
+- `<top-table>` — the **first** entry of `<top tables>`, formatted for SQL as a **schema-qualified, double-quoted identifier**: `"<schema>"."<table>"`. The README's row-count sample is supposed to be runnable copy-paste, so it must work for any introspected name — including non-`public` schemas, identifiers that need quoting (mixed case, spaces, reserved words like `Order`), and duplicate table names across schemas. A bare `users` would fail on `analytics."UserSessions"`-shaped tables; always-quote is safe because Postgres treats `"users"` and `users` as the same object when the stored name is lowercase.
 - `<table count>`, `<view count>`, `<enum count>` — totals from introspection (drop the enums clause entirely if `enums.tsv` was empty)
 
 The README must include working samples for `query.sh` (smoke test, real-table count, multi-statement via stdin, per-environment via `--env-file`), the one-time `.env` setup, the credential-helper pointer, and the regeneration command — those are the things engineers ask first when they open the skill directory.
