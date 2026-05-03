@@ -1,8 +1,8 @@
 {
   "summary": {
-    "passed": 9,
+    "passed": 10,
     "failed": 0,
-    "total": 9,
+    "total": 10,
     "pass_rate": 1.0
   },
   "expectations": [
@@ -45,6 +45,11 @@
       "text": "the assistant's report mentions plugin.json registration since --output landed in a plugin tree",
       "passed": true,
       "evidence": "plugin.json mentioned"
+    },
+    {
+      "text": "the assistant's response references the resolved output path when describing verify/smoke, not .claude/skills/pg-orders/...",
+      "passed": true,
+      "evidence": "output path referenced: True; default-path absent: True"
     },
     {
       "text": "the assistant surfaces the smoke-test failure or notes it was skipped (does not silently claim success)",

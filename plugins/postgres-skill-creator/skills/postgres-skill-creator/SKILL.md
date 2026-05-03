@@ -22,11 +22,27 @@ The path's parent directory must already exist (the operator chose where the ski
 - If it doesn't exist: create it.
 - If it does exist: delete it and recreate it. Overwrite is intentional — schemas drift, and stale references mislead.
 
-Before deleting anything, validate the path against three layers of guards. The wipe lands `rm -rf` on a directory the operator named, so a malformed `--output` value is the most safety-critical input this skill takes — these checks fire **before** introspection, container-runtime selection, or anything else that touches disk.
+Before deleting anything, validate the path against four layers of guards. The wipe lands `rm -rf` on a directory the operator named, so a malformed `--output` value is the most safety-critical input this skill takes — these checks fire **before** introspection, container-runtime selection, or anything else that touches disk.
 
-1. **Reject literal danger shapes.** Refuse if `--output` is empty, all-whitespace, or starts with whitespace (a sloppy paste). Refuse if it equals `/`, `.`, `..`, `~`, or starts with `~/`. Refuse if the **leaf segment** (the last path component, after stripping trailing slashes) is empty, `.`, `..`, `~`, or `*` — the leaf is what `rm -rf` lands on most directly.
+1. **Reject literal danger shapes.** Refuse if `--output` is empty, contains any whitespace anywhere (leading, trailing, or embedded — `plugins/team data/skills/pg-orders` would break every unquoted `cp <skill-dir>/...` sample in the generated README, and quoting every emission for the rare case isn't worth it). Refuse if it equals `/`, `.`, `..`, `~`, or starts with `~/`. Refuse if the **leaf segment** (the last path component, after stripping trailing slashes) is empty, `.`, `..`, `~`, or `*` — the leaf is what `rm -rf` lands on most directly.
 2. **Reject paths whose components include `..`.** `rm -rf /tmp/out/..` resolves to `/tmp` (or worse), and the literal-string check above wouldn't catch it. Match `..` at any position: leading (`../foo`), trailing (`foo/..`), middle (`foo/../bar`), and lone (`..`).
 3. **Strip any number of trailing slashes** before the wipe. `rm -rf path/` (with trailing slash) on a symlink dereferences the symlink and recursively deletes its target — even one trailing slash forces deref. Iterate the strip until none remain so a sloppy `.../pg-foo///` can't slip past.
+4. **Reject paths that escape the project root via symlinks.** Layers 1–3 are textual; they don't catch a `--output plugins/team-data/skills/pg-orders` where `plugins/team-data` is a symlink to `/etc`. Resolve the canonical path and refuse if it doesn't sit inside the current working directory (the project root). Concretely:
+
+   ```bash
+   cwd="$(pwd -P)"   # canonical CWD
+   # Resolve --output's deepest existing ancestor; -m lets the leaf not exist yet.
+   resolved="$(realpath -m -- "$OUTPUT")"
+   case "$resolved/" in
+     "$cwd/"*) ;;   # inside project root — OK
+     *)
+       echo "error: refusing --output that escapes the project root: $OUTPUT -> $resolved" >&2
+       exit 2
+       ;;
+   esac
+   ```
+
+   The trailing slash on both sides closes a prefix-collision hole (so `/home/user/proj-evil/` doesn't pass when `cwd=/home/user/proj`). `realpath -m` is widely available; if it isn't, the Python equivalent is `python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$OUTPUT"`. Run this guard *after* layers 1–3 so a `..`-bearing or whitespace-bearing input is rejected before the resolver normalizes it.
 
 If `--output` is supplied but `PGDATABASE` is unset, the missing-env refusal in Preconditions still wins — `--output` doesn't substitute for the env-var contract, it only controls where a successfully-generated skill lands. (Path-safety on the `<dbname>` value still applies independently — see Step 2 — because `<dbname>` flows into the generated frontmatter `name` and into the default `--output`'s leaf segment.)
 
@@ -51,14 +67,14 @@ Postgres schemas are often too large to keep in working memory, but most ad-hoc 
 
 ## High-level workflow
 
-1. Parse `--output` if supplied; resolve to the default `./.claude/skills/pg-<dbname>/` otherwise. Apply the three-layer path-safety guards above before going further.
+1. Parse `--output` if supplied; resolve to the default `./.claude/skills/pg-<dbname>/` otherwise. Apply the four-layer path-safety guards above before going further.
 2. Detect a container runtime (`docker` or `podman`) — error out with a clear message if neither is on PATH.
 3. Run introspection queries via the `alpine/psql` container against the user's database.
 4. Write the generated skill to `<output>/`, overwriting any prior version.
 5. Verify the generated skill by sanity-checking that `SKILL.md` and at least one reference file are non-empty.
 6. Tell the user where the skill was written and how to invoke it.
 
-The bundled `scripts/introspect.sh` does step 1 and 2. Read it before running so you understand what queries it issues — you may need to adapt if a query fails (e.g. older Postgres versions lack a column).
+The bundled `scripts/introspect.sh` does steps 2 and 3. Read it before running so you understand what queries it issues — you may need to adapt if a query fails (e.g. older Postgres versions lack a column).
 
 If the host can't reach the database via `PGHOST` as-is (common on Linux when the DB is on `localhost` and `PGHOST=localhost` would resolve inside the container), set `PG_DOCKER_ARGS=--network=host` before invoking the script.
 

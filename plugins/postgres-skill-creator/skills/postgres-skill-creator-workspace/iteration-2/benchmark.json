@@ -4,7 +4,7 @@
     "skill_path": "<path/to/skill>",
     "executor_model": "<model-name>",
     "analyzer_model": "<model-name>",
-    "timestamp": "2026-05-03T18:47:31Z",
+    "timestamp": "2026-05-03T22:49:22Z",
     "evals_run": [
       0,
       1,
@@ -193,9 +193,9 @@
       "run_number": 1,
       "result": {
         "pass_rate": 1.0,
-        "passed": 9,
+        "passed": 10,
         "failed": 0,
-        "total": 9,
+        "total": 10,
         "time_seconds": 210.2,
         "tokens": 36433,
         "tool_calls": 0,
@@ -241,6 +241,11 @@
           "text": "the assistant's report mentions plugin.json registration since --output landed in a plugin tree",
           "passed": true,
           "evidence": "plugin.json mentioned"
+        },
+        {
+          "text": "the assistant's response references the resolved output path when describing verify/smoke, not .claude/skills/pg-orders/...",
+          "passed": true,
+          "evidence": "output path referenced: True; default-path absent: True"
         },
         {
           "text": "the assistant surfaces the smoke-test failure or notes it was skipped (does not silently claim success)",

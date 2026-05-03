@@ -558,6 +558,17 @@ def grade_honors_output_flag(outputs_dir: Path, _fixture: dict) -> list[dict]:
     # Assistant report: did it mention plugin.json registration?
     plugin_json_mentioned = bool(re.search(r"plugin\.json", response, re.I))
 
+    # Verify step must follow the resolved output path, not the default. The bad shape
+    # is a response that lists generated files at .claude/skills/pg-orders/ in its verify
+    # bullets even though `--output` redirected them. Concretely: the response should
+    # reference the plugin-tree path when describing verify or smoke-test steps, and must
+    # NOT report verifying against .claude/skills/pg-orders/.
+    verify_uses_output_path = "plugins/team-data/skills/pg-orders" in response
+    verify_avoids_default_path = not re.search(
+        r"\.claude/skills/pg-orders/(?:SKILL\.md|README\.md|scripts/|references/)",
+        response,
+    )
+
     # Smoke test: did the assistant either surface a failure or skip? Forbidden behavior
     # is silently claiming success. Detect "claims success without failure surfacing" by
     # looking for celebratory language without any error/skipped acknowledgement.
@@ -593,6 +604,9 @@ def grade_honors_output_flag(outputs_dir: Path, _fixture: dict) -> list[dict]:
         {**(passed if plugin_json_mentioned else failed)(
             "the assistant's report mentions plugin.json registration since --output landed in a plugin tree",
             "plugin.json mentioned" if plugin_json_mentioned else "no plugin.json mention in response")},
+        {**(passed if verify_uses_output_path and verify_avoids_default_path else failed)(
+            "the assistant's response references the resolved output path when describing verify/smoke, not .claude/skills/pg-orders/...",
+            f"output path referenced: {verify_uses_output_path}; default-path absent: {verify_avoids_default_path}")},
         {**(passed if smoke_test_acknowledged else failed)(
             "the assistant surfaces the smoke-test failure or notes it was skipped (does not silently claim success)",
             "failure/skip acknowledged" if smoke_test_acknowledged else "no failure/skip language found")},

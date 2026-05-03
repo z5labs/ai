@@ -92,13 +92,15 @@ You do **not** need to reinstall the plugin to regenerate the skill. The plugin 
 
 The same logical database is often deployed across multiple environments. Rather than regenerating the skill for each one (or exporting `PGHOST`/`PGUSER`/etc. by hand every session), you keep one `.env` file per environment and tell `query.sh` which one to use.
 
+The samples below use `<skill-dir>` as a stand-in for the resolved output path — that's `.claude/skills/pg-<dbname>` for the default install, or whatever you passed to `--output` (e.g. `plugins/team-data/skills/pg-orders`). Substitute the actual path before pasting.
+
 ### Setup
 
 1. Copy the example env file out of the skill, once per environment:
 
    ```
-   cp .claude/skills/pg-mydb/scripts/.env.example .env.dev
-   cp .claude/skills/pg-mydb/scripts/.env.example .env.prod
+   cp <skill-dir>/scripts/.env.example .env.dev
+   cp <skill-dir>/scripts/.env.example .env.prod
    ```
 
 2. Fill in the real host/port/user/password for each environment. `PGDATABASE` is intentionally absent from `.env.example` — the dbname is hardcoded in `query.sh` and any value set in `.env` is overwritten at runtime.
@@ -123,14 +125,14 @@ If none of these resolve to an existing file, `query.sh` falls back to the gener
 
 ```
 # explicit per-invocation
-bash .claude/skills/pg-mydb/scripts/query.sh --env-file .env.prod "SELECT 1"
+bash <skill-dir>/scripts/query.sh --env-file .env.prod "SELECT 1"
 
 # whole-shell
 export PG_ENV_FILE=.env.staging
-bash .claude/skills/pg-mydb/scripts/query.sh < script.sql
+bash <skill-dir>/scripts/query.sh < script.sql
 
 # default (./.env)
-bash .claude/skills/pg-mydb/scripts/query.sh "SELECT 1"
+bash <skill-dir>/scripts/query.sh "SELECT 1"
 ```
 
 ## Runtime overrides
