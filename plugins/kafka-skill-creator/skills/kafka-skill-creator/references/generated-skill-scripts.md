@@ -111,6 +111,29 @@ build_env_args() {
   read -r -a EXTRA_RUNTIME_ARGS <<< "${KAFKA_DOCKER_ARGS:-}"
 }
 
+# Validate a `--flag value` pair. With `set -u`, a bare `--flag` (no value)
+# would otherwise abort with an unbound-variable error from `$2`; these
+# helpers turn that into a controlled exit-2 with a usage line.
+# require_value:    used by callers passing `--flag value`
+#   args: <flag-name> "$#" "${2:-}"
+# require_eq_value: used by callers passing `--flag=value`
+#   args: "$1"
+# Wrappers that source this file are expected to define $USAGE before
+# calling these helpers, so the error message can show the right shape.
+require_value() {
+  local flag="$1" remaining="$2" value="$3"
+  [ "$remaining" -ge 2 ] || { echo "error: $flag requires a value" >&2; echo "${USAGE:-}" >&2; exit 2; }
+  [ -n "$value" ]        || { echo "error: $flag requires a non-empty value" >&2; echo "${USAGE:-}" >&2; exit 2; }
+  case "$value" in
+    -*) echo "error: $flag requires a value, got another flag: $value" >&2; echo "${USAGE:-}" >&2; exit 2 ;;
+  esac
+}
+
+require_eq_value() {
+  local arg="$1" value="${1#*=}"
+  [ -n "$value" ] || { echo "error: ${arg%%=*} requires a non-empty value" >&2; echo "${USAGE:-}" >&2; exit 2; }
+}
+
 KAFKACTL_IMAGE="${KAFKACTL_IMAGE:-docker.io/deviceinsight/kafkactl:v5.18.0-scratch}"
 ```
 
@@ -122,23 +145,33 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/_common.sh"
 
+USAGE="usage: describe-topic.sh <topic> --context <ctx> [--env-file PATH]"
+
 TOPIC=""
 CONTEXT=""
 ENV_FILE=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --context) CONTEXT="$2"; shift 2 ;;
-    --context=*) CONTEXT="${1#--context=}"; shift ;;
-    --env-file) ENV_FILE="$2"; shift 2 ;;
-    --env-file=*) ENV_FILE="${1#--env-file=}"; shift ;;
-    -*) echo "error: unknown flag: $1" >&2; exit 2 ;;
-    *) [ -z "$TOPIC" ] || { echo "error: unexpected positional: $1" >&2; exit 2; }
+    --context)
+      require_value --context "$#" "${2:-}"
+      CONTEXT="$2"; shift 2 ;;
+    --context=*)
+      require_eq_value "$1"
+      CONTEXT="${1#--context=}"; shift ;;
+    --env-file)
+      require_value --env-file "$#" "${2:-}"
+      ENV_FILE="$2"; shift 2 ;;
+    --env-file=*)
+      require_eq_value "$1"
+      ENV_FILE="${1#--env-file=}"; shift ;;
+    -*) echo "error: unknown flag: $1" >&2; echo "$USAGE" >&2; exit 2 ;;
+    *) [ -z "$TOPIC" ] || { echo "error: unexpected positional: $1" >&2; echo "$USAGE" >&2; exit 2; }
        TOPIC="$1"; shift ;;
   esac
 done
 
-[ -n "$TOPIC" ]   || { echo "usage: describe-topic.sh <topic> --context <ctx> [--env-file PATH]" >&2; exit 2; }
-[ -n "$CONTEXT" ] || { echo "usage: describe-topic.sh <topic> --context <ctx> [--env-file PATH]" >&2; exit 2; }
+[ -n "$TOPIC" ]   || { echo "$USAGE" >&2; exit 2; }
+[ -n "$CONTEXT" ] || { echo "$USAGE" >&2; exit 2; }
 
 require_allowed "topic" "$TOPIC" "${ALLOWED_TOPICS[@]}"
 resolve_env_file
@@ -151,6 +184,8 @@ exec "$RUNTIME" run --rm -i \
   "$KAFKACTL_IMAGE" --context "$CONTEXT" \
   describe topic "$TOPIC" --output json
 ```
+
+`require_value` and `require_eq_value` come from `_common.sh` (sourced above the flag parser); the wrapper just defines `$USAGE` so those helpers print the right shape on a missing-value error.
 
 The other four scripts swap:
 

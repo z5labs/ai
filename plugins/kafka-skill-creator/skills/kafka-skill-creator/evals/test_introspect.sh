@@ -133,6 +133,40 @@ assert_test \
   "$ALL_DEV" \
   --context dev --group "u:pass@host:9092" /tmp/out
 
+# Equals-form variants must hit the same DSN-rejection path. Earlier the
+# `--topic=*` and `--group=*` branches were stripping the prefix and
+# pushing straight into the array — a credential-bearing connection
+# string written as --topic=kafka://... could have flowed past argv
+# inspection, into kafkactl's command line, and on into logs/transcripts.
+# Pin the expectation explicitly.
+assert_test \
+  "rejects kafka:// in --topic=value form" \
+  2 \
+  "connection strings are not accepted" \
+  "$ALL_DEV" \
+  --context dev "--topic=kafka://b:9092/t" /tmp/out
+
+assert_test \
+  "rejects kafka:// in --group=value form" \
+  2 \
+  "connection strings are not accepted" \
+  "$ALL_DEV" \
+  --context dev "--group=kafka://b:9092/g" /tmp/out
+
+assert_test \
+  "rejects user:pass@host in --topic=value form" \
+  2 \
+  "connection strings are not accepted" \
+  "$ALL_DEV" \
+  --context dev "--topic=u:pass@host:9092" /tmp/out
+
+assert_test \
+  "rejects user:pass@host in --group=value form" \
+  2 \
+  "connection strings are not accepted" \
+  "$ALL_DEV" \
+  --context dev "--group=u:pass@host:9092" /tmp/out
+
 # --- Context-name validation --------------------------------------------------
 
 # Context name flows into env-var derivation; restrict it to a charset that

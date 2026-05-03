@@ -71,8 +71,9 @@ Stop and refuse if any of the following are unmet:
 
 1. **Container runtime** — `docker` or `podman` on `PATH` (auto-detected, or override via `KAFKA_CONTAINER_RUNTIME`).
 2. **Manifest validates** against `scripts/manifest.schema.json`. v1 hard-fails on `cluster.auth` values other than `SASL_SCRAM` and points at the matching deferred issue.
-3. **Path-safety on `team`** — must match `^[A-Za-z0-9_-]+$`. The `--output` path itself is taken at face value (it's an explicit operator choice), but `team` flows into generated frontmatter and the default output path segment, so it stays restricted.
-4. **Per-context env vars are populated** for every context declared in the manifest. For each `<ctx>`, derive `<UPPER>` by uppercasing the name and replacing `-` with `_`, then check that all three are set and non-empty:
+3. **Context names are unique.** JSON Schema's `uniqueItems: true` only rejects fully-identical objects, so two contexts with the same `name` but different `sasl_mechanism` would slip past it and create an ambiguous env-var lookup (which `CONTEXTS_DEV_*` belongs to which `dev`?). After the schema validates, walk `contexts[]` and refuse with a named error if any `name` repeats.
+4. **Path-safety on `team`** — must match `^[A-Za-z0-9_-]+$`. The `--output` path itself is taken at face value (it's an explicit operator choice), but `team` flows into generated frontmatter and the default output path segment, so it stays restricted.
+5. **Per-context env vars are populated** for every context declared in the manifest. For each `<ctx>`, derive `<UPPER>` by uppercasing the name and replacing `-` with `_`, then check that all three are set and non-empty:
    - `CONTEXTS_<UPPER>_BROKERS`
    - `CONTEXTS_<UPPER>_SASL_USERNAME`
    - `CONTEXTS_<UPPER>_SASL_PASSWORD`
@@ -88,7 +89,7 @@ Stop and refuse if any of the following are unmet:
 
    The reason is the same one postgres-skill-creator hardened in [#42](https://github.com/z5labs/ai/issues/42): secrets must reach tools out-of-band, never through model context. The libpq-equivalent here is kafkactl's documented `CONTEXTS_<NAME>_*` convention — see `references/kafkactl-env-vars.md`.
 
-5. **No connection-string positional argument**. `/kafka-skill-creator "kafka://user:pass@broker:9092"` is rejected; do not parse the password out of the URL even silently. The skill takes flags only.
+6. **No connection-string positional argument**. `/kafka-skill-creator "kafka://user:pass@broker:9092"` is rejected; do not parse the password out of the URL even silently. The skill takes flags only.
 
 ## High-level workflow
 
@@ -123,24 +124,46 @@ If any individual call fails, `introspect.sh` writes an empty file for that targ
 
 ## Step 2: Pull schemas (Schema Registry, when configured)
 
-If the manifest has a `cluster.schema_registry` block, fetch the latest schema for each topic's `<topic>-value` subject. Use `curl` inside a pinned container so credentials are forwarded as env vars rather than baked into argv. The `CURL_IMAGE` env var overrides the default for private-registry users:
+If the manifest has a `cluster.schema_registry` block, fetch the latest schema for each topic's `<topic>-value` subject. Use `curl` inside a pinned container so credentials are forwarded as env vars rather than baked into argv. The `CURL_IMAGE` env var overrides the default for private-registry users.
+
+The trick is bash indirect expansion (`${!varname}` looks up the env var whose name is held in `$varname`) plus docker's `-e VARNAME` form (no `=value` — docker reads the value from the *host* environment, so it never lands in `docker run`'s argv):
 
 ```bash
 CURL_IMAGE="${CURL_IMAGE:-docker.io/curlimages/curl:8.11.1}"
-"$RUNTIME" run --rm -i \
-  -e SR_USER="$CONTEXTS_<UPPER>_SCHEMAREGISTRY_USERNAME" \
-  -e SR_PASS="$CONTEXTS_<UPPER>_SCHEMAREGISTRY_PASSWORD" \
-  -e SR_URL="$CONTEXTS_<UPPER>_SCHEMAREGISTRY_URL" \
-  "$CURL_IMAGE" \
-  -sf -K - "${SR_URL}/subjects/${TOPIC}-value/versions/latest" \
-  <<< 'user-config-from-stdin: see below'
+
+# Derive the per-context var names. <UPPER> is the context name uppercased
+# with hyphens replaced by underscores — e.g. "dev-us-east" -> "DEV_US_EAST".
+upper="${CONTEXT^^}"; upper="${upper//-/_}"
+sr_url_var="CONTEXTS_${upper}_SCHEMAREGISTRY_URL"
+sr_user_var="CONTEXTS_${upper}_SCHEMAREGISTRY_USERNAME"
+sr_pass_var="CONTEXTS_${upper}_SCHEMAREGISTRY_PASSWORD"
+
+# Re-export the values under stable names. `export` is a shell builtin and
+# does not fork, so the password never enters any process's argv at this step.
+export SR_URL="${!sr_url_var}"
+export SR_USER="${!sr_user_var}"
+export SR_PASS="${!sr_pass_var}"
+export TOPIC
+
+for TOPIC in "${TOPICS[@]}"; do
+  safe="$(printf '%s' "$TOPIC" | sed 's/[^A-Za-z0-9._-]/_/g')"
+  # `-e SR_*` (no `=value`) tells docker to read each var from the host env
+  # and forward it to the container. Argv only carries the var NAME.
+  # Inside the container, `curl -K -` reads `--user` from stdin so the
+  # password never lands in argv there either.
+  "$RUNTIME" run --rm -i \
+    -e SR_URL -e SR_USER -e SR_PASS -e TOPIC \
+    "$CURL_IMAGE" \
+    sh -c 'printf "user = %s:%s\n" "$SR_USER" "$SR_PASS" \
+           | curl -sf -K - "$SR_URL/subjects/$TOPIC-value/versions/latest"' \
+    > "/tmp/kafka-introspect-${TEAM}/schemas/${safe}.json" \
+    || echo "warning: schema fetch failed for $TOPIC; continuing" >&2
+done
 ```
 
-Use `curl -K -` (read config from stdin) to keep `--user $SR_USER:$SR_PASS` out of `docker run`'s host-side argv. The stdin content is `user = ${SR_USER}:${SR_PASS}` — do **not** put the password on the command line.
+The response is the standard Schema Registry envelope — a `subject`, `version`, `id`, `schemaType` (`AVRO` / `PROTOBUF` / `JSON`), and `schema` string with the actual definition. You'll project these into `<output>/references/schemas/<topic>.<ext>` in Step 3 (extension chosen by `schemaType`).
 
-Save the response to `/tmp/kafka-introspect-<team>/schemas/<topic>.json` (the response includes a `schemaType` field and a `schema` string; the `schema` field's value is the actual Avro/Protobuf/JSON Schema definition, which you'll write into the generated `references/schemas/` in Step 3).
-
-If a subject is not registered (Schema Registry returns 404), skip it and note the absence in `references/topics.md` for that topic.
+If Schema Registry returns 404 for a subject, skip it and note the absence in `references/topics.md` for that topic — partial coverage is better than aborting the whole generation.
 
 ## Step 3: Write the generated skill
 
@@ -360,7 +383,7 @@ After writing files, check:
 - `<output>/scripts/{_common,describe-topic,describe-group,lag,consume,reset-offsets}.sh` all exist and are executable
 - `<output>/scripts/.env.example` has one block per declared context
 - `<output>/scripts/manifest.yml` is a verbatim copy of the input manifest (or the in-memory manifest built from manual flags)
-- `<output>/references/cluster.md` and at least one `<output>/references/topics/*.md` exist
+- `<output>/references/cluster.md`, `<output>/references/topics.md`, and `<output>/references/groups.md` all exist and are non-empty
 - No file under `<output>/` contains an unsubstituted `<...>` placeholder (grep for `<` followed by an identifier-shape — there will be matches in markdown table headers and SQL-style placeholders that are intentional, so check by regex `<[a-z_-]+>` and audit hits)
 
 ## Step 5: Smoke test

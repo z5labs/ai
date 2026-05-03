@@ -10,13 +10,15 @@
 #     <output-dir>
 #
 # Reads connection details from env vars matching kafkactl's documented
-# CONTEXTS_<NAME>_* convention. The five required keys per context are:
+# CONTEXTS_<NAME>_* convention. Three keys per context are required:
 #
 #   CONTEXTS_<NAME>_BROKERS                  (whitespace-separated host:port list)
 #   CONTEXTS_<NAME>_SASL_USERNAME
 #   CONTEXTS_<NAME>_SASL_PASSWORD
-#   (and one of)
-#   CONTEXTS_<NAME>_SASL_MECHANISM           (optional; defaults via kafkactl-config.yml)
+#
+# One key is optional (default lives in the generated kafkactl-config.yml):
+#
+#   CONTEXTS_<NAME>_SASL_MECHANISM
 #
 # Schema Registry pulls are handled by the caller (SKILL.md), not here, so the
 # script doesn't need to know whether the manifest has an SR block.
@@ -107,7 +109,9 @@ while [ $# -gt 0 ]; do
       shift 2
       ;;
     --topic=*)
-      TOPICS+=("${1#--topic=}")
+      _v="${1#--topic=}"
+      reject_positional_dsn "$_v"
+      TOPICS+=("$_v")
       shift
       ;;
     --group)
@@ -117,7 +121,9 @@ while [ $# -gt 0 ]; do
       shift 2
       ;;
     --group=*)
-      GROUPS+=("${1#--group=}")
+      _v="${1#--group=}"
+      reject_positional_dsn "$_v"
+      GROUPS+=("$_v")
       shift
       ;;
     -h|--help)

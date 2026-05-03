@@ -122,6 +122,7 @@ op run --env-file=kafka.env -- claude
 ### Other requirements
 
 - `docker` or `podman` on `PATH`.
+- `jq` on `PATH` — the generated `lag.sh` filters kafkactl's JSON output through `jq` to surface only the lag-relevant fields. The other wrappers don't need it (they emit kafkactl's JSON unfiltered), so a host without `jq` can still run `consume.sh`, `describe-topic.sh`, `describe-group.sh`, and `reset-offsets.sh` — `lag.sh` is the only one that fails closed when `jq` is absent.
 - The container can reach the brokers and Schema Registry. On Linux when these are on `localhost`, set `KAFKA_DOCKER_ARGS=--network=host` so the container shares the host network namespace.
 
 ## Regenerating an installed skill
