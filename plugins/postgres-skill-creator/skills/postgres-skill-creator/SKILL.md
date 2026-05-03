@@ -386,6 +386,7 @@ After writing files, check:
 - `.claude/skills/pg-<dbname>/SKILL.md` exists and is non-empty
 - `.claude/skills/pg-<dbname>/SKILL.md`'s frontmatter does **not** contain `disable-model-invocation: true` (the generated skill must be model-invocable so it fires on natural-language prompts)
 - `.claude/skills/pg-<dbname>/README.md` exists and is non-empty
+- `.claude/skills/pg-<dbname>/README.md` has no unsubstituted `<...>` placeholders — `grep -E '<dbname>|<top tables?>|<top-table>|<table count>|<view count>|<enum count>'` should return nothing. The README is assembled from a placeholder-heavy template, so a generation bug can easily leave a literal like `<table count>` in the opening paragraph; verifying README existence alone won't catch that
 - `.claude/skills/pg-<dbname>/scripts/query.sh` is executable
 - `.claude/skills/pg-<dbname>/scripts/.env.example` exists
 - At least `references/tables.md` and `references/relationships.md` exist

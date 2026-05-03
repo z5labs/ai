@@ -85,7 +85,7 @@ bash .claude/skills/pg-<dbname>/scripts/query.sh "SELECT count(*) FROM <top-tabl
 bash .claude/skills/pg-<dbname>/scripts/query.sh < script.sql
 \`\`\`
 
-Useful for migrations-style work or anything that needs more than one statement (the `-c` form `psql` runs by default rejects multi-statement input in some contexts).
+Useful for `.sql` files you already have on disk, multi-line SQL that's awkward to inline as a single shell argument, and SQL that mixes plain statements with psql meta-commands (`\copy`, `\set`, `\timing`, `\d`, …). Plain multi-statement SQL works fine via the inline `-c` form too — `bash scripts/query.sh "SELECT 1; SELECT 2"` runs both statements in a single transaction — but `-c` can't mix SQL with psql meta-commands, so anything using `\copy` or similar has to come in via stdin.
 
 ### Per-environment
 
