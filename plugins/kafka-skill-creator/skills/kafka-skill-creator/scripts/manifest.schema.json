@@ -60,7 +60,7 @@
           "properties": {
             "auth": {
               "type": "string",
-              "description": "Schema Registry auth. v1: 'basic' (HTTP Basic over the bearer of the SR password env var) or 'none'.",
+              "description": "Schema Registry auth. v1: 'basic' (HTTP Basic auth using CONTEXTS_<CTX>_SCHEMAREGISTRY_USERNAME and CONTEXTS_<CTX>_SCHEMAREGISTRY_PASSWORD per context, sent over HTTPS) or 'none' (anonymous, e.g. for a dev-only SR).",
               "enum": ["basic", "none"],
               "default": "basic"
             }
