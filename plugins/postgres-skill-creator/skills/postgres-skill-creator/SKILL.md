@@ -71,8 +71,8 @@ Use this skeleton; substitute the `<...>` placeholders with real content. The fr
 
 **Top-table ranking (deterministic).** Both the SKILL.md `<top tables>` list above and the README's `<top tables>` / `<top-table>` substitutions use the same ranked list. Compute it once per generation by sorting all tables in `tables.tsv` by:
 
-1. **FK in-degree DESC** — count, from `foreign_keys.tsv`'s `(ref_schema, ref_table)` columns, how many distinct FKs point AT this table. Hub tables (the ones lots of other tables reference) rank highest because they're the most useful orientation signal for an engineer skimming the README.
-2. **Column count DESC** — break in-degree ties by table width.
+1. **FK reference row count DESC** — count rows in `foreign_keys.tsv` where `(ref_schema, ref_table)` equals this table. Hub tables (the ones lots of other tables reference) rank highest because they're the most useful orientation signal for an engineer skimming the README. Composite foreign keys contribute multiple rows (one per referenced column) since `foreign_keys.tsv` carries no constraint identifier — that's fine semantically because a multi-column-composite-FK target is in fact a higher-traffic join target than a single-column one. If you ever need to count *distinct* FK constraints rather than referenced columns, that's a deeper change to the introspection output, not the ranking rule.
+2. **Column count DESC** — break ties from rule 1 by table width.
 3. **`(schema, table_name)` ASC** — lexicographic, final tie-breaker.
 
 Take the top 5 (or fewer if the schema has fewer than 5 tables) for `<top tables>`. The single first entry is `<top-table>`. Allowing "either column count or FK references" would let two runs over the same schema produce different output, which makes the generated skill's diff/audit story brittle — pick this rule and stick to it.

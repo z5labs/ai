@@ -5,7 +5,7 @@ The README that ships inside every generated `pg-<dbname>/`. Read this file when
 Substitute every `<...>` placeholder with real values from introspection at generation time so the examples are runnable copy-paste. In particular:
 
 - `<dbname>` — the value of `PGDATABASE` (also the leaf segment of the output path, `pg-<dbname>/`)
-- `<top tables>` — the same 3–5 ranked tables you used in the SKILL.md frontmatter description, computed by the deterministic **Top-table ranking** rule defined in SKILL.md (FK in-degree DESC → column count DESC → `(schema, table_name)` ASC). Render each as a bare `table` name — this is prose for humans, not SQL.
+- `<top tables>` — the same 3–5 ranked tables you used in the SKILL.md frontmatter description, computed by the deterministic **Top-table ranking** rule defined in SKILL.md (FK reference row count DESC → column count DESC → `(schema, table_name)` ASC). Render each as a bare `table` name — this is prose for humans, not SQL.
 - `<top-table>` — the **first** entry of `<top tables>`, formatted for SQL as a **schema-qualified, double-quoted identifier**: `"<schema>"."<table>"`. The README's row-count sample is supposed to be runnable copy-paste, so a bare `users` won't do — it would fail on `analytics."UserSessions"`-shaped tables, on duplicate names across schemas, and on identifiers that need quoting (mixed case, spaces, reserved words). Always-quote is safe because Postgres treats `"users"` and `users` as the same object when the stored name is lowercase.
 - `<table count>`, `<view count>`, `<enum count>` — totals from the introspection output
 
@@ -53,13 +53,21 @@ grep -qxF '/.env'   .gitignore || echo '/.env'   >> .gitignore
 grep -qxF '/.env.*' .gitignore || echo '/.env.*' >> .gitignore
 \`\`\`
 
-For locked-down environments, populate the env vars via a credential helper instead of a plain `.env` file:
+For locked-down environments, populate the env vars via a credential helper instead of a plain `.env` file. `op run` (and the equivalents for `vault`, `direnv`, `gcloud`) only exports secrets into the immediate child process, so pick the wrapper that matches *how* you'll invoke `query.sh`:
+
+**Asking Claude to run queries** (the typical case for an analyst asking "how many orders last week?" — Claude calls the skill, which invokes `query.sh`, which inherits the env from Claude):
 
 \`\`\`bash
 op run --env-file=postgres.env -- claude
 \`\`\`
 
-…where `postgres.env` declares e.g. `PGPASSWORD=op://Vault/Postgres/dev-password`. The same shape works with `vault`, `direnv`, `gcloud`, or any helper that exports secrets to a subprocess.
+**Running `query.sh` directly from your shell** — wrap each invocation, since `op run … -- claude` only populates the `claude` subprocess and the env doesn't survive into your shell's later commands:
+
+\`\`\`bash
+op run --env-file=postgres.env -- bash .claude/skills/pg-<dbname>/scripts/query.sh "SELECT 1"
+\`\`\`
+
+In both cases `postgres.env` declares the libpq vars by reference, e.g. `PGPASSWORD=op://Vault/Postgres/dev-password`. The same shape works with `vault`, `direnv`, `gcloud`, or any helper that exports secrets to a subprocess.
 
 ## Sample uses
 
