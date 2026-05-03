@@ -83,7 +83,7 @@ Both modes build the same in-memory manifest and run the same generation pipelin
 
 ### Output location
 
-`--output PATH` (alias `--out`) chooses where the generated skill is written. Default is `./.claude/skills/kafka-<team>/`. The override exists so a team building their own plugin can land the generated skill directly inside it — for example:
+`--output PATH` chooses where the generated skill is written. Default is `./.claude/skills/kafka-<team>/`. The override exists so a team building their own plugin can land the generated skill directly inside it — for example:
 
 ```
 /kafka-skill-creator --manifest team.yml --output plugins/team-payments/skills/kafka-payments/

@@ -61,7 +61,7 @@ Build an in-memory manifest of the same shape as the file form and continue down
 
 ### Output location
 
-`--output PATH` (alias `--out`) chooses where the generated skill is written. Defaults to `./.claude/skills/kafka-<team>/`. The primary use case for the override is a team building their own plugin: pointing `--output` at e.g. `plugins/team-payments/skills/kafka-payments/` lands the generated skill directly inside the plugin tree, no copy step.
+`--output PATH` chooses where the generated skill is written. Defaults to `./.claude/skills/kafka-<team>/`. The primary use case for the override is a team building their own plugin: pointing `--output` at e.g. `plugins/team-payments/skills/kafka-payments/` lands the generated skill directly inside the plugin tree, no copy step. There is no short-form alias — `--output` is the only spelling — so the invocation shape stays singular for evals and operator muscle memory.
 
 The path's parent directory must already exist (the operator chose where the skill goes; the generator does not create arbitrary parent paths). The leaf directory itself is the generator's responsibility:
 
@@ -196,7 +196,13 @@ Create these files under `<output>/` (the resolved output directory). Substitute
 
 ### `<output>/SKILL.md`
 
-The frontmatter `name` is what gets registered with Claude Code. The `description` is what determines triggering — name the team, mention the topic domain, and list the **first up to 5 topics from the manifest's `topics:` list, in manifest order**, so the model recognizes the right context. Manifest order is the deterministic rule (operators control which topics surface in the triggering description by ordering them in the manifest); avoid subjective rules like "the most prominent" or "the most-used" because two runs against the same manifest must produce the same description.
+The frontmatter `name` is what gets registered with Claude Code. The `description` is what determines triggering and is generated from a fixed template — substitution only, no paraphrasing. Two runs against the same manifest must produce byte-identical descriptions.
+
+The substitutions are:
+
+- `<team>` — the manifest's `team` field, verbatim.
+- `<top topics>` — the **first up to 5** entries from the manifest's `topics:` list, in manifest order, joined by `", "`. Operators control which topics surface in the triggering description by ordering them in the manifest; this is the deterministic rule. Don't apply subjective rules like "most prominent" or "most-used".
+- `<env list>` — the manifest's `contexts[].name` values, in manifest order, joined by `" / "` (e.g. `dev / staging / prod`).
 
 **Do NOT set `disable-model-invocation: true` on the generated skill.** The generated `kafka-<team>` skill is meant to fire automatically when its description matches the user's prose ("what's lag on the orders projector?", "peek at the last few payments.refunds.v1 messages"). Disabling model invocation would force the user to type `/kafka-<team>` explicitly to use it, which defeats the point of having a per-team skill that the model recognizes by topic context. The meta-generator (this `kafka-skill-creator`) is slash-only because *it* requires deliberate invocation; the *generated* skill should not inherit that property. Omit the field — Claude Code's default is "model-invocable" — rather than setting it to `false` (the field's name is a footgun; explicit `false` reads like an extra knob even though it's just the default).
 
@@ -267,7 +273,7 @@ If `--context` doesn't match a context the loaded `.env` populated, kafkactl's l
 These are written **once at generation time**. Re-run `/kafka-skill-creator` when topics drift or new groups appear.
 ```
 
-Tailor the `description` to drive triggering for this team — generic phrasings ("a Kafka skill") undertrigger.
+The description copy above is the canonical template. Don't paraphrase it for "tone", don't add team-specific color, don't drop the "even if they don't say 'Kafka' explicitly" clause to make it shorter — the wording is what triggers reliably. Substitution only.
 
 ### `<output>/scripts/_common.sh`, `<output>/scripts/describe-topic.sh`, and the four sibling wrappers
 
