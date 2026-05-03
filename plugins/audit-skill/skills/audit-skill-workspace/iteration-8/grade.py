@@ -42,6 +42,17 @@ def diff_files(a: Path, b: Path) -> bool:
     return a.read_bytes() == b.read_bytes()
 
 
+def strip_quoted(text: str) -> str:
+    """Remove backtick-quoted and double-quoted spans so target text the
+    report cites verbatim (e.g. `` `Low` `` or "High-level workflow") does
+    not pollute label checks such as the severity-tier regex. Auditors are
+    expected to wrap any verbatim target reference in one of those forms."""
+    text = re.sub(r"```.*?```", "", text, flags=re.S)
+    text = re.sub(r"`[^`\n]*`", "", text)
+    text = re.sub(r'"[^"\n]*"', "", text)
+    return text
+
+
 def count_findings(report: str) -> dict:
     """Count findings under each objective heading. Returns {objective: count}."""
     sections = {}
@@ -98,7 +109,7 @@ def grade_eval(eval_id: int, config: str) -> dict:
     file_line_refs = len(re.findall(r"`?[A-Za-z0-9_./\-]+\.md:\d+", report))
     findings_with_citations = file_line_refs
     findings_total = total_findings
-    severity_words = re.search(r"\b(Critical|High|Medium|Low|P0|P1)\b", report)
+    severity_words = re.search(r"\b(Critical|High|Medium|Low|P0|P1)\b", strip_quoted(report))
 
     expectations = []
     for a in metadata["assertions"]:
