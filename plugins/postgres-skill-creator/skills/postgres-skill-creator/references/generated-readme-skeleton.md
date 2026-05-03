@@ -33,14 +33,21 @@ This skill is intended for an analyst or developer doing ad-hoc reads, one-off D
 Run these commands from your project root (the directory containing `.claude/`) so the `.env` files and `.gitignore` rule land outside the generated skill directory:
 
 \`\`\`bash
-# Per environment you connect to:
-cp .claude/skills/pg-<dbname>/scripts/.env.example .env.dev
-# edit .env.dev — fill in PGHOST, PGPORT, PGUSER, PGPASSWORD
+# Default environment — query.sh picks ./.env up automatically when no
+# --env-file flag is passed, so the smoke test below is runnable as-is
+# once this file is filled in.
+cp .claude/skills/pg-<dbname>/scripts/.env.example .env
+# edit .env — fill in PGHOST, PGPORT, PGUSER, PGPASSWORD
 # (PGDATABASE is intentionally absent — the dbname is hardcoded in query.sh)
+
+# (Optional) per additional environment, referenced explicitly via
+# --env-file or PG_ENV_FILE in the "Per-environment" section below:
+#   cp .claude/skills/pg-<dbname>/scripts/.env.example .env.prod
 
 # Add the env files to .gitignore — they contain secrets. The `grep -qxF`
 # guard makes this re-runnable: appending only when the exact line is not
 # already present, so following this README twice doesn't duplicate rules.
+# `/.env.*` covers .env.prod, .env.staging, etc.
 touch .gitignore
 grep -qxF '/.env'   .gitignore || echo '/.env'   >> .gitignore
 grep -qxF '/.env.*' .gitignore || echo '/.env.*' >> .gitignore
