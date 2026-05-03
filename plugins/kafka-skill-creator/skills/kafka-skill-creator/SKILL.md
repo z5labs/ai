@@ -227,9 +227,11 @@ A commented template per declared context. Pre-fill the comments with the keys (
 # ---- context: prod ----
 # (same shape, CONTEXTS_PROD_*)
 
-# Any other kafkactl-shaped env var (TLS_CERTKEY, PGOPTIONS-style overrides,
-# etc.) set here is also forwarded to kafkactl inside the container, as long
-# as its name matches CONTEXTS_*, TLS_*, SASL_*, SCHEMAREGISTRY_*, or BROKERS.
+# Any other kafkactl-shaped env var (e.g. CONTEXTS_<NAME>_TLS_CERTKEY for
+# mTLS-style cert pinning, CONTEXTS_<NAME>_SASL_MECHANISM to override the
+# default, or a bare BROKERS shorthand for default-context use) set here is
+# also forwarded to kafkactl inside the container, as long as its name
+# matches CONTEXTS_*, TLS_*, SASL_*, SCHEMAREGISTRY_*, or BROKERS.
 ```
 
 Emit a `# ---- context: <name> ----` block for **every** context declared in the manifest.
