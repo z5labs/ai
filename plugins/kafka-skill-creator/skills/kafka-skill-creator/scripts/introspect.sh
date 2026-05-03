@@ -279,7 +279,15 @@ esac
 # prescribes `/tmp/kafka-introspect-<team>`; pinning the leaf prefix
 # here turns that prescription into enforcement, so a misuse hits the
 # refusal before any data on disk is touched.
-out_leaf="$(basename -- "$OUT")"
+#
+# Use pure bash parameter expansion rather than `basename -- "$OUT"`:
+# the `--` end-of-options marker is GNU-only and BSD/macOS basename
+# rejects it, which would break the very macOS-default-Bash environment
+# the script otherwise targets. The argparse loop above already rejects
+# any positional starting with `-`, so `$OUT` cannot reach this point
+# beginning with a dash — the only edge case `--` would have guarded.
+out_no_trail="${OUT%/}"   # strip a single trailing slash if present
+out_leaf="${out_no_trail##*/}"
 case "$out_leaf" in
   kafka-introspect-?*) ;;
   *)
