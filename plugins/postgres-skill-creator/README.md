@@ -135,6 +135,8 @@ If you set `PSQL_IMAGE` during generation, export the same value in any session 
 
 ## Development
 
+All paths in this section are relative to this plugin's directory (`plugins/postgres-skill-creator/`). From a repo-root checkout, `cd plugins/postgres-skill-creator` first.
+
 The eval suite lives under `skills/postgres-skill-creator/evals/`. It has two layers — cheap shell tests that don't need a database, and a fixture-driven suite that brings up a real Postgres in a container.
 
 ### Layer 1 — `introspect.sh` shell tests (no fixture)
