@@ -19,6 +19,7 @@ If you collapse this back to `docker run -e SR_PASS="$value" ... curl -u "$user:
 | `CONTEXT` | The same context name used in Step 1 (the manifest's first context). |
 | `TOPICS=()` | Bash array of the manifest's `topics:` values (one entry per topic). |
 | `RUNTIME` | `docker` or `podman`. The snippet auto-detects with the same block `introspect.sh` uses, honoring `KAFKA_CONTAINER_RUNTIME` if set. |
+| `KAFKA_DOCKER_ARGS` | Optional. Word-split into an array and spliced into the `docker run` invocation, identical to `introspect.sh`. The common case is `--network=host` on Linux when Schema Registry is on `localhost`. Default: empty. |
 
 ## Snippet
 
@@ -32,6 +33,13 @@ else echo "neither docker nor podman found on PATH" >&2; exit 1
 fi
 
 CURL_IMAGE="${CURL_IMAGE:-docker.io/curlimages/curl:8.11.1}"
+
+# Word-split KAFKA_DOCKER_ARGS into an array, identical to introspect.sh.
+# SKILL.md documents this var as affecting "both the generator (... SR fetch
+# step) and the generated wrappers" — the most common need is `--network=host`
+# on Linux when Schema Registry is on localhost, which only works if it
+# reaches THIS docker run too, not just the kafkactl one.
+read -r -a EXTRA_ARGS <<< "${KAFKA_DOCKER_ARGS:-}"
 
 # Derive the per-context var names. <UPPER> is the context name uppercased
 # with hyphens replaced by underscores — e.g. "dev-us-east" -> "DEV_US_EAST".
@@ -68,7 +76,12 @@ for TOPIC in "${TOPICS[@]}"; do
   # and forward it to the container. Argv only carries the var NAME.
   # Inside the container, `curl -K -` reads `--user` from stdin so the
   # password never lands in argv there either.
+  #
+  # `${EXTRA_ARGS[@]}` is spliced in the same shape introspect.sh uses, so
+  # any KAFKA_DOCKER_ARGS the operator set for the kafkactl invocations
+  # also applies here.
   if "$RUNTIME" run --rm -i \
+       "${EXTRA_ARGS[@]}" \
        -e SR_URL -e SR_USER -e SR_PASS -e TOPIC \
        "$CURL_IMAGE" \
        sh -c 'printf "user = %s:%s\n" "$SR_USER" "$SR_PASS" \
