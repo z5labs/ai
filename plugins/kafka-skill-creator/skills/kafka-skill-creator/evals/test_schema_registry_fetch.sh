@@ -60,7 +60,10 @@ chmod +x "$FAKE_RUNTIME"
 
 export TEAM="$TEAM_SUFFIX"
 export CONTEXT=dev
-export TOPICS=(payments.orders.v1)
+# Indexed arrays don't propagate through `export` (bash 5+ silently allows
+# the form, older bashes warn — and the export does nothing either way).
+# eval'ing the snippet runs in this shell, so plain assignment is enough.
+TOPICS=(payments.orders.v1)
 export KAFKA_CONTAINER_RUNTIME="$FAKE_RUNTIME"
 export KAFKA_DOCKER_ARGS="--network=host"
 export CONTEXTS_DEV_SCHEMAREGISTRY_URL=http://sr.test:8081
