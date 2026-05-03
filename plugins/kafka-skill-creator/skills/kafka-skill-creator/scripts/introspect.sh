@@ -63,9 +63,12 @@ Required:
                     (e.g. /tmp/kafka-introspect-<team>) — that prefix is
                     the safety pin that lets the script recursively delete
                     its output without risk of nuking a high-impact dir.
-                    The script refuses to wipe `/`, `.`, `..`, `~`, paths
-                    containing `..` segments, or any leaf without the
-                    required prefix.
+                    The script refuses to wipe: empty path, `/`, `.`, `..`,
+                    `~`, anything starting with `~/`, anything starting with
+                    whitespace, paths containing `..` segments, and any leaf
+                    without the `kafka-introspect-` prefix. A trailing slash
+                    is normalized away before the wipe so a symlink-with-
+                    trailing-slash can't be followed into its target.
 
 Repeatable:
   --topic T         Topic to describe. Pass once per topic in the manifest.
@@ -243,6 +246,13 @@ case "$out_leaf" in
     exit 2
     ;;
 esac
+# Adopt the de-trailed path for the wipe and recreate steps. `rm -rf path/`
+# (with trailing slash) on a symlink dereferences the symlink and recursively
+# deletes its target — even if the symlink itself sits in a kafka-introspect-
+# directory, the target could be anywhere on disk. Normalizing OUT to the
+# non-trailing form ensures `rm -rf -- "$OUT"` removes the link itself,
+# never what it points to.
+OUT="$out_no_trail"
 
 # Derive the env-var prefix kafkactl uses for the chosen context. kafkactl
 # uppercases the context name and prepends `CONTEXTS_`. Hyphens become

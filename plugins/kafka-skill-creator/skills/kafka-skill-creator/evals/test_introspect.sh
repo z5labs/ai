@@ -319,6 +319,49 @@ $no_runtime_output")
   echo "FAIL: output-dir guard fires before runtime selection (no docker/podman needed)"
 fi
 
+# --- Trailing-slash symlink hazard -------------------------------------------
+#
+# `rm -rf path/` with a trailing slash on a symlink dereferences the link
+# and recursively deletes the *target*. The kafka-introspect- leaf guard
+# only checks the link's own name, not what it points at — so a symlink
+# named kafka-introspect-foo pointing at $HOME would slip past the leaf
+# check and the wipe would land in $HOME if the trailing slash isn't
+# normalized away. Pin that the script normalizes OUT to its de-trailed
+# form before the rm so the link itself is removed, not its target.
+
+SENTINEL_DIR="$(mktemp -d "${TMPDIR:-/tmp}/kafka-introspect-sentinel-XXXXXX")"
+SENTINEL_FILE="$SENTINEL_DIR/DO_NOT_TOUCH"
+echo "marker" > "$SENTINEL_FILE"
+
+LINK_PARENT="$(mktemp -d "${TMPDIR:-/tmp}/kafka-introspect-linktest-XXXXXX")"
+SYMLINK_PATH="$LINK_PARENT/kafka-introspect-symlinktest"
+ln -s "$SENTINEL_DIR" "$SYMLINK_PATH"
+
+SYMLINK_FAKE_RUNTIME="$(mktemp)"
+cat > "$SYMLINK_FAKE_RUNTIME" <<'FAKE'
+#!/usr/bin/env bash
+cat > /dev/null 2>&1 || true
+exit 0
+FAKE
+chmod +x "$SYMLINK_FAKE_RUNTIME"
+
+env -i PATH="$PATH" HOME="$HOME" bash -c "
+  $ALL_DEV
+  export KAFKA_CONTAINER_RUNTIME='$SYMLINK_FAKE_RUNTIME'
+  bash '$INTROSPECT' --context dev '$SYMLINK_PATH/' > /dev/null 2>&1 || true
+"
+
+if [ -f "$SENTINEL_FILE" ]; then
+  PASS=$((PASS + 1))
+  echo "PASS: trailing slash on a symlink output-dir doesn't follow into the target"
+else
+  FAIL=$((FAIL + 1))
+  FAILURES+=("symlink target was deleted! Sentinel $SENTINEL_FILE no longer exists. The trailing-slash symlink hazard guard is broken.")
+  echo "FAIL: trailing slash on a symlink output-dir doesn't follow into the target"
+fi
+
+rm -rf -- "$SENTINEL_DIR" "$LINK_PARENT" "$SYMLINK_FAKE_RUNTIME"
+
 # --- Context-name validation --------------------------------------------------
 
 # Context name flows into env-var derivation; restrict it to a charset that
