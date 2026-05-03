@@ -272,46 +272,88 @@ assert_test \
   "" \
   --context dev /tmp/kafka-introspect-payments
 
+# --- Ordering invariant: output-dir guards fire before runtime selection -----
+#
+# The output-path guards must reject before the script tries to pick docker /
+# podman. Two reasons matter together:
+#  1. The header of this file claims refusal-path tests don't need a container
+#     runtime — only true if RUNTIME selection runs after these guards.
+#  2. The wipe is the most catastrophic operation in this script; failing on
+#     the cheapest input check (path shape) is the right defense in depth.
+#
+# Build a sandbox PATH directory containing only the utilities introspect.sh
+# needs to reach the output-dir guard — explicitly excluding docker/podman.
+# Stripping whole directories from $PATH would also drop bash itself
+# (/usr/bin contains both bash and podman on most distros), so the symlink-
+# in-a-clean-dir shape is the only portable way to get a docker-less PATH.
+SANDBOX_BIN="$(mktemp -d "${TMPDIR:-/tmp}/kafka-introspect-test-bin-XXXXXX")"
+trap 'rm -rf -- "$SANDBOX_BIN"' EXIT
+for cmd in bash sh tr printf cat mkdir rm grep sed paste env; do
+  src="$(command -v "$cmd" 2>/dev/null || true)"
+  [ -n "$src" ] && ln -sf "$src" "$SANDBOX_BIN/$cmd"
+done
+no_runtime_output="$(env -i PATH="$SANDBOX_BIN" HOME="$HOME" "$SANDBOX_BIN/bash" -c "
+  $ALL_DEV
+  bash '$INTROSPECT' --context dev /tmp/some-other-dir 2>&1
+" || true)"
+if grep -qF -- "kafka-introspect-" <<<"$no_runtime_output" \
+   && ! grep -qF -- "neither docker nor podman" <<<"$no_runtime_output"; then
+  PASS=$((PASS + 1))
+  echo "PASS: output-dir guard fires before runtime selection (no docker/podman needed)"
+else
+  FAIL=$((FAIL + 1))
+  FAILURES+=("ordering: output-dir guard must fire without docker/podman on PATH. Output:
+$no_runtime_output")
+  echo "FAIL: output-dir guard fires before runtime selection (no docker/podman needed)"
+fi
+
 # --- Context-name validation --------------------------------------------------
 
 # Context name flows into env-var derivation; restrict it to a charset that
-# survives uppercasing without collisions.
+# survives uppercasing without collisions. Use a kafka-introspect- prefixed
+# path so we exercise the context regex and not the (earlier) leaf-prefix
+# guard.
 assert_test \
   "rejects context name starting with digit" \
   2 \
   "not a valid context name" \
   "$ALL_DEV" \
-  --context "1bad" /tmp/out
+  --context "1bad" /tmp/kafka-introspect-test
 
 assert_test \
   "rejects context name with dot" \
   2 \
   "not a valid context name" \
   "$ALL_DEV" \
-  --context "dev.us-east" /tmp/out
+  --context "dev.us-east" /tmp/kafka-introspect-test
 
 # --- Env-var validation tests -------------------------------------------------
+#
+# Output-dir wipe guards now fire BEFORE env-var validation, so these tests
+# need a path whose leaf passes the kafka-introspect- prefix check. Otherwise
+# the script would refuse on the path and never reach the env-var logic these
+# assertions are about.
 
 assert_test \
   "refuses with missing-list when no env vars set" \
   2 \
   "missing required environment variables" \
   "" \
-  --context dev /tmp/out
+  --context dev /tmp/kafka-introspect-test
 
 assert_test \
   "names CONTEXTS_DEV_SASL_PASSWORD specifically when only it is missing" \
   2 \
   "CONTEXTS_DEV_SASL_PASSWORD" \
   'export CONTEXTS_DEV_BROKERS=b CONTEXTS_DEV_SASL_USERNAME=u' \
-  --context dev /tmp/out
+  --context dev /tmp/kafka-introspect-test
 
 assert_test \
   "names CONTEXTS_DEV_BROKERS specifically when only it is missing" \
   2 \
   "CONTEXTS_DEV_BROKERS" \
   'export CONTEXTS_DEV_SASL_USERNAME=u CONTEXTS_DEV_SASL_PASSWORD=p' \
-  --context dev /tmp/out
+  --context dev /tmp/kafka-introspect-test
 
 # Empty-string vars must count as missing, matching the postgres-skill-creator
 # rule — an empty SASL_PASSWORD would otherwise authenticate as "no password"
@@ -321,11 +363,11 @@ assert_test \
   2 \
   "CONTEXTS_DEV_SASL_PASSWORD" \
   'export CONTEXTS_DEV_BROKERS=b CONTEXTS_DEV_SASL_USERNAME=u CONTEXTS_DEV_SASL_PASSWORD=' \
-  --context dev /tmp/out
+  --context dev /tmp/kafka-introspect-test
 
 # Multi-missing case: all three required keys must appear in a single error,
 # not fail-then-fix-then-fail-again.
-multi_output="$(run_introspect "" --context dev /tmp/out 2>&1 || true)"
+multi_output="$(run_introspect "" --context dev /tmp/kafka-introspect-test 2>&1 || true)"
 if grep -q "CONTEXTS_DEV_BROKERS" <<<"$multi_output" && \
    grep -q "CONTEXTS_DEV_SASL_USERNAME" <<<"$multi_output" && \
    grep -q "CONTEXTS_DEV_SASL_PASSWORD" <<<"$multi_output"; then
@@ -340,7 +382,7 @@ fi
 
 # Refusal must point users at credential helpers — that's the documented path
 # for populating these vars without leaking them through model context.
-helper_output="$(run_introspect "" --context dev /tmp/out 2>&1 || true)"
+helper_output="$(run_introspect "" --context dev /tmp/kafka-introspect-test 2>&1 || true)"
 if grep -qE "(op run|vault|direnv|credential helper)" <<<"$helper_output"; then
   PASS=$((PASS + 1))
   echo "PASS: refusal mentions credential-helper path"
@@ -362,7 +404,7 @@ assert_test \
   2 \
   "CONTEXTS_DEV_1_BROKERS" \
   "" \
-  --context "dev-1" /tmp/out
+  --context "dev-1" /tmp/kafka-introspect-test
 
 # --- Positive-path test: invocation shape -------------------------------------
 #
@@ -378,7 +420,7 @@ INVOCATION_LOG="$(mktemp)"
 # leaf-prefix safety check. mktemp's positional template form works on
 # both GNU and BSD mktemp.
 TMPOUT="$(mktemp -d "${TMPDIR:-/tmp}/kafka-introspect-XXXXXX")"
-trap 'rm -rf "$FAKE_RUNTIME" "$INVOCATION_LOG" "$TMPOUT"' EXIT
+trap 'rm -rf "$FAKE_RUNTIME" "$INVOCATION_LOG" "$TMPOUT" "$SANDBOX_BIN"' EXIT
 
 cat > "$FAKE_RUNTIME" <<'FAKE'
 #!/usr/bin/env bash

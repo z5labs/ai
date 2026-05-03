@@ -175,6 +175,64 @@ fi
 
 OUT="${POSITIONAL[0]}"
 
+# Output-dir wipe guards run BEFORE env-var validation and container-runtime
+# selection. Two reasons: (a) these are the most safety-critical checks
+# (a misuse turns into rm -rf on the wrong directory), so they should fire
+# on the cheapest input we have; (b) the test suite asserts that refusal-
+# path tests work without a container runtime on PATH, which only holds if
+# RUNTIME selection happens after these guards.
+#
+# Refuse the operation on path values that would be catastrophic to wipe.
+# This is a sanity net for malformed arguments — the contract is that the
+# caller passes a scratch location like /tmp/kafka-introspect-<team>, and
+# the OS will catch un-writable paths at mkdir time.
+case "$OUT" in
+  ""|"/"|"."|".."|"~"|"~/"*|" "*)
+    echo "error: refusing to wipe suspicious output-dir: $OUT" >&2
+    echo "       pass a scratch path like /tmp/kafka-introspect-<team>." >&2
+    exit 2
+    ;;
+esac
+# Reject any path whose components include `..`. `rm -rf` resolves
+# `/tmp/out/..` to `/tmp` (or worse), and the string-shape check above
+# wouldn't catch it because the literal string isn't `..` itself. The
+# four glob alternatives below cover the four positions a `..` component
+# can take: leading (`../foo`), trailing (`foo/..`), middle (`foo/../bar`),
+# and lone (`..` — already handled in the case above but kept here for
+# documentation symmetry).
+case "$OUT" in
+  "../"*|*"/.."|*"/../"*)
+    echo "error: refusing to wipe output-dir containing '..' segment: $OUT" >&2
+    echo "       '..' would let rm -rf resolve to a parent directory." >&2
+    exit 2
+    ;;
+esac
+# Final guard: the leaf segment must start with `kafka-introspect-`. This
+# is what makes the wipe safe in the common case — a malformed argument
+# like `/tmp` or `/home/user/work` would pass the syntactic checks above
+# but is catastrophic to recursively delete. The SKILL.md contract
+# prescribes `/tmp/kafka-introspect-<team>`; pinning the leaf prefix
+# here turns that prescription into enforcement, so a misuse hits the
+# refusal before any data on disk is touched.
+#
+# Use pure bash parameter expansion rather than `basename -- "$OUT"`:
+# the `--` end-of-options marker is GNU-only and BSD/macOS basename
+# rejects it, which would break the very macOS-default-Bash environment
+# the script otherwise targets. The argparse loop above already rejects
+# any positional starting with `-`, so `$OUT` cannot reach this point
+# beginning with a dash — the only edge case `--` would have guarded.
+out_no_trail="${OUT%/}"   # strip a single trailing slash if present
+out_leaf="${out_no_trail##*/}"
+case "$out_leaf" in
+  kafka-introspect-?*) ;;
+  *)
+    echo "error: refusing to wipe output-dir whose leaf segment is not 'kafka-introspect-<...>': $OUT" >&2
+    echo "       this script wipes the directory recursively before writing; the kafka-introspect- prefix" >&2
+    echo "       is the safety pin that prevents accidental destruction of a high-impact directory." >&2
+    exit 2
+    ;;
+esac
+
 # Derive the env-var prefix kafkactl uses for the chosen context. kafkactl
 # uppercases the context name and prepends `CONTEXTS_`. Hyphens become
 # underscores per kafkactl's own normalization.
@@ -245,58 +303,9 @@ fi
 
 # Wipe and recreate the output directory so a re-introspection after a
 # manifest change (topic dropped, group renamed) doesn't leave stale JSON
-# files lying around to confuse downstream rendering.
-#
-# Refuse the operation on path values that would be catastrophic to wipe.
-# This is a sanity net for malformed arguments — the contract is that the
-# caller passes a scratch location like /tmp/kafka-introspect-<team>, and
-# the OS will catch un-writable paths at mkdir time.
-case "$OUT" in
-  ""|"/"|"."|".."|"~"|"~/"*|" "*)
-    echo "error: refusing to wipe suspicious output-dir: $OUT" >&2
-    echo "       pass a scratch path like /tmp/kafka-introspect-<team>." >&2
-    exit 2
-    ;;
-esac
-# Reject any path whose components include `..`. `rm -rf` resolves
-# `/tmp/out/..` to `/tmp` (or worse), and the string-shape check above
-# wouldn't catch it because the literal string isn't `..` itself. The
-# four glob alternatives below cover the four positions a `..` component
-# can take: leading (`../foo`), trailing (`foo/..`), middle (`foo/../bar`),
-# and lone (`..` — already handled in the case above but kept here for
-# documentation symmetry).
-case "$OUT" in
-  "../"*|*"/.."|*"/../"*)
-    echo "error: refusing to wipe output-dir containing '..' segment: $OUT" >&2
-    echo "       '..' would let rm -rf resolve to a parent directory." >&2
-    exit 2
-    ;;
-esac
-# Final guard: the leaf segment must start with `kafka-introspect-`. This
-# is what makes the wipe safe in the common case — a malformed argument
-# like `/tmp` or `/home/user/work` would pass the syntactic checks above
-# but is catastrophic to recursively delete. The SKILL.md contract
-# prescribes `/tmp/kafka-introspect-<team>`; pinning the leaf prefix
-# here turns that prescription into enforcement, so a misuse hits the
-# refusal before any data on disk is touched.
-#
-# Use pure bash parameter expansion rather than `basename -- "$OUT"`:
-# the `--` end-of-options marker is GNU-only and BSD/macOS basename
-# rejects it, which would break the very macOS-default-Bash environment
-# the script otherwise targets. The argparse loop above already rejects
-# any positional starting with `-`, so `$OUT` cannot reach this point
-# beginning with a dash — the only edge case `--` would have guarded.
-out_no_trail="${OUT%/}"   # strip a single trailing slash if present
-out_leaf="${out_no_trail##*/}"
-case "$out_leaf" in
-  kafka-introspect-?*) ;;
-  *)
-    echo "error: refusing to wipe output-dir whose leaf segment is not 'kafka-introspect-<...>': $OUT" >&2
-    echo "       this script wipes the directory recursively before writing; the kafka-introspect- prefix" >&2
-    echo "       is the safety pin that prevents accidental destruction of a high-impact directory." >&2
-    exit 2
-    ;;
-esac
+# files lying around to confuse downstream rendering. The path was already
+# validated above, before any env / runtime work; everything between then
+# and now has been read-only setup.
 rm -rf -- "$OUT"
 mkdir -p "$OUT" "$OUT/topics" "$OUT/groups"
 
