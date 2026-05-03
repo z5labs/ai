@@ -1,0 +1,6 @@
+Test ran and failed exactly as expected — the decoder stub returns errUnimplemented. This is the implementation gap signal the skill anticipates.
+
+Status report:
+- Fixture added: tlv/testdata/sample.tlv (21 bytes, byte-identical to source).
+- Test wired: new TestRoundTripFromTestdata function in tlv/encoder_test.go with one case {name: "sample_tlv", fixture: "sample.tlv"}. Imports bytes, os, path/filepath, and the existing testify/require are all in place. go build ./... passes.
+- Test result: go test -race ./... — TestRoundTripFromTestdata/sample_tlv fails, as expected: "decoding File: at byte 0: tlv: unimplemented". This is not a skill bug. The tlv package's Decode is currently a stub that returns errUnimplemented, so the round-trip can't even reach the encode/byte-equal step. The fixture is on disk, the contract is wired, and the failure is real signal: the package needs its decoder/encoder implemented before this regression-guard goes green. Recommended next step: implement-go-binary-file-library against this tlv package.

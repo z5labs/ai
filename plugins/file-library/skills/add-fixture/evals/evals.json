@@ -1,0 +1,73 @@
+{
+  "skill_name": "add-fixture",
+  "evals": [
+    {
+      "id": 0,
+      "name": "text-fresh-first-fixture",
+      "prompt": "I just got a real-world KVR file from a customer and want to harden the parser against it. Add `./text-fresh/sample.kvr` as a golden test fixture for the Go file library package at `./text-fresh/kvr`. The package is freshly scaffolded — there's no `testdata/` directory yet and no fixture-driven test wired up. Wire up a round-trip test that reads from `testdata/`, parses the file, prints, parses the output, and asserts the two ASTs are equal.",
+      "expected_output": "./text-fresh/kvr/testdata/sample.kvr exists with bytes identical to ./text-fresh/sample.kvr. ./text-fresh/kvr/printer_test.go contains a new TestRoundTripFromTestdata function with one entry referencing 'sample.kvr', using the Parse → Print → Parse → require.Equal pattern (AST equality, not byte equality). The package builds and tests pass (the kvr stub returns &File{} for any input, so the round-trip is vacuously correct).",
+      "files": ["fixtures/text-fresh"],
+      "assertions": [
+        {"id": "fixture-copied", "text": "text-fresh/kvr/testdata/sample.kvr exists"},
+        {"id": "fixture-bytes-identical", "text": "text-fresh/kvr/testdata/sample.kvr is byte-identical to the original text-fresh/sample.kvr"},
+        {"id": "testdata-dir-created", "text": "text-fresh/kvr/testdata/ directory exists (was not present in the fixture)"},
+        {"id": "round-trip-test-added", "text": "text-fresh/kvr/printer_test.go contains a new function named TestRoundTripFromTestdata"},
+        {"id": "round-trip-uses-os-readfile", "text": "TestRoundTripFromTestdata reads the fixture via os.ReadFile and a path under testdata/"},
+        {"id": "round-trip-uses-ast-equality", "text": "TestRoundTripFromTestdata asserts AST equality (require.Equal on two *File values), not byte equality on the printed output"},
+        {"id": "round-trip-shape-parse-print-parse", "text": "TestRoundTripFromTestdata follows the Parse(file) → Print → Parse(buf) → require.Equal(first, second) shape"},
+        {"id": "round-trip-table-driven", "text": "TestRoundTripFromTestdata is table-driven with a testCases slice and t.Run subtests"},
+        {"id": "round-trip-uses-t-parallel", "text": "TestRoundTripFromTestdata calls t.Parallel() at both function and subtest level"},
+        {"id": "round-trip-uses-require", "text": "TestRoundTripFromTestdata uses github.com/stretchr/testify/require for assertions"},
+        {"id": "go-build-passes", "text": "`go build ./...` succeeds in text-fresh/kvr/"},
+        {"id": "go-test-passes", "text": "`go test -race ./...` passes in text-fresh/kvr/ (the new round-trip case passes vacuously against the stub)"},
+        {"id": "no-existing-test-edits", "text": "The pre-existing TestPrinter and TestPrinterRoundTrip tests in printer_test.go are unchanged from the fixture"},
+        {"id": "no-source-edits", "text": "tokenizer.go, parser.go, printer.go in text-fresh/kvr/ are unchanged from the fixture (skill is additive only)"},
+        {"id": "no-spec-edits", "text": "SPEC.md in text-fresh/kvr/ is unchanged from the fixture"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "binary-fresh-first-fixture",
+      "prompt": "I have a real-world TLV-encoded blob at `./binary-fresh/sample.tlv` and want it pinned as a regression-guard fixture for my Go binary file library at `./binary-fresh/tlv`. The package is freshly scaffolded (types.go / decoder.go / encoder.go stubs); there's no `testdata/` yet. Drop the file in as a golden fixture and wire a round-trip test against it. For binary I want byte-equality on the round-trip, not AST equality.",
+      "expected_output": "./binary-fresh/tlv/testdata/sample.tlv exists with bytes identical to ./binary-fresh/sample.tlv. ./binary-fresh/tlv/encoder_test.go contains a new TestRoundTripFromTestdata function using the Decode(file) → Encode → require.Equal(originalBytes, buf.Bytes()) pattern (byte equality). The package builds. The new round-trip test will fail with errUnimplemented because the decoder is still stubbed — that's expected and the skill should report it as an implementation gap, not as a skill bug.",
+      "files": ["fixtures/binary-fresh"],
+      "assertions": [
+        {"id": "fixture-copied", "text": "binary-fresh/tlv/testdata/sample.tlv exists"},
+        {"id": "fixture-bytes-identical", "text": "binary-fresh/tlv/testdata/sample.tlv is byte-identical to the original binary-fresh/sample.tlv"},
+        {"id": "testdata-dir-created", "text": "binary-fresh/tlv/testdata/ directory exists (was not present in the fixture)"},
+        {"id": "round-trip-test-added", "text": "binary-fresh/tlv/encoder_test.go contains a new function named TestRoundTripFromTestdata"},
+        {"id": "round-trip-uses-os-readfile", "text": "TestRoundTripFromTestdata reads the fixture via os.ReadFile and a path under testdata/"},
+        {"id": "round-trip-uses-byte-equality", "text": "TestRoundTripFromTestdata asserts byte equality (require.Equal on the original bytes vs encoded bytes), NOT AST equality on *File values"},
+        {"id": "round-trip-shape-decode-encode", "text": "TestRoundTripFromTestdata follows the Decode(file) → Encode(&buf, f) → require.Equal(originalBytes, buf.Bytes()) shape"},
+        {"id": "round-trip-table-driven", "text": "TestRoundTripFromTestdata is table-driven with a testCases slice and t.Run subtests"},
+        {"id": "round-trip-uses-t-parallel", "text": "TestRoundTripFromTestdata calls t.Parallel() at both function and subtest level"},
+        {"id": "round-trip-uses-require", "text": "TestRoundTripFromTestdata uses github.com/stretchr/testify/require for assertions"},
+        {"id": "go-build-passes", "text": "`go build ./...` succeeds in binary-fresh/tlv/ (test wiring compiles cleanly)"},
+        {"id": "go-test-failure-reported-gracefully", "text": "The skill's final user-facing report mentions the new round-trip test failing (or errUnimplemented), and frames the failure as an implementation gap to fix next — not as a skill bug. The skill does NOT claim 'tests pass' if they don't."},
+        {"id": "no-existing-test-edits", "text": "The pre-existing TestDecodeStubReturnsErrUnimplemented and TestEncodeStubReturnsErrUnimplemented tests are unchanged from the fixture"},
+        {"id": "no-source-edits", "text": "types.go, decoder.go, encoder.go in binary-fresh/tlv/ are unchanged from the fixture (skill is additive only)"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "text-second-append-fixture",
+      "prompt": "Add `./text-second/sample2.kvr` as another golden fixture for the kvr package at `./text-second/kvr`. The package already has one fixture wired up (testdata/example.kvr referenced from TestRoundTripFromTestdata in printer_test.go) — append the new one to the existing test table rather than creating a duplicate test function.",
+      "expected_output": "./text-second/kvr/testdata/sample2.kvr exists with bytes identical to ./text-second/sample2.kvr. ./text-second/kvr/printer_test.go's existing TestRoundTripFromTestdata function gains a second testCases entry referencing 'sample2.kvr'; the existing 'example_kvr' / 'example.kvr' entry is preserved unchanged. No new TestRoundTripFromTestdata function is created. The package builds and tests pass.",
+      "files": ["fixtures/text-second"],
+      "assertions": [
+        {"id": "fixture-copied", "text": "text-second/kvr/testdata/sample2.kvr exists"},
+        {"id": "fixture-bytes-identical", "text": "text-second/kvr/testdata/sample2.kvr is byte-identical to the original text-second/sample2.kvr"},
+        {"id": "existing-fixture-preserved", "text": "text-second/kvr/testdata/example.kvr is unchanged from the fixture"},
+        {"id": "no-duplicate-test-function", "text": "text-second/kvr/printer_test.go contains exactly one TestRoundTripFromTestdata function (no duplicates, no _2 suffix)"},
+        {"id": "existing-case-preserved", "text": "The pre-existing testCases entry for example.kvr (slug 'example_kvr') is still present in TestRoundTripFromTestdata"},
+        {"id": "new-case-appended", "text": "TestRoundTripFromTestdata's testCases slice has a new entry referencing 'sample2.kvr'"},
+        {"id": "two-cases-total", "text": "TestRoundTripFromTestdata's testCases slice now contains exactly two entries"},
+        {"id": "test-body-unchanged", "text": "The body of TestRoundTripFromTestdata's t.Run loop (Parse → Print → Parse → require.Equal) is unchanged from the fixture"},
+        {"id": "go-build-passes", "text": "`go build ./...` succeeds in text-second/kvr/"},
+        {"id": "go-test-passes", "text": "`go test -race ./...` passes in text-second/kvr/ (both the original and new round-trip cases pass vacuously against the stub)"},
+        {"id": "no-source-edits", "text": "tokenizer.go, parser.go, printer.go in text-second/kvr/ are unchanged from the fixture (skill is additive only)"},
+        {"id": "no-other-test-edits", "text": "TestPrinter and TestPrinterRoundTrip in printer_test.go are unchanged from the fixture"}
+      ]
+    }
+  ]
+}

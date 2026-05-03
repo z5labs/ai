@@ -1,0 +1,80 @@
+{
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 14,
+    "failed": 0,
+    "total": 14
+  },
+  "expectations": [
+    {
+      "text": "binary-fresh/tlv/testdata/sample.tlv exists",
+      "passed": true,
+      "evidence": "fixture exists=True"
+    },
+    {
+      "text": "binary-fresh/tlv/testdata/sample.tlv is byte-identical to original sample.tlv",
+      "passed": true,
+      "evidence": "fixture 21B, original 21B, equal=True"
+    },
+    {
+      "text": "binary-fresh/tlv/testdata/ exists (was not present)",
+      "passed": true,
+      "evidence": "testdata dir exists=True"
+    },
+    {
+      "text": "encoder_test.go contains a new TestRoundTripFromTestdata function",
+      "passed": true,
+      "evidence": "len=552"
+    },
+    {
+      "text": "TestRoundTripFromTestdata reads via os.ReadFile and a testdata/ path",
+      "passed": true,
+      "evidence": "os.ReadFile=True, testdata=True"
+    },
+    {
+      "text": "asserts byte equality (require.Equal on bytes), NOT AST equality on *File",
+      "passed": true,
+      "evidence": "byte equality=True, no 'first' var=True"
+    },
+    {
+      "text": "Decode(file) \u2192 Encode(&buf, f) \u2192 require.Equal(originalBytes, buf.Bytes()) shape",
+      "passed": true,
+      "evidence": "Decode=True, Encode=True, byte-eq=True"
+    },
+    {
+      "text": "table-driven with testCases and t.Run",
+      "passed": true,
+      "evidence": "testCases=True, t.Run=True"
+    },
+    {
+      "text": "t.Parallel() at both function and subtest level",
+      "passed": true,
+      "evidence": "t.Parallel() count=2"
+    },
+    {
+      "text": "uses testify/require",
+      "passed": true,
+      "evidence": "testify import=True"
+    },
+    {
+      "text": "go build ./... succeeds (test wiring compiles cleanly)",
+      "passed": true,
+      "evidence": "build clean"
+    },
+    {
+      "text": "skill's final report frames test failure as implementation gap, not skill bug",
+      "passed": true,
+      "evidence": "report file=present, framing=True"
+    },
+    {
+      "text": "TestEncodeStubReturnsErrUnimplemented unchanged from fixture",
+      "passed": true,
+      "evidence": "unchanged=True"
+    },
+    {
+      "text": "types.go, decoder.go, encoder.go unchanged",
+      "passed": true,
+      "evidence": "edited: none"
+    }
+  ]
+}

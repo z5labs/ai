@@ -1,0 +1,15 @@
+Status report:
+
+What I did:
+- Detected basename collision: incoming sample.kvr (364 B, defines NEW_INCOMING/CHANGED block) vs. existing kvr/testdata/sample.kvr (247 B, defines ALREADY_PINNED/STABLE block) — confirmed contents differ via Read.
+- Per the user's instruction to "pick something that won't clobber the existing one," wrote the new fixture to kvr/testdata/sample_v2.kvr instead of overwriting.
+- The v2 suffix matches the file's own self-identifying record (record string NEW_INCOMING = "v2").
+
+Result:
+Both fixtures now coexist in testdata/:
+- kvr/testdata/sample.kvr (untouched, 247 B)
+- kvr/testdata/sample_v2.kvr (new, 364 B)
+
+Notes:
+- I did not delete the original sample.kvr source from outputs/ since the task didn't specify a move vs. copy; left it in place as the source of truth.
+- No tests reference sample_v2.kvr yet — if a fixture-loader test should be added/updated to consume it, that's a follow-up.

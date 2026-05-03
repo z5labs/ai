@@ -1,0 +1,19 @@
+{
+  "eval_id": 2,
+  "eval_name": "text-second-append-fixture",
+  "prompt": "Add `./text-second/sample2.kvr` as another golden fixture for the kvr package at `./text-second/kvr`. The package already has one fixture wired up (testdata/example.kvr referenced from TestRoundTripFromTestdata in printer_test.go) — append the new one to the existing test table rather than creating a duplicate test function.",
+  "assertions": [
+    {"id": "fixture-copied", "text": "text-second/kvr/testdata/sample2.kvr exists"},
+    {"id": "fixture-bytes-identical", "text": "text-second/kvr/testdata/sample2.kvr is byte-identical to the original text-second/sample2.kvr"},
+    {"id": "existing-fixture-preserved", "text": "text-second/kvr/testdata/example.kvr is unchanged from the fixture"},
+    {"id": "no-duplicate-test-function", "text": "text-second/kvr/printer_test.go contains exactly one TestRoundTripFromTestdata function (no duplicates, no _2 suffix)"},
+    {"id": "existing-case-preserved", "text": "The pre-existing testCases entry for example.kvr (slug 'example_kvr') is still present in TestRoundTripFromTestdata"},
+    {"id": "new-case-appended", "text": "TestRoundTripFromTestdata's testCases slice has a new entry referencing 'sample2.kvr'"},
+    {"id": "two-cases-total", "text": "TestRoundTripFromTestdata's testCases slice now contains exactly two entries"},
+    {"id": "test-body-unchanged", "text": "The body of TestRoundTripFromTestdata's t.Run loop (Parse → Print → Parse → require.Equal) is unchanged from the fixture"},
+    {"id": "go-build-passes", "text": "`go build ./...` succeeds in text-second/kvr/"},
+    {"id": "go-test-passes", "text": "`go test -race ./...` passes in text-second/kvr/ (both the original and new round-trip cases pass vacuously against the stub)"},
+    {"id": "no-source-edits", "text": "tokenizer.go, parser.go, printer.go in text-second/kvr/ are unchanged from the fixture (skill is additive only)"},
+    {"id": "no-other-test-edits", "text": "TestPrinter and TestPrinterRoundTrip in printer_test.go are unchanged from the fixture"}
+  ]
+}

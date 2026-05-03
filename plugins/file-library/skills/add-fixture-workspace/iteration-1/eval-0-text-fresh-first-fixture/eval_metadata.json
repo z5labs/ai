@@ -1,0 +1,22 @@
+{
+  "eval_id": 0,
+  "eval_name": "text-fresh-first-fixture",
+  "prompt": "I just got a real-world KVR file from a customer and want to harden the parser against it. Add `./text-fresh/sample.kvr` as a golden test fixture for the Go file library package at `./text-fresh/kvr`. The package is freshly scaffolded — there's no `testdata/` directory yet and no fixture-driven test wired up. Wire up a round-trip test that reads from `testdata/`, parses the file, prints, parses the output, and asserts the two ASTs are equal.",
+  "assertions": [
+    {"id": "fixture-copied", "text": "text-fresh/kvr/testdata/sample.kvr exists"},
+    {"id": "fixture-bytes-identical", "text": "text-fresh/kvr/testdata/sample.kvr is byte-identical to the original text-fresh/sample.kvr"},
+    {"id": "testdata-dir-created", "text": "text-fresh/kvr/testdata/ directory exists (was not present in the fixture)"},
+    {"id": "round-trip-test-added", "text": "text-fresh/kvr/printer_test.go contains a new function named TestRoundTripFromTestdata"},
+    {"id": "round-trip-uses-os-readfile", "text": "TestRoundTripFromTestdata reads the fixture via os.ReadFile and a path under testdata/"},
+    {"id": "round-trip-uses-ast-equality", "text": "TestRoundTripFromTestdata asserts AST equality (require.Equal on two *File values), not byte equality on the printed output"},
+    {"id": "round-trip-shape-parse-print-parse", "text": "TestRoundTripFromTestdata follows the Parse(file) → Print → Parse(buf) → require.Equal(first, second) shape"},
+    {"id": "round-trip-table-driven", "text": "TestRoundTripFromTestdata is table-driven with a testCases slice and t.Run subtests"},
+    {"id": "round-trip-uses-t-parallel", "text": "TestRoundTripFromTestdata calls t.Parallel() at both function and subtest level"},
+    {"id": "round-trip-uses-require", "text": "TestRoundTripFromTestdata uses github.com/stretchr/testify/require for assertions"},
+    {"id": "go-build-passes", "text": "`go build ./...` succeeds in text-fresh/kvr/"},
+    {"id": "go-test-passes", "text": "`go test -race ./...` passes in text-fresh/kvr/ (the new round-trip case passes vacuously against the stub)"},
+    {"id": "no-existing-test-edits", "text": "The pre-existing TestPrinter and TestPrinterRoundTrip tests in printer_test.go are unchanged from the fixture"},
+    {"id": "no-source-edits", "text": "tokenizer.go, parser.go, printer.go in text-fresh/kvr/ are unchanged from the fixture (skill is additive only)"},
+    {"id": "no-spec-edits", "text": "SPEC.md in text-fresh/kvr/ is unchanged from the fixture"}
+  ]
+}

@@ -1,0 +1,591 @@
+{
+  "metadata": {
+    "skill_name": "add-fixture",
+    "skill_path": "/home/carson/github.com/z5labs/ai/.claude/worktrees/issue-22/plugins/file-library/skills/add-fixture",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-05-03T18:25:46Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 15,
+        "failed": 0,
+        "total": 15,
+        "time_seconds": 95.5,
+        "tokens": 35221,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "text-fresh/kvr/testdata/sample.kvr exists",
+          "passed": true,
+          "evidence": "fixture path=/home/carson/github.com/z5labs/ai/.claude/worktrees/issue-22/plugins/file-library/skills/add-fixture-workspace/iteration-1/eval-0-text-fresh-first-fixture/with_skill/run-1/outputs/kvr/testdata/sample.kvr, exists=True"
+        },
+        {
+          "text": "text-fresh/kvr/testdata/sample.kvr is byte-identical to the original sample.kvr",
+          "passed": true,
+          "evidence": "fixture 326B, original 326B, equal=True"
+        },
+        {
+          "text": "text-fresh/kvr/testdata/ directory exists (was not present in the fixture)",
+          "passed": true,
+          "evidence": "testdata dir=/home/carson/github.com/z5labs/ai/.claude/worktrees/issue-22/plugins/file-library/skills/add-fixture-workspace/iteration-1/eval-0-text-fresh-first-fixture/with_skill/run-1/outputs/kvr/testdata, exists=True"
+        },
+        {
+          "text": "printer_test.go contains a new function named TestRoundTripFromTestdata",
+          "passed": true,
+          "evidence": "len(TestRoundTripFromTestdata body)=612"
+        },
+        {
+          "text": "TestRoundTripFromTestdata reads the fixture via os.ReadFile and a path under testdata/",
+          "passed": true,
+          "evidence": "os.ReadFile in body=True, testdata in body=True"
+        },
+        {
+          "text": "TestRoundTripFromTestdata asserts AST equality (require.Equal on two *File values), not byte equality",
+          "passed": true,
+          "evidence": "require.Equal(...first..second...) found=True"
+        },
+        {
+          "text": "Parse(file) \u2192 Print \u2192 Parse(buf) \u2192 require.Equal(first, second) shape",
+          "passed": true,
+          "evidence": "Parse count=2, Print present=True"
+        },
+        {
+          "text": "TestRoundTripFromTestdata is table-driven with a testCases slice and t.Run subtests",
+          "passed": true,
+          "evidence": "testCases in body=True, t.Run in body=True"
+        },
+        {
+          "text": "TestRoundTripFromTestdata calls t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel() count=2"
+        },
+        {
+          "text": "uses github.com/stretchr/testify/require",
+          "passed": true,
+          "evidence": "testify import=True"
+        },
+        {
+          "text": "go build ./... succeeds in text-fresh/kvr/",
+          "passed": true,
+          "evidence": "build clean"
+        },
+        {
+          "text": "go test -race ./... passes in text-fresh/kvr/",
+          "passed": true,
+          "evidence": "ok  \tkvr\t(cached)"
+        },
+        {
+          "text": "TestPrinter and TestPrinterRoundTrip in printer_test.go are unchanged",
+          "passed": true,
+          "evidence": "TestPrinter equal=True, TestPrinterRoundTrip equal=True"
+        },
+        {
+          "text": "tokenizer.go, parser.go, printer.go are unchanged from the fixture",
+          "passed": true,
+          "evidence": "edited files: none"
+        },
+        {
+          "text": "SPEC.md is unchanged from the fixture",
+          "passed": true,
+          "evidence": "SPEC.md equal=True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 14,
+        "failed": 0,
+        "total": 14,
+        "time_seconds": 69.4,
+        "tokens": 29801,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "binary-fresh/tlv/testdata/sample.tlv exists",
+          "passed": true,
+          "evidence": "fixture exists=True"
+        },
+        {
+          "text": "binary-fresh/tlv/testdata/sample.tlv is byte-identical to original sample.tlv",
+          "passed": true,
+          "evidence": "fixture 21B, original 21B, equal=True"
+        },
+        {
+          "text": "binary-fresh/tlv/testdata/ exists (was not present)",
+          "passed": true,
+          "evidence": "testdata dir exists=True"
+        },
+        {
+          "text": "encoder_test.go contains a new TestRoundTripFromTestdata function",
+          "passed": true,
+          "evidence": "len=552"
+        },
+        {
+          "text": "TestRoundTripFromTestdata reads via os.ReadFile and a testdata/ path",
+          "passed": true,
+          "evidence": "os.ReadFile=True, testdata=True"
+        },
+        {
+          "text": "asserts byte equality (require.Equal on bytes), NOT AST equality on *File",
+          "passed": true,
+          "evidence": "byte equality=True, no 'first' var=True"
+        },
+        {
+          "text": "Decode(file) \u2192 Encode(&buf, f) \u2192 require.Equal(originalBytes, buf.Bytes()) shape",
+          "passed": true,
+          "evidence": "Decode=True, Encode=True, byte-eq=True"
+        },
+        {
+          "text": "table-driven with testCases and t.Run",
+          "passed": true,
+          "evidence": "testCases=True, t.Run=True"
+        },
+        {
+          "text": "t.Parallel() at both function and subtest level",
+          "passed": true,
+          "evidence": "t.Parallel() count=2"
+        },
+        {
+          "text": "uses testify/require",
+          "passed": true,
+          "evidence": "testify import=True"
+        },
+        {
+          "text": "go build ./... succeeds (test wiring compiles cleanly)",
+          "passed": true,
+          "evidence": "build clean"
+        },
+        {
+          "text": "skill's final report frames test failure as implementation gap, not skill bug",
+          "passed": true,
+          "evidence": "report file=present, framing=True"
+        },
+        {
+          "text": "TestEncodeStubReturnsErrUnimplemented unchanged from fixture",
+          "passed": true,
+          "evidence": "unchanged=True"
+        },
+        {
+          "text": "types.go, decoder.go, encoder.go unchanged",
+          "passed": true,
+          "evidence": "edited: none"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 12,
+        "failed": 0,
+        "total": 12,
+        "time_seconds": 57.0,
+        "tokens": 27783,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "text-second/kvr/testdata/sample2.kvr exists",
+          "passed": true,
+          "evidence": "fixture exists=True"
+        },
+        {
+          "text": "sample2.kvr is byte-identical to original",
+          "passed": true,
+          "evidence": "fixture 350B, original 350B, equal=True"
+        },
+        {
+          "text": "testdata/example.kvr (existing fixture) is unchanged",
+          "passed": true,
+          "evidence": "unchanged=True"
+        },
+        {
+          "text": "exactly one TestRoundTripFromTestdata function (no duplicates)",
+          "passed": true,
+          "evidence": "function count=1"
+        },
+        {
+          "text": "pre-existing testCases entry for example.kvr is still present",
+          "passed": true,
+          "evidence": "example_kvr or example.kvr in body=True"
+        },
+        {
+          "text": "testCases has a new entry referencing sample2.kvr",
+          "passed": true,
+          "evidence": "sample2.kvr in body=True"
+        },
+        {
+          "text": "testCases slice contains exactly two entries",
+          "passed": true,
+          "evidence": "entry count=2"
+        },
+        {
+          "text": "body of TestRoundTripFromTestdata's t.Run loop is unchanged",
+          "passed": true,
+          "evidence": "loop bodies equal=True, len(out)=435"
+        },
+        {
+          "text": "go build ./... succeeds",
+          "passed": true,
+          "evidence": "build clean"
+        },
+        {
+          "text": "go test -race ./... passes",
+          "passed": true,
+          "evidence": "ok  \tkvr\t(cached)"
+        },
+        {
+          "text": "tokenizer.go, parser.go, printer.go unchanged",
+          "passed": true,
+          "evidence": "edited: none"
+        },
+        {
+          "text": "TestPrinter and TestPrinterRoundTrip unchanged",
+          "passed": true,
+          "evidence": "TestPrinter equal=True, TestPrinterRoundTrip equal=True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5333,
+        "passed": 8,
+        "failed": 7,
+        "total": 15,
+        "time_seconds": 70.2,
+        "tokens": 32220,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "text-fresh/kvr/testdata/sample.kvr exists",
+          "passed": true,
+          "evidence": "fixture path=/home/carson/github.com/z5labs/ai/.claude/worktrees/issue-22/plugins/file-library/skills/add-fixture-workspace/iteration-1/eval-0-text-fresh-first-fixture/without_skill/run-1/outputs/kvr/testdata/sample.kvr, exists=True"
+        },
+        {
+          "text": "text-fresh/kvr/testdata/sample.kvr is byte-identical to the original sample.kvr",
+          "passed": true,
+          "evidence": "fixture 326B, original 326B, equal=True"
+        },
+        {
+          "text": "text-fresh/kvr/testdata/ directory exists (was not present in the fixture)",
+          "passed": true,
+          "evidence": "testdata dir=/home/carson/github.com/z5labs/ai/.claude/worktrees/issue-22/plugins/file-library/skills/add-fixture-workspace/iteration-1/eval-0-text-fresh-first-fixture/without_skill/run-1/outputs/kvr/testdata, exists=True"
+        },
+        {
+          "text": "printer_test.go contains a new function named TestRoundTripFromTestdata",
+          "passed": false,
+          "evidence": "len(TestRoundTripFromTestdata body)=0"
+        },
+        {
+          "text": "TestRoundTripFromTestdata reads the fixture via os.ReadFile and a path under testdata/",
+          "passed": false,
+          "evidence": "os.ReadFile in body=False, testdata in body=False"
+        },
+        {
+          "text": "TestRoundTripFromTestdata asserts AST equality (require.Equal on two *File values), not byte equality",
+          "passed": false,
+          "evidence": "require.Equal(...first..second...) found=False"
+        },
+        {
+          "text": "Parse(file) \u2192 Print \u2192 Parse(buf) \u2192 require.Equal(first, second) shape",
+          "passed": false,
+          "evidence": "Parse count=0, Print present=False"
+        },
+        {
+          "text": "TestRoundTripFromTestdata is table-driven with a testCases slice and t.Run subtests",
+          "passed": false,
+          "evidence": "testCases in body=False, t.Run in body=False"
+        },
+        {
+          "text": "TestRoundTripFromTestdata calls t.Parallel() at both function and subtest level",
+          "passed": false,
+          "evidence": "t.Parallel() count=0"
+        },
+        {
+          "text": "uses github.com/stretchr/testify/require",
+          "passed": false,
+          "evidence": "testify import=True"
+        },
+        {
+          "text": "go build ./... succeeds in text-fresh/kvr/",
+          "passed": true,
+          "evidence": "build clean"
+        },
+        {
+          "text": "go test -race ./... passes in text-fresh/kvr/",
+          "passed": true,
+          "evidence": "ok  \tkvr\t(cached)"
+        },
+        {
+          "text": "TestPrinter and TestPrinterRoundTrip in printer_test.go are unchanged",
+          "passed": true,
+          "evidence": "TestPrinter equal=True, TestPrinterRoundTrip equal=True"
+        },
+        {
+          "text": "tokenizer.go, parser.go, printer.go are unchanged from the fixture",
+          "passed": true,
+          "evidence": "edited files: none"
+        },
+        {
+          "text": "SPEC.md is unchanged from the fixture",
+          "passed": true,
+          "evidence": "SPEC.md equal=True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5,
+        "passed": 7,
+        "failed": 7,
+        "total": 14,
+        "time_seconds": 57.7,
+        "tokens": 26478,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "binary-fresh/tlv/testdata/sample.tlv exists",
+          "passed": true,
+          "evidence": "fixture exists=True"
+        },
+        {
+          "text": "binary-fresh/tlv/testdata/sample.tlv is byte-identical to original sample.tlv",
+          "passed": true,
+          "evidence": "fixture 21B, original 21B, equal=True"
+        },
+        {
+          "text": "binary-fresh/tlv/testdata/ exists (was not present)",
+          "passed": true,
+          "evidence": "testdata dir exists=True"
+        },
+        {
+          "text": "encoder_test.go contains a new TestRoundTripFromTestdata function",
+          "passed": false,
+          "evidence": "len=0"
+        },
+        {
+          "text": "TestRoundTripFromTestdata reads via os.ReadFile and a testdata/ path",
+          "passed": false,
+          "evidence": "os.ReadFile=False, testdata=False"
+        },
+        {
+          "text": "asserts byte equality (require.Equal on bytes), NOT AST equality on *File",
+          "passed": false,
+          "evidence": "byte equality=False, no 'first' var=True"
+        },
+        {
+          "text": "Decode(file) \u2192 Encode(&buf, f) \u2192 require.Equal(originalBytes, buf.Bytes()) shape",
+          "passed": false,
+          "evidence": "Decode=False, Encode=False, byte-eq=False"
+        },
+        {
+          "text": "table-driven with testCases and t.Run",
+          "passed": false,
+          "evidence": "testCases=False, t.Run=False"
+        },
+        {
+          "text": "t.Parallel() at both function and subtest level",
+          "passed": false,
+          "evidence": "t.Parallel() count=0"
+        },
+        {
+          "text": "uses testify/require",
+          "passed": false,
+          "evidence": "testify import=True"
+        },
+        {
+          "text": "go build ./... succeeds (test wiring compiles cleanly)",
+          "passed": true,
+          "evidence": "build clean"
+        },
+        {
+          "text": "skill's final report frames test failure as implementation gap, not skill bug",
+          "passed": true,
+          "evidence": "report file=present, framing=True"
+        },
+        {
+          "text": "TestEncodeStubReturnsErrUnimplemented unchanged from fixture",
+          "passed": true,
+          "evidence": "unchanged=True"
+        },
+        {
+          "text": "types.go, decoder.go, encoder.go unchanged",
+          "passed": true,
+          "evidence": "edited: none"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 12,
+        "failed": 0,
+        "total": 12,
+        "time_seconds": 37.5,
+        "tokens": 21630,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "text-second/kvr/testdata/sample2.kvr exists",
+          "passed": true,
+          "evidence": "fixture exists=True"
+        },
+        {
+          "text": "sample2.kvr is byte-identical to original",
+          "passed": true,
+          "evidence": "fixture 350B, original 350B, equal=True"
+        },
+        {
+          "text": "testdata/example.kvr (existing fixture) is unchanged",
+          "passed": true,
+          "evidence": "unchanged=True"
+        },
+        {
+          "text": "exactly one TestRoundTripFromTestdata function (no duplicates)",
+          "passed": true,
+          "evidence": "function count=1"
+        },
+        {
+          "text": "pre-existing testCases entry for example.kvr is still present",
+          "passed": true,
+          "evidence": "example_kvr or example.kvr in body=True"
+        },
+        {
+          "text": "testCases has a new entry referencing sample2.kvr",
+          "passed": true,
+          "evidence": "sample2.kvr in body=True"
+        },
+        {
+          "text": "testCases slice contains exactly two entries",
+          "passed": true,
+          "evidence": "entry count=2"
+        },
+        {
+          "text": "body of TestRoundTripFromTestdata's t.Run loop is unchanged",
+          "passed": true,
+          "evidence": "loop bodies equal=True, len(out)=435"
+        },
+        {
+          "text": "go build ./... succeeds",
+          "passed": true,
+          "evidence": "build clean"
+        },
+        {
+          "text": "go test -race ./... passes",
+          "passed": true,
+          "evidence": "ok  \tkvr\t(cached)"
+        },
+        {
+          "text": "tokenizer.go, parser.go, printer.go unchanged",
+          "passed": true,
+          "evidence": "edited: none"
+        },
+        {
+          "text": "TestPrinter and TestPrinterRoundTrip unchanged",
+          "passed": true,
+          "evidence": "TestPrinter equal=True, TestPrinterRoundTrip equal=True"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 73.9667,
+        "stddev": 19.6521,
+        "min": 57.0,
+        "max": 95.5
+      },
+      "tokens": {
+        "mean": 30935.0,
+        "stddev": 3846.4825,
+        "min": 27783,
+        "max": 35221
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.6778,
+        "stddev": 0.2796,
+        "min": 0.5,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 55.1333,
+        "stddev": 16.5004,
+        "min": 37.5,
+        "max": 70.2
+      },
+      "tokens": {
+        "mean": 26776.0,
+        "stddev": 5301.2855,
+        "min": 21630,
+        "max": 32220
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.32",
+      "time_seconds": "+18.8",
+      "tokens": "+4159"
+    }
+  },
+  "notes": [
+    "WITH-SKILL: 100 percent pass rate across all 3 evals, zero variance. Every with-skill run produced the exact prescribed shape (function name TestRoundTripFromTestdata, table-driven testCases, t.Parallel at both levels, AST equality for text vs byte equality for binary).",
+    "BASELINE: 67.8 percent pass rate with high variance (stddev 28). Eval-2 baseline scored 100 percent only because the existing TestRoundTripFromTestdata in the fixture seeded the convention; once a convention is established, baselines tend to follow it.",
+    "WHERE BASELINE FELL SHORT: every baseline picked a different function name (TestFixtureRoundTrip, TestGoldenRoundTrip), and one used a glob-based zero-touch table instead of an explicit testCases slice. Both choices are defensible in isolation, but they fragment the test surface across packages.",
+    "COPY VS MOVE: all 3 baselines moved the source file into testdata/ (deleting the original); all 3 with-skill runs copied. The skill should make this explicit (currently the wording is implicit in 'copied verbatim') because it is a real divergence in behavior.",
+    "TIME/TOKEN COST: with-skill is 18.8s slower and uses 4159 more tokens on average. The cost is reading SKILL.md and applying its template verbatim. For a one-off task this is a meaningful overhead; for a fleet of file libraries that the user wants tested consistently, it is worth it.",
+    "BINARY-FAILURE FRAMING: eval-1 (binary, decoder still stubbed) expects the round-trip test to fail. Both with-skill and baseline correctly framed this as an implementation gap rather than a skill bug, citing errUnimplemented. The skill made this explicit; the baseline got it right anyway from context.",
+    "GRADER LIMITATION: my graders look up the round-trip test by exact name (TestRoundTripFromTestdata). When baselines used different names, downstream checks (uses os.ReadFile, table-driven, t.Parallel) reported as failing even when the substance was present. This makes the with-vs-baseline gap look slightly larger than it really is. The naming consistency itself is real value, just not the only value."
+  ]
+}

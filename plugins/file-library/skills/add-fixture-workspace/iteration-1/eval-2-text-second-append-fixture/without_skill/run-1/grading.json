@@ -1,0 +1,70 @@
+{
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 12,
+    "failed": 0,
+    "total": 12
+  },
+  "expectations": [
+    {
+      "text": "text-second/kvr/testdata/sample2.kvr exists",
+      "passed": true,
+      "evidence": "fixture exists=True"
+    },
+    {
+      "text": "sample2.kvr is byte-identical to original",
+      "passed": true,
+      "evidence": "fixture 350B, original 350B, equal=True"
+    },
+    {
+      "text": "testdata/example.kvr (existing fixture) is unchanged",
+      "passed": true,
+      "evidence": "unchanged=True"
+    },
+    {
+      "text": "exactly one TestRoundTripFromTestdata function (no duplicates)",
+      "passed": true,
+      "evidence": "function count=1"
+    },
+    {
+      "text": "pre-existing testCases entry for example.kvr is still present",
+      "passed": true,
+      "evidence": "example_kvr or example.kvr in body=True"
+    },
+    {
+      "text": "testCases has a new entry referencing sample2.kvr",
+      "passed": true,
+      "evidence": "sample2.kvr in body=True"
+    },
+    {
+      "text": "testCases slice contains exactly two entries",
+      "passed": true,
+      "evidence": "entry count=2"
+    },
+    {
+      "text": "body of TestRoundTripFromTestdata's t.Run loop is unchanged",
+      "passed": true,
+      "evidence": "loop bodies equal=True, len(out)=435"
+    },
+    {
+      "text": "go build ./... succeeds",
+      "passed": true,
+      "evidence": "build clean"
+    },
+    {
+      "text": "go test -race ./... passes",
+      "passed": true,
+      "evidence": "ok  \tkvr\t(cached)"
+    },
+    {
+      "text": "tokenizer.go, parser.go, printer.go unchanged",
+      "passed": true,
+      "evidence": "edited: none"
+    },
+    {
+      "text": "TestPrinter and TestPrinterRoundTrip unchanged",
+      "passed": true,
+      "evidence": "TestPrinter equal=True, TestPrinterRoundTrip equal=True"
+    }
+  ]
+}

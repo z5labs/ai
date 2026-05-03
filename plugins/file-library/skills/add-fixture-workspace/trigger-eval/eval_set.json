@@ -1,0 +1,22 @@
+[
+  {"query": "I just got handed a real-world KVR config file from one of our biggest customers. Can you add it as a golden test fixture under the kvr package and wire up a round-trip test against it? File is at ~/Downloads/customer-prod.kvr.", "should_trigger": true},
+  {"query": "we keep regressing on this one weird TLV blob — every time someone touches the encoder it breaks for this specific input. drop ./tlv-bug-2024-11.bin into pkg/tlv/testdata as a regression-guard please", "should_trigger": true},
+  {"query": "found a parser bug on this gnarly INI file (./Downloads/sample.ini). pin it as a test case for ./pkg/ini so we don't regress once i fix the parser", "should_trigger": true},
+  {"query": "Add the file at /tmp/edge_case.toml to the toml package's testdata/ and wire it to the existing round-trip test table.", "should_trigger": true},
+  {"query": "harden my graphql parser against this real schema we got from a user — file is at ./schemas/from-user-issue-127.graphql, package is at pkg/graphql", "should_trigger": true},
+  {"query": "i want this binary file pinned as a golden fixture for my elf decoder. it round-trips today and i want to make sure it always does. ./samples/static-binary.elf, package is at /home/me/code/elf-go", "should_trigger": true},
+  {"query": "ok so i've got like 5 real protobuf bytes blobs from prod traffic captures and i want each one as a regression fixture for the proto package — start with ./capture-1.pb", "should_trigger": true},
+  {"query": "drop this in as a test", "should_trigger": true},
+  {"query": "so the customer sent us their config (at ~/inbox/their-config.kvr) and it broke our parser yesterday. i fixed the parser. now i need to make sure it never breaks on that file again — handle this for me", "should_trigger": true},
+  {"query": "scaffold a new go file library package called yaml so i can start working on a YAML parser/printer", "should_trigger": false},
+  {"query": "audit my pkg/kvr package against its SPEC.md — i want to know what's missing before i ship", "should_trigger": false},
+  {"query": "extract a SPEC.md from the existing pkg/json package — i need to capture what the format actually does before i refactor", "should_trigger": false},
+  {"query": "implement the integer literal grammar from SPEC.md section 3.4 in pkg/kvr/parser.go — the spec just got updated and the package is missing it", "should_trigger": false},
+  {"query": "i need to set up testdata for our gorm models — there's a fixture loader somewhere in this repo right? add some seed user records under tests/fixtures/users.json", "should_trigger": false},
+  {"query": "we need golden snapshot tests for the React component library. when a snapshot diverges the test should fail — set up jest-snapshot for ./packages/ui", "should_trigger": false},
+  {"query": "copy ./Downloads/spec-draft.kvr to docs/examples/ — the docs site renders kvr files in that folder as syntax highlighted examples", "should_trigger": false},
+  {"query": "explain the round-trip property for parser-printer libraries to me — why is parse → print → parse → AST equality the right shape and not byte equality?", "should_trigger": false},
+  {"query": "open the file at testdata/sample.kvr and read the first 20 lines into context — i want to understand what's in it before i write a test", "should_trigger": false},
+  {"query": "go ahead and add error handling to the Encode function in pkg/tlv/encoder.go — it's panicking on truncated input right now", "should_trigger": false},
+  {"query": "we're designing a new binary file format for shipping telemetry — give me your recommended layout for header, records, and trailer with checksums", "should_trigger": false}
+]

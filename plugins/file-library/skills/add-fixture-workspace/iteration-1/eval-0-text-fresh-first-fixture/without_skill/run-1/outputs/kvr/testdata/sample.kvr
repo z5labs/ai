@@ -1,0 +1,14 @@
+# Sample KVR file from production logs
+record string GREETING = "hello, world"
+record string FAREWELL = "goodbye"
+
+block COLORS {
+    record string RED  = "ff0000";
+    record string BLUE = "0000ff";
+    record string LIME = "00ff00";
+}
+
+block NUMBERS {
+    record string PI  = "3.14159";
+    record string TAU = "6.28318";
+}

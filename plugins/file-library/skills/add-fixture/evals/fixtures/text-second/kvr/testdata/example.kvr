@@ -1,0 +1,7 @@
+# a leading comment attached to the first record
+record string GREETING = "hello"
+
+block COLORS {
+    record string RED  = "ff0000";
+    record string BLUE = "0000ff";
+}

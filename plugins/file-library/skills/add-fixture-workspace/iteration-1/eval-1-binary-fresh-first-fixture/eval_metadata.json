@@ -1,0 +1,21 @@
+{
+  "eval_id": 1,
+  "eval_name": "binary-fresh-first-fixture",
+  "prompt": "I have a real-world TLV-encoded blob at `./binary-fresh/sample.tlv` and want it pinned as a regression-guard fixture for my Go binary file library at `./binary-fresh/tlv`. The package is freshly scaffolded (types.go / decoder.go / encoder.go stubs); there's no `testdata/` yet. Drop the file in as a golden fixture and wire a round-trip test against it. For binary I want byte-equality on the round-trip, not AST equality.",
+  "assertions": [
+    {"id": "fixture-copied", "text": "binary-fresh/tlv/testdata/sample.tlv exists"},
+    {"id": "fixture-bytes-identical", "text": "binary-fresh/tlv/testdata/sample.tlv is byte-identical to the original binary-fresh/sample.tlv"},
+    {"id": "testdata-dir-created", "text": "binary-fresh/tlv/testdata/ directory exists (was not present in the fixture)"},
+    {"id": "round-trip-test-added", "text": "binary-fresh/tlv/encoder_test.go contains a new function named TestRoundTripFromTestdata"},
+    {"id": "round-trip-uses-os-readfile", "text": "TestRoundTripFromTestdata reads the fixture via os.ReadFile and a path under testdata/"},
+    {"id": "round-trip-uses-byte-equality", "text": "TestRoundTripFromTestdata asserts byte equality (require.Equal on the original bytes vs encoded bytes), NOT AST equality on *File values"},
+    {"id": "round-trip-shape-decode-encode", "text": "TestRoundTripFromTestdata follows the Decode(file) → Encode(&buf, f) → require.Equal(originalBytes, buf.Bytes()) shape"},
+    {"id": "round-trip-table-driven", "text": "TestRoundTripFromTestdata is table-driven with a testCases slice and t.Run subtests"},
+    {"id": "round-trip-uses-t-parallel", "text": "TestRoundTripFromTestdata calls t.Parallel() at both function and subtest level"},
+    {"id": "round-trip-uses-require", "text": "TestRoundTripFromTestdata uses github.com/stretchr/testify/require for assertions"},
+    {"id": "go-build-passes", "text": "`go build ./...` succeeds in binary-fresh/tlv/ (test wiring compiles cleanly)"},
+    {"id": "go-test-failure-reported-gracefully", "text": "The skill's final user-facing report mentions the new round-trip test failing (or errUnimplemented), and frames the failure as an implementation gap to fix next — not as a skill bug. The skill does NOT claim 'tests pass' if they don't."},
+    {"id": "no-existing-test-edits", "text": "The pre-existing TestDecodeStubReturnsErrUnimplemented and TestEncodeStubReturnsErrUnimplemented tests are unchanged from the fixture"},
+    {"id": "no-source-edits", "text": "types.go, decoder.go, encoder.go in binary-fresh/tlv/ are unchanged from the fixture (skill is additive only)"}
+  ]
+}
