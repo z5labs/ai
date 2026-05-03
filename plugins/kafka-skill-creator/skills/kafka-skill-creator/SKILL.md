@@ -140,7 +140,9 @@ CURL_IMAGE="${CURL_IMAGE:-docker.io/curlimages/curl:8.11.1}"
 
 # Derive the per-context var names. <UPPER> is the context name uppercased
 # with hyphens replaced by underscores — e.g. "dev-us-east" -> "DEV_US_EAST".
-upper="${CONTEXT^^}"; upper="${upper//-/_}"
+# `tr` rather than `${var^^}` keeps this portable to macOS's default Bash 3.2.
+upper="$(printf '%s' "$CONTEXT" | tr '[:lower:]' '[:upper:]')"
+upper="${upper//-/_}"
 sr_url_var="CONTEXTS_${upper}_SCHEMAREGISTRY_URL"
 sr_user_var="CONTEXTS_${upper}_SCHEMAREGISTRY_USERNAME"
 sr_pass_var="CONTEXTS_${upper}_SCHEMAREGISTRY_PASSWORD"

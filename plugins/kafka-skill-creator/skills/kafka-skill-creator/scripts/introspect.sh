@@ -170,7 +170,12 @@ OUT="${POSITIONAL[0]}"
 # Derive the env-var prefix kafkactl uses for the chosen context. kafkactl
 # uppercases the context name and prepends `CONTEXTS_`. Hyphens become
 # underscores per kafkactl's own normalization.
-ctx_upper="${CONTEXT^^}"
+#
+# Use `tr` rather than `${var^^}` for the uppercase — `^^` is a Bash 4+
+# parameter-expansion feature, but macOS still ships Bash 3.2 by default
+# and we want a developer on a default Mac shell to be able to invoke
+# this script without first installing a newer bash.
+ctx_upper="$(printf '%s' "$CONTEXT" | tr '[:lower:]' '[:upper:]')"
 ctx_upper="${ctx_upper//-/_}"
 prefix="CONTEXTS_${ctx_upper}"
 

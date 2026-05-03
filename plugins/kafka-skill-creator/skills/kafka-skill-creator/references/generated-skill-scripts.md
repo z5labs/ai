@@ -73,13 +73,29 @@ require_allowed() {
 
 validate_context_env() {
   local context="$1"
-  local upper="${context^^}"
+  # `tr` rather than `${var^^}` keeps this portable to macOS's default
+  # Bash 3.2 — `^^` is Bash 4+ only.
+  local upper="$(printf '%s' "$context" | tr '[:lower:]' '[:upper:]')"
   upper="${upper//-/_}"
   local required=(
     "CONTEXTS_${upper}_BROKERS"
     "CONTEXTS_${upper}_SASL_USERNAME"
     "CONTEXTS_${upper}_SASL_PASSWORD"
   )
+  # When the manifest declared a schema_registry block, the generator
+  # baked a CONTEXTS_<UPPER>_SCHEMAREGISTRY_AUTH export above. Use its
+  # presence as the signal that SR env vars should also be required for
+  # this context — that way the wrapper fails closed with a complete
+  # missing-list instead of letting kafkactl reach Schema Registry with
+  # no URL and surface a less targeted error.
+  local sr_auth_var="CONTEXTS_${upper}_SCHEMAREGISTRY_AUTH"
+  if [ -n "${!sr_auth_var:-}" ]; then
+    required+=("CONTEXTS_${upper}_SCHEMAREGISTRY_URL")
+    if [ "${!sr_auth_var}" = "basic" ]; then
+      required+=("CONTEXTS_${upper}_SCHEMAREGISTRY_USERNAME")
+      required+=("CONTEXTS_${upper}_SCHEMAREGISTRY_PASSWORD")
+    fi
+  fi
   local missing=() var
   for var in "${required[@]}"; do
     if [ -z "${!var:-}" ]; then missing+=("$var"); fi
