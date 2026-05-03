@@ -413,6 +413,66 @@ def assertion_phase_chunking_spec() -> tuple[bool, str]:
     return ok, "; ".join(findings)
 
 
+def assertion_section_names_canonical() -> tuple[bool, str]:
+    """Verify SKILL.md's partition table uses canonical SPEC.md headings.
+
+    Acceptance from issue #82: the partition table must reference
+    `Conditional and Optional Fields`, `Checksums and Integrity`, and
+    `Padding and Alignment` (the canonical headings scaffolded by
+    `new-go-binary-file-library`), not the abbreviated forms
+    (`Conditional/Optional Fields`, `Checksums`, `Padding`) that won't
+    match `grep -n '^## '` output. The section must also document the
+    prefix-match rule so specs adapted from external standards still
+    resolve.
+
+    Anchored to the `## Partition SPEC.md by line range...` section so
+    unrelated prose elsewhere in SKILL.md cannot give a false positive.
+    """
+    text = skill_md_text()
+    section = extract_section(text, "Partition SPEC.md by line range (do not read the whole file)")
+    findings = []
+
+    section_present = bool(section.strip())
+    findings.append(f"section_present={section_present}")
+    if not section_present:
+        return False, "; ".join(findings) + " (no `## Partition SPEC.md...` section)"
+
+    canonical = [
+        "Conditional and Optional Fields",
+        "Checksums and Integrity",
+        "Padding and Alignment",
+    ]
+    for name in canonical:
+        present = name in section
+        findings.append(f"{name!r}={present}")
+        if not present:
+            return False, "; ".join(findings)
+
+    # Reject the abbreviated forms that motivated this issue. Match each
+    # in a way that won't false-positive on the canonical names: the
+    # slash form is unambiguous; for the bare words, require a trailing
+    # comma (table-cell separator) or pipe — the canonical forms always
+    # have " and " continuing after the bare word.
+    abbreviated_patterns = [
+        ("Conditional/Optional Fields", "Conditional/Optional Fields"),
+        ("Checksums (bare)", re.compile(r"\bChecksums\s*[,|]")),
+        ("Padding (bare)", re.compile(r"\bPadding\s*[,|]")),
+    ]
+    for label, pat in abbreviated_patterns:
+        if isinstance(pat, str):
+            hit = pat in section
+        else:
+            hit = bool(pat.search(section))
+        if hit:
+            findings.append(f"abbreviated_present={label}")
+            return False, "; ".join(findings)
+
+    section_lower = section.lower()
+    has_prefix_rule = "prefix" in section_lower and "match" in section_lower
+    findings.append(f"prefix_match_documented={has_prefix_rule}")
+    return has_prefix_rule, "; ".join(findings)
+
+
 def assertion_eval0_header(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, str]:
     common = assertion_partition_common(asid, pkg)
     if common is not None:
@@ -533,6 +593,9 @@ def assertion_eval0_header(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, s
     if asid == "phase-chunking-spec-tightened":
         return assertion_phase_chunking_spec()
 
+    if asid == "section-names-canonical":
+        return assertion_section_names_canonical()
+
     return False, f"unknown assertion id: {asid}"
 
 
@@ -635,6 +698,9 @@ def assertion_eval1_record(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, s
     if asid == "phase-chunking-spec-tightened":
         return assertion_phase_chunking_spec()
 
+    if asid == "section-names-canonical":
+        return assertion_section_names_canonical()
+
     return False, f"unknown assertion id: {asid}"
 
 
@@ -714,6 +780,9 @@ def assertion_eval2_trailer(asid: str, pkg: Path, run_dir: Path) -> tuple[bool, 
 
     if asid == "phase-chunking-spec-tightened":
         return assertion_phase_chunking_spec()
+
+    if asid == "section-names-canonical":
+        return assertion_section_names_canonical()
 
     return False, f"unknown assertion id: {asid}"
 
@@ -865,6 +934,9 @@ def assertion_eval3_tlvx_header_extended(asid: str, pkg: Path, run_dir: Path) ->
 
     if asid == "phase-chunking-spec-tightened":
         return assertion_phase_chunking_spec()
+
+    if asid == "section-names-canonical":
+        return assertion_section_names_canonical()
 
     return False, f"unknown assertion id: {asid}"
 

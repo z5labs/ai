@@ -46,11 +46,13 @@ wc -l <package>/SPEC.md                # last-line marker for the final section
 
 Build a `(section, line_start, line_end)` table from that output. Each section ends one line before the next `## ` heading; the final section ends at `wc -l`. Map sections to phases:
 
-| Phase   | Sections to slice                                                                                          |
-|---------|------------------------------------------------------------------------------------------------------------|
-| types   | Overview, Conventions, Field Definitions, Encoding Tables, Versioning                                      |
-| decoder | Overview, Conventions, Field Definitions, Encoding Tables, Conditional/Optional Fields, Checksums, Padding, Examples |
-| encoder | Overview, Conventions, Field Definitions, Encoding Tables, Checksums, Padding, Examples                    |
+| Phase   | Sections to slice                                                                                                                  |
+|---------|------------------------------------------------------------------------------------------------------------------------------------|
+| types   | Overview, Conventions, Field Definitions, Encoding Tables, Versioning                                                              |
+| decoder | Overview, Conventions, Field Definitions, Encoding Tables, Conditional and Optional Fields, Checksums and Integrity, Padding and Alignment, Examples |
+| encoder | Overview, Conventions, Field Definitions, Encoding Tables, Checksums and Integrity, Padding and Alignment, Examples                |
+
+Match section names against `grep -n '^## '` output by **prefix**, not exact equality — a binary spec that abbreviates `## Checksums and Integrity` to `## Checksums` should still match. The canonical names above are what `new-go-binary-file-library` scaffolds, but specs adapted from external standards may diverge.
 
 Always include `Conventions` for every phase — byte order is load-bearing for all three.
 
