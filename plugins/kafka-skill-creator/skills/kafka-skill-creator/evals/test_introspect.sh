@@ -235,6 +235,43 @@ assert_test \
   "$ALL_DEV" \
   --context dev /tmp/a/../../etc
 
+# Leaf-prefix guard: even a syntactically-clean absolute path is refused
+# unless its leaf starts with `kafka-introspect-`. This is what stops
+# `--context dev /tmp` (or `/home/user/work`, or any other innocuous-
+# looking but high-impact directory) from being recursively wiped.
+
+assert_test \
+  "refuses /tmp as output-dir (leaf doesn't start with kafka-introspect-)" \
+  2 \
+  "kafka-introspect-" \
+  "$ALL_DEV" \
+  --context dev /tmp
+
+assert_test \
+  "refuses /home/user/work as output-dir" \
+  2 \
+  "kafka-introspect-" \
+  "$ALL_DEV" \
+  --context dev /home/user/work
+
+assert_test \
+  "refuses /tmp/some-other-dir as output-dir" \
+  2 \
+  "kafka-introspect-" \
+  "$ALL_DEV" \
+  --context dev /tmp/some-other-dir
+
+# Trailing slash on a kafka-introspect- path should still pass the guard
+# (basename strips the slash). This is the positive case for the prefix
+# check, exercised here via the env-var-validation refusal so the test
+# doesn't need a fake runtime.
+assert_test \
+  "accepts /tmp/kafka-introspect-payments at the prefix-guard layer (refusal happens later for missing creds)" \
+  2 \
+  "missing required environment variables" \
+  "" \
+  --context dev /tmp/kafka-introspect-payments
+
 # --- Context-name validation --------------------------------------------------
 
 # Context name flows into env-var derivation; restrict it to a charset that
@@ -337,7 +374,10 @@ assert_test \
 
 FAKE_RUNTIME="$(mktemp)"
 INVOCATION_LOG="$(mktemp)"
-TMPOUT="$(mktemp -d)"
+# Prefix the temp dir with `kafka-introspect-` so it satisfies the script's
+# leaf-prefix safety check. mktemp's positional template form works on
+# both GNU and BSD mktemp.
+TMPOUT="$(mktemp -d "${TMPDIR:-/tmp}/kafka-introspect-XXXXXX")"
 trap 'rm -rf "$FAKE_RUNTIME" "$INVOCATION_LOG" "$TMPOUT"' EXIT
 
 cat > "$FAKE_RUNTIME" <<'FAKE'

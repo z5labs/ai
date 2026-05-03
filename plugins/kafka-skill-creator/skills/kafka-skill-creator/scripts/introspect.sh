@@ -51,8 +51,13 @@ Required:
 
   <output-dir>      Where to write JSON dumps. Wiped and recreated on every
                     run so stale files from a prior manifest don't linger.
-                    Pass a scratch path like /tmp/kafka-introspect-<team>;
-                    the script refuses to wipe `/`, `.`, `..`, or `~`.
+                    The leaf segment must start with `kafka-introspect-`
+                    (e.g. /tmp/kafka-introspect-<team>) — that prefix is
+                    the safety pin that lets the script recursively delete
+                    its output without risk of nuking a high-impact dir.
+                    The script refuses to wipe `/`, `.`, `..`, `~`, paths
+                    containing `..` segments, or any leaf without the
+                    required prefix.
 
 Repeatable:
   --topic T         Topic to describe. Pass once per topic in the manifest.
@@ -264,6 +269,23 @@ case "$OUT" in
   "../"*|*"/.."|*"/../"*)
     echo "error: refusing to wipe output-dir containing '..' segment: $OUT" >&2
     echo "       '..' would let rm -rf resolve to a parent directory." >&2
+    exit 2
+    ;;
+esac
+# Final guard: the leaf segment must start with `kafka-introspect-`. This
+# is what makes the wipe safe in the common case — a malformed argument
+# like `/tmp` or `/home/user/work` would pass the syntactic checks above
+# but is catastrophic to recursively delete. The SKILL.md contract
+# prescribes `/tmp/kafka-introspect-<team>`; pinning the leaf prefix
+# here turns that prescription into enforcement, so a misuse hits the
+# refusal before any data on disk is touched.
+out_leaf="$(basename -- "$OUT")"
+case "$out_leaf" in
+  kafka-introspect-?*) ;;
+  *)
+    echo "error: refusing to wipe output-dir whose leaf segment is not 'kafka-introspect-<...>': $OUT" >&2
+    echo "       this script wipes the directory recursively before writing; the kafka-introspect- prefix" >&2
+    echo "       is the safety pin that prevents accidental destruction of a high-impact directory." >&2
     exit 2
     ;;
 esac

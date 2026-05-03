@@ -145,7 +145,7 @@ bash <skill-dir>/scripts/introspect.sh \
 
 `<skill-dir>` is wherever this skill is installed (the directory containing the `SKILL.md` you are reading). Use an absolute path.
 
-`introspect.sh` wipes its output directory on every run before writing, so a re-introspection after a manifest change (topic dropped, group renamed) doesn't leave stale JSON files lying around to confuse downstream rendering. Pass a path under `/tmp/` (or another scratch location) — the script refuses to operate on `/`, `.`, `..`, or `~` as a defense against catastrophic deletes from a malformed argument.
+`introspect.sh` wipes its output directory on every run before writing, so a re-introspection after a manifest change (topic dropped, group renamed) doesn't leave stale JSON files lying around to confuse downstream rendering. **The leaf segment of the output path must start with `kafka-introspect-`** (e.g. `/tmp/kafka-introspect-<team>`). That prefix is the safety pin that lets the script recursively delete its output without risk of nuking a high-impact directory — passing `/tmp` or `/home/user/work` would be catastrophic to wipe, so the script refuses any leaf without the required prefix. The script also refuses `/`, `.`, `..`, `~`, paths containing `..` segments, and empty / leading-whitespace paths.
 
 `introspect.sh` also re-validates the env vars itself, so a missing variable surfaces with the same exit-2 refusal even if Preconditions somehow passed. Output layout:
 
@@ -157,64 +157,11 @@ If any individual call fails, `introspect.sh` writes an empty file for that targ
 
 ## Step 2: Pull schemas (Schema Registry, when configured)
 
-If the manifest has a `cluster.schema_registry` block, fetch the latest schema for each topic's `<topic>-value` subject. Use `curl` inside a pinned container so credentials are forwarded as env vars rather than baked into argv. The `CURL_IMAGE` env var overrides the default for private-registry users.
+If the manifest has a `cluster.schema_registry` block, fetch the latest schema for each topic's `<topic>-value` subject. Read `references/schema-registry-fetch.md` for the verbatim bash; the snippet relies on bash indirect expansion (`${!varname}`) plus docker's `-e VARNAME` form (no `=value` — docker reads the value from the host environment so it never lands in `docker run`'s argv) plus `curl -K -` (config-via-stdin so the password stays out of curl's argv inside the container).
 
-The trick is bash indirect expansion (`${!varname}` looks up the env var whose name is held in `$varname`) plus docker's `-e VARNAME` form (no `=value` — docker reads the value from the *host* environment, so it never lands in `docker run`'s argv):
+Inputs the snippet expects: `TEAM`, `CONTEXT`, `TOPICS=()` (bash array), and `RUNTIME` (the snippet auto-detects this with the same block `introspect.sh` uses).
 
-```bash
-# --- inputs the model is responsible for setting before this snippet runs ---
-# TEAM      — the manifest's `team` field, validated path-safe in Precondition 4.
-# CONTEXT   — the same context name used in Step 1 (the manifest's first context).
-# TOPICS=() — bash array of the manifest's `topics:` values (one entry per topic).
-# RUNTIME   — `docker` or `podman`, picked by the same auto-detect block
-#             introspect.sh uses; honor KAFKA_CONTAINER_RUNTIME if set.
-
-# Pick the container runtime the same way introspect.sh does. `command -v`
-# is more portable than `which` and doesn't fork a subshell on a hit.
-if [ -n "${KAFKA_CONTAINER_RUNTIME:-}" ]; then RUNTIME="$KAFKA_CONTAINER_RUNTIME"
-elif command -v docker >/dev/null 2>&1; then RUNTIME=docker
-elif command -v podman >/dev/null 2>&1; then RUNTIME=podman
-else echo "neither docker nor podman found on PATH" >&2; exit 1
-fi
-
-CURL_IMAGE="${CURL_IMAGE:-docker.io/curlimages/curl:8.11.1}"
-
-# Derive the per-context var names. <UPPER> is the context name uppercased
-# with hyphens replaced by underscores — e.g. "dev-us-east" -> "DEV_US_EAST".
-# `tr` rather than `${var^^}` keeps this portable to macOS's default Bash 3.2.
-upper="$(printf '%s' "$CONTEXT" | tr '[:lower:]' '[:upper:]')"
-upper="${upper//-/_}"
-sr_url_var="CONTEXTS_${upper}_SCHEMAREGISTRY_URL"
-sr_user_var="CONTEXTS_${upper}_SCHEMAREGISTRY_USERNAME"
-sr_pass_var="CONTEXTS_${upper}_SCHEMAREGISTRY_PASSWORD"
-
-# Re-export the values under stable names. `export` is a shell builtin and
-# does not fork, so the password never enters any process's argv at this step.
-export SR_URL="${!sr_url_var}"
-export SR_USER="${!sr_user_var}"
-export SR_PASS="${!sr_pass_var}"
-export TOPIC
-
-# introspect.sh creates topics/ and groups/ but not schemas/, so make it here.
-mkdir -p "/tmp/kafka-introspect-${TEAM}/schemas"
-
-for TOPIC in "${TOPICS[@]}"; do
-  safe="$(printf '%s' "$TOPIC" | sed 's/[^A-Za-z0-9._-]/_/g')"
-  # `-e SR_*` (no `=value`) tells docker to read each var from the host env
-  # and forward it to the container. Argv only carries the var NAME.
-  # Inside the container, `curl -K -` reads `--user` from stdin so the
-  # password never lands in argv there either.
-  "$RUNTIME" run --rm -i \
-    -e SR_URL -e SR_USER -e SR_PASS -e TOPIC \
-    "$CURL_IMAGE" \
-    sh -c 'printf "user = %s:%s\n" "$SR_USER" "$SR_PASS" \
-           | curl -sf -K - "$SR_URL/subjects/$TOPIC-value/versions/latest"' \
-    > "/tmp/kafka-introspect-${TEAM}/schemas/${safe}.json" \
-    || echo "warning: schema fetch failed for $TOPIC; continuing" >&2
-done
-```
-
-The response is the standard Schema Registry envelope — a `subject`, `version`, `id`, `schemaType` (`AVRO` / `PROTOBUF` / `JSON`), and `schema` string with the actual definition. **Persist it verbatim** as `<topic>.json` (one extension, regardless of `schemaType`) — both in `/tmp/.../schemas/` and, in Step 3, at `<output>/references/schemas/<topic>.json`. The verbatim envelope keeps the metadata (`id`, `version`, `schemaType`) alongside the schema body so the model can read whichever it needs without a per-format dispatch step in the generator. Don't extract the inner `schema` string into format-specific files (`.avsc` / `.proto`) — that's a future enhancement, and doing it inconsistently is the bigger trap.
+Persist each response **verbatim** as `<output>/references/schemas/<topic>.json` in Step 3 — the Schema Registry envelope already carries `id`, `version`, `schemaType`, and the schema string, so the model can read whichever piece it needs without a per-format dispatch step. Don't extract the inner `schema` string into format-specific files (`.avsc` / `.proto`); that's a future enhancement, and doing it inconsistently is the bigger trap.
 
 If Schema Registry returns 404 for a subject, skip it and note the absence in `references/topics.md` for that topic — partial coverage is better than aborting the whole generation.
 
