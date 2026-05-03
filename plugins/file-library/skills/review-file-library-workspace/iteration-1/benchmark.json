@@ -1,0 +1,683 @@
+{
+  "metadata": {
+    "skill_name": "review-file-library",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-05-03T05:48:26Z",
+    "evals_run": [
+      "kvr-no-spec-refusal",
+      "kvr-text-scaffold",
+      "tlv-binary-multi-file-spec"
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": "kvr-no-spec-refusal",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 38.1,
+        "tokens": 21478,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "no-audit-md",
+          "passed": true,
+          "evidence": "AUDIT.md absent"
+        },
+        {
+          "text": "agent-detected-missing-spec",
+          "passed": true,
+          "evidence": "response identifies missing SPEC.md"
+        },
+        {
+          "text": "agent-points-at-extract-skill",
+          "passed": true,
+          "evidence": "response names extract-text-spec"
+        },
+        {
+          "text": "no-source-edits",
+          "passed": true,
+          "evidence": "differing source/test files: []"
+        },
+        {
+          "text": "no-leftover-scratch",
+          "passed": true,
+          "evidence": "0 leftover scratch files"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": "kvr-text-scaffold",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 22,
+        "failed": 0,
+        "total": 22,
+        "time_seconds": 207.0,
+        "tokens": 56370,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "audit-md-exists",
+          "passed": true,
+          "evidence": "AUDIT.md exists"
+        },
+        {
+          "text": "header-says-text",
+          "passed": true,
+          "evidence": "header text"
+        },
+        {
+          "text": "header-has-test-status",
+          "passed": true,
+          "evidence": "tests: line in header"
+        },
+        {
+          "text": "header-has-spec-line-count",
+          "passed": true,
+          "evidence": "SPEC.md (N lines) format"
+        },
+        {
+          "text": "tokenizer-section-present",
+          "passed": true,
+          "evidence": "## Tokenizer findings header"
+        },
+        {
+          "text": "parser-section-present",
+          "passed": true,
+          "evidence": "## Parser findings header"
+        },
+        {
+          "text": "printer-section-present",
+          "passed": true,
+          "evidence": "## Printer findings header"
+        },
+        {
+          "text": "missing-token-types-category",
+          "passed": true,
+          "evidence": "### Missing token types subsection"
+        },
+        {
+          "text": "grammar-gaps-category",
+          "passed": true,
+          "evidence": "### Grammar gaps subsection"
+        },
+        {
+          "text": "printer-rules-category",
+          "passed": true,
+          "evidence": "### Missing/incomplete printer rules subsection"
+        },
+        {
+          "text": "round-trip-category",
+          "passed": true,
+          "evidence": "### Round-trip test coverage subsection"
+        },
+        {
+          "text": "drift-categories-present",
+          "passed": true,
+          "evidence": "0 ### Drift sections"
+        },
+        {
+          "text": "uses-blocker-severity",
+          "passed": true,
+          "evidence": "[blocker] severity prefix used"
+        },
+        {
+          "text": "findings-cite-spec-section",
+          "passed": true,
+          "evidence": "SPEC.md \u00a7 citations present"
+        },
+        {
+          "text": "findings-cite-go-file",
+          "passed": true,
+          "evidence": "Go file paths cited"
+        },
+        {
+          "text": "missing-token-string",
+          "passed": true,
+          "evidence": "TokenString gap noted"
+        },
+        {
+          "text": "missing-record-ast",
+          "passed": true,
+          "evidence": "Record AST gap noted"
+        },
+        {
+          "text": "missing-block-ast",
+          "passed": true,
+          "evidence": "Block AST gap noted"
+        },
+        {
+          "text": "no-leftover-scratch",
+          "passed": true,
+          "evidence": "0 leftover _audit_*.md files: []"
+        },
+        {
+          "text": "no-source-edits",
+          "passed": true,
+          "evidence": "differing source files: []"
+        },
+        {
+          "text": "no-test-edits",
+          "passed": true,
+          "evidence": "differing test files: []"
+        },
+        {
+          "text": "no-spec-edits",
+          "passed": true,
+          "evidence": "differing spec files: []"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": "tlv-binary-multi-file-spec",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 24,
+        "failed": 0,
+        "total": 24,
+        "time_seconds": 194.4,
+        "tokens": 52840,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "audit-md-exists",
+          "passed": true,
+          "evidence": "AUDIT.md exists"
+        },
+        {
+          "text": "header-says-binary",
+          "passed": true,
+          "evidence": "header identifies binary"
+        },
+        {
+          "text": "header-has-test-status",
+          "passed": true,
+          "evidence": "tests: line in header"
+        },
+        {
+          "text": "header-cites-chunked-tree",
+          "passed": true,
+          "evidence": "chunked tree mentioned in header"
+        },
+        {
+          "text": "types-section-present",
+          "passed": true,
+          "evidence": "## Types findings header"
+        },
+        {
+          "text": "decoder-section-present",
+          "passed": true,
+          "evidence": "## Decoder findings header"
+        },
+        {
+          "text": "encoder-section-present",
+          "passed": true,
+          "evidence": "## Encoder findings header"
+        },
+        {
+          "text": "missing-structs-category",
+          "passed": true,
+          "evidence": "### Missing struct types subsection"
+        },
+        {
+          "text": "encoding-tables-category",
+          "passed": true,
+          "evidence": "### Encoding-table coverage subsection"
+        },
+        {
+          "text": "unread-fields-category",
+          "passed": true,
+          "evidence": "### Unread fields subsection"
+        },
+        {
+          "text": "checksum-category",
+          "passed": true,
+          "evidence": "### Missing length/offset/checksum checks subsection"
+        },
+        {
+          "text": "unwritten-fields-category",
+          "passed": true,
+          "evidence": "### Unwritten fields subsection"
+        },
+        {
+          "text": "encoder-round-trip-category",
+          "passed": true,
+          "evidence": "### Round-trip test coverage subsection"
+        },
+        {
+          "text": "findings-cite-chunked-files",
+          "passed": true,
+          "evidence": "chunked spec file paths cited in findings"
+        },
+        {
+          "text": "crc32-blocker",
+          "passed": true,
+          "evidence": "CRC/checksum [blocker] finding"
+        },
+        {
+          "text": "record-type-enum-blocker",
+          "passed": true,
+          "evidence": "RecordType [blocker] finding"
+        },
+        {
+          "text": "header-flags-bit-field",
+          "passed": true,
+          "evidence": "Header.Flags bit field gap noted"
+        },
+        {
+          "text": "missing-header-struct",
+          "passed": true,
+          "evidence": "Header struct gap noted"
+        },
+        {
+          "text": "missing-record-struct",
+          "passed": true,
+          "evidence": "Record struct gap noted"
+        },
+        {
+          "text": "missing-trailer-struct",
+          "passed": true,
+          "evidence": "Trailer struct gap noted"
+        },
+        {
+          "text": "uses-blocker-severity",
+          "passed": true,
+          "evidence": "[blocker] severity prefix used"
+        },
+        {
+          "text": "no-leftover-scratch",
+          "passed": true,
+          "evidence": "0 leftover scratch files"
+        },
+        {
+          "text": "no-source-edits",
+          "passed": true,
+          "evidence": "differing source files: []"
+        },
+        {
+          "text": "no-spec-edits",
+          "passed": true,
+          "evidence": "differing spec files: []"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": "kvr-no-spec-refusal",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 44.1,
+        "tokens": 24896,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "no-audit-md",
+          "passed": true,
+          "evidence": "AUDIT.md absent"
+        },
+        {
+          "text": "agent-detected-missing-spec",
+          "passed": true,
+          "evidence": "response identifies missing SPEC.md"
+        },
+        {
+          "text": "agent-points-at-extract-skill",
+          "passed": false,
+          "evidence": "response names extract-text-spec"
+        },
+        {
+          "text": "no-source-edits",
+          "passed": true,
+          "evidence": "differing source/test files: []"
+        },
+        {
+          "text": "no-leftover-scratch",
+          "passed": true,
+          "evidence": "0 leftover scratch files"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": "kvr-text-scaffold",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4090909090909091,
+        "passed": 9,
+        "failed": 13,
+        "total": 22,
+        "time_seconds": 142.8,
+        "tokens": 36872,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "audit-md-exists",
+          "passed": true,
+          "evidence": "AUDIT.md exists"
+        },
+        {
+          "text": "header-says-text",
+          "passed": false,
+          "evidence": "no 'text file library' phrase"
+        },
+        {
+          "text": "header-has-test-status",
+          "passed": false,
+          "evidence": "tests: line in header"
+        },
+        {
+          "text": "header-has-spec-line-count",
+          "passed": false,
+          "evidence": "SPEC.md (N lines) format"
+        },
+        {
+          "text": "tokenizer-section-present",
+          "passed": false,
+          "evidence": "## Tokenizer findings header"
+        },
+        {
+          "text": "parser-section-present",
+          "passed": false,
+          "evidence": "## Parser findings header"
+        },
+        {
+          "text": "printer-section-present",
+          "passed": false,
+          "evidence": "## Printer findings header"
+        },
+        {
+          "text": "missing-token-types-category",
+          "passed": false,
+          "evidence": "### Missing token types subsection"
+        },
+        {
+          "text": "grammar-gaps-category",
+          "passed": false,
+          "evidence": "### Grammar gaps subsection"
+        },
+        {
+          "text": "printer-rules-category",
+          "passed": false,
+          "evidence": "### Missing/incomplete printer rules subsection"
+        },
+        {
+          "text": "round-trip-category",
+          "passed": false,
+          "evidence": "### Round-trip test coverage subsection"
+        },
+        {
+          "text": "drift-categories-present",
+          "passed": false,
+          "evidence": "0 ### Drift sections"
+        },
+        {
+          "text": "uses-blocker-severity",
+          "passed": false,
+          "evidence": "[blocker] severity prefix used"
+        },
+        {
+          "text": "findings-cite-spec-section",
+          "passed": false,
+          "evidence": "SPEC.md \u00a7 citations present"
+        },
+        {
+          "text": "findings-cite-go-file",
+          "passed": true,
+          "evidence": "Go file paths cited"
+        },
+        {
+          "text": "missing-token-string",
+          "passed": true,
+          "evidence": "TokenString gap noted"
+        },
+        {
+          "text": "missing-record-ast",
+          "passed": true,
+          "evidence": "Record AST gap noted"
+        },
+        {
+          "text": "missing-block-ast",
+          "passed": true,
+          "evidence": "Block AST gap noted"
+        },
+        {
+          "text": "no-leftover-scratch",
+          "passed": true,
+          "evidence": "0 leftover _audit_*.md files: []"
+        },
+        {
+          "text": "no-source-edits",
+          "passed": true,
+          "evidence": "differing source files: []"
+        },
+        {
+          "text": "no-test-edits",
+          "passed": true,
+          "evidence": "differing test files: []"
+        },
+        {
+          "text": "no-spec-edits",
+          "passed": true,
+          "evidence": "differing spec files: []"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": "tlv-binary-multi-file-spec",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4166666666666667,
+        "passed": 10,
+        "failed": 14,
+        "total": 24,
+        "time_seconds": 153.3,
+        "tokens": 37541,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "audit-md-exists",
+          "passed": true,
+          "evidence": "AUDIT.md exists"
+        },
+        {
+          "text": "header-says-binary",
+          "passed": false,
+          "evidence": "header identifies binary"
+        },
+        {
+          "text": "header-has-test-status",
+          "passed": false,
+          "evidence": "tests: line in header"
+        },
+        {
+          "text": "header-cites-chunked-tree",
+          "passed": true,
+          "evidence": "chunked tree mentioned in header"
+        },
+        {
+          "text": "types-section-present",
+          "passed": false,
+          "evidence": "## Types findings header"
+        },
+        {
+          "text": "decoder-section-present",
+          "passed": false,
+          "evidence": "## Decoder findings header"
+        },
+        {
+          "text": "encoder-section-present",
+          "passed": false,
+          "evidence": "## Encoder findings header"
+        },
+        {
+          "text": "missing-structs-category",
+          "passed": false,
+          "evidence": "### Missing struct types subsection"
+        },
+        {
+          "text": "encoding-tables-category",
+          "passed": false,
+          "evidence": "### Encoding-table coverage subsection"
+        },
+        {
+          "text": "unread-fields-category",
+          "passed": false,
+          "evidence": "### Unread fields subsection"
+        },
+        {
+          "text": "checksum-category",
+          "passed": false,
+          "evidence": "### Missing length/offset/checksum checks subsection"
+        },
+        {
+          "text": "unwritten-fields-category",
+          "passed": false,
+          "evidence": "### Unwritten fields subsection"
+        },
+        {
+          "text": "encoder-round-trip-category",
+          "passed": false,
+          "evidence": "### Round-trip test coverage subsection"
+        },
+        {
+          "text": "findings-cite-chunked-files",
+          "passed": true,
+          "evidence": "chunked spec file paths cited in findings"
+        },
+        {
+          "text": "crc32-blocker",
+          "passed": false,
+          "evidence": "CRC/checksum [blocker] finding"
+        },
+        {
+          "text": "record-type-enum-blocker",
+          "passed": false,
+          "evidence": "RecordType [blocker] finding"
+        },
+        {
+          "text": "header-flags-bit-field",
+          "passed": true,
+          "evidence": "Header.Flags bit field gap noted"
+        },
+        {
+          "text": "missing-header-struct",
+          "passed": true,
+          "evidence": "Header struct gap noted"
+        },
+        {
+          "text": "missing-record-struct",
+          "passed": true,
+          "evidence": "Record struct gap noted"
+        },
+        {
+          "text": "missing-trailer-struct",
+          "passed": true,
+          "evidence": "Trailer struct gap noted"
+        },
+        {
+          "text": "uses-blocker-severity",
+          "passed": false,
+          "evidence": "[blocker] severity prefix used"
+        },
+        {
+          "text": "no-leftover-scratch",
+          "passed": true,
+          "evidence": "0 leftover scratch files"
+        },
+        {
+          "text": "no-source-edits",
+          "passed": true,
+          "evidence": "differing source files: []"
+        },
+        {
+          "text": "no-spec-edits",
+          "passed": true,
+          "evidence": "differing spec files: []"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 146.5,
+        "stddev": 94.0883,
+        "min": 38.1,
+        "max": 207.0
+      },
+      "tokens": {
+        "mean": 43562.6667,
+        "stddev": 19207.1497,
+        "min": 21478,
+        "max": 56370
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.5419,
+        "stddev": 0.2235,
+        "min": 0.4091,
+        "max": 0.8
+      },
+      "time_seconds": {
+        "mean": 113.4,
+        "stddev": 60.2448,
+        "min": 44.1,
+        "max": 153.3
+      },
+      "tokens": {
+        "mean": 33103.0,
+        "stddev": 7115.3374,
+        "min": 24896,
+        "max": 37541
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.46",
+      "time_seconds": "+33.1",
+      "tokens": "+10460"
+    }
+  },
+  "notes": []
+}

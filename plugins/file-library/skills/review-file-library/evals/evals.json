@@ -1,0 +1,87 @@
+{
+  "skill_name": "review-file-library",
+  "evals": [
+    {
+      "id": 0,
+      "name": "kvr-text-scaffold",
+      "prompt": "Audit the Go file library package at ./kvr-text against its SPEC.md. The package is a freshly-scaffolded text format library (tokenizer.go / parser.go / printer.go) and the SPEC.md describes records, blocks, and comments. I want a categorized findings report at ./kvr-text/AUDIT.md covering: missing token types, grammar gaps, missing/incomplete printer rules, round-trip test coverage, and any drift between spec and implementation. Cite both the spec section and the source file location for every finding. Don't read the whole SPEC.md into context — slice it.",
+      "expected_output": "./kvr-text/AUDIT.md exists with a top header (package type, test status, spec line count), three phase sections (Tokenizer findings / Parser findings / Printer findings), and a long list of [blocker] findings under each — every token type from the spec missing from tokenizer.go, every AST node missing from parser.go, every printer rule missing from printer.go. Findings use the [blocker]/[warning]/[info] severity prefix and cite both spec section and Go file.",
+      "files": ["fixtures/kvr-text"],
+      "assertions": [
+        {"id": "audit-md-exists", "text": "kvr-text/AUDIT.md exists"},
+        {"id": "header-says-text", "text": "AUDIT.md top header identifies the package as a text file library"},
+        {"id": "header-has-test-status", "text": "AUDIT.md top header reports `go test -race ./...` status (PASS or FAIL)"},
+        {"id": "header-has-spec-line-count", "text": "AUDIT.md top header cites SPEC.md with a line count"},
+        {"id": "tokenizer-section-present", "text": "AUDIT.md has a `## Tokenizer findings` section"},
+        {"id": "parser-section-present", "text": "AUDIT.md has a `## Parser findings` section"},
+        {"id": "printer-section-present", "text": "AUDIT.md has a `## Printer findings` section"},
+        {"id": "missing-token-types-category", "text": "AUDIT.md has a `### Missing token types` subsection under Tokenizer findings"},
+        {"id": "grammar-gaps-category", "text": "AUDIT.md has a `### Grammar gaps` subsection under Parser findings"},
+        {"id": "printer-rules-category", "text": "AUDIT.md has a `### Missing/incomplete printer rules` subsection under Printer findings"},
+        {"id": "round-trip-category", "text": "AUDIT.md has a `### Round-trip test coverage` subsection under Printer findings"},
+        {"id": "drift-categories-present", "text": "AUDIT.md has a `### Drift` subsection under each of the three phase sections"},
+        {"id": "uses-blocker-severity", "text": "AUDIT.md contains at least one finding with the `[blocker]` severity prefix"},
+        {"id": "findings-cite-spec-section", "text": "At least one finding cites a SPEC.md section (e.g. `SPEC.md § Lexical Elements`, with section name)"},
+        {"id": "findings-cite-go-file", "text": "At least one finding cites a Go source file (`tokenizer.go`, `parser.go`, or `printer.go`)"},
+        {"id": "missing-token-string", "text": "AUDIT.md flags the absence of a TokenString constant (or equivalent string-literal token type) in tokenizer.go"},
+        {"id": "missing-record-ast", "text": "AUDIT.md flags the absence of a Record AST node (or equivalent) in parser.go"},
+        {"id": "missing-block-ast", "text": "AUDIT.md flags the absence of a Block AST node (or equivalent) in parser.go"},
+        {"id": "no-leftover-scratch", "text": "no _audit_*.md scratch files left in kvr-text/ after the audit"},
+        {"id": "no-source-edits", "text": "tokenizer.go, parser.go, and printer.go in kvr-text/ are unchanged from the fixture (audit is read-only)"},
+        {"id": "no-test-edits", "text": "tokenizer_test.go, parser_test.go, and printer_test.go in kvr-text/ are unchanged from the fixture"},
+        {"id": "no-spec-edits", "text": "SPEC.md in kvr-text/ is unchanged from the fixture"},
+        {"id": "round-trip-gap-is-blocker", "text": "the missing-round-trip-test finding under Printer findings appears as [blocker] (not [warning])"},
+        {"id": "untested-token-class-is-blocker", "text": "at least one untested-token-class finding under Tokenizer findings appears as [blocker] (not [warning])"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "tlv-binary-multi-file-spec",
+      "prompt": "Audit the Go binary file library package at ./tlv-binary against its SPEC.md and the chunked spec tree under structures/ and encoding-tables/. The package is freshly-scaffolded (types.go / decoder.go / encoder.go stubs); the spec describes a TLV1 container with a Header (8 bytes), variable-length Records, a Trailer (4 bytes with CRC32), a RecordType enum, and a Header.Flags bit field. I want a categorized findings report at ./tlv-binary/AUDIT.md covering: missing struct types in types.go, unread/unwritten fields in decoder/encoder, missing length/offset/checksum checks (the trailer CRC32 is the obvious one), encoding-table coverage (the RecordType enum), round-trip test coverage, and drift. Walk the chunked spec tree — don't only look at SPEC.md. Don't read the whole SPEC.md into context — slice it.",
+      "expected_output": "./tlv-binary/AUDIT.md exists with a top header, three phase sections (Types / Decoder / Encoder findings), and findings that cite both SPEC.md sections AND the chunked files (e.g. structures/header.md, encoding-tables/record-type.md). The CRC32 check appears as a [blocker] under Decoder's 'Missing length/offset/checksum checks'. The RecordType enum appears as [blocker] under Types' 'Encoding-table coverage'. Round-trip test coverage findings appear under Encoder.",
+      "files": ["fixtures/tlv-binary"],
+      "assertions": [
+        {"id": "audit-md-exists", "text": "tlv-binary/AUDIT.md exists"},
+        {"id": "header-says-binary", "text": "AUDIT.md top header identifies the package as a binary file library"},
+        {"id": "header-has-test-status", "text": "AUDIT.md top header reports `go test -race ./...` status"},
+        {"id": "header-cites-chunked-tree", "text": "AUDIT.md top header cites the chunked spec tree (mentions structures/ and encoding-tables/ with file counts)"},
+        {"id": "types-section-present", "text": "AUDIT.md has a `## Types findings` section"},
+        {"id": "decoder-section-present", "text": "AUDIT.md has a `## Decoder findings` section"},
+        {"id": "encoder-section-present", "text": "AUDIT.md has a `## Encoder findings` section"},
+        {"id": "missing-structs-category", "text": "AUDIT.md has a `### Missing struct types` subsection under Types findings"},
+        {"id": "encoding-tables-category", "text": "AUDIT.md has a `### Encoding-table coverage` subsection under Types findings"},
+        {"id": "unread-fields-category", "text": "AUDIT.md has a `### Unread fields` subsection under Decoder findings"},
+        {"id": "checksum-category", "text": "AUDIT.md has a `### Missing length/offset/checksum checks` subsection under Decoder findings"},
+        {"id": "unwritten-fields-category", "text": "AUDIT.md has a `### Unwritten fields` subsection under Encoder findings"},
+        {"id": "encoder-round-trip-category", "text": "AUDIT.md has a `### Round-trip test coverage` subsection under Encoder findings"},
+        {"id": "findings-cite-chunked-files", "text": "At least one finding cites a chunked spec file (mentions `structures/header.md`, `structures/record.md`, `structures/trailer.md`, or `encoding-tables/record-type.md`)"},
+        {"id": "crc32-blocker", "text": "AUDIT.md flags the missing CRC32 validation as a [blocker] finding under Decoder (cite the trailer CRC32 from SPEC.md ## Checksums or structures/trailer.md)"},
+        {"id": "record-type-enum-blocker", "text": "AUDIT.md flags the missing RecordType enum as a [blocker] under Types (cite encoding-tables/record-type.md or SPEC.md ## Encoding Tables)"},
+        {"id": "header-flags-bit-field", "text": "AUDIT.md flags the missing Header.Flags bit field constants in types.go"},
+        {"id": "missing-header-struct", "text": "AUDIT.md flags the missing Header struct in types.go"},
+        {"id": "missing-record-struct", "text": "AUDIT.md flags the missing Record struct in types.go"},
+        {"id": "missing-trailer-struct", "text": "AUDIT.md flags the missing Trailer struct in types.go"},
+        {"id": "uses-blocker-severity", "text": "AUDIT.md contains at least one finding with the `[blocker]` severity prefix"},
+        {"id": "no-leftover-scratch", "text": "no _audit_*.md scratch files left in tlv-binary/ after the audit"},
+        {"id": "no-source-edits", "text": "types.go, decoder.go, encoder.go in tlv-binary/ are unchanged from the fixture"},
+        {"id": "no-spec-edits", "text": "SPEC.md, structures/*.md, encoding-tables/*.md in tlv-binary/ are unchanged from the fixture"},
+        {"id": "round-trip-gap-is-blocker", "text": "the missing-round-trip-test finding under Encoder findings appears as [blocker] (not [warning])"},
+        {"id": "error-chain-test-gap-is-blocker", "text": "the missing decoder failure-path/error-chain test finding appears as [blocker] (not [warning])"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "kvr-no-spec-refusal",
+      "prompt": "Audit the Go file library package at ./kvr-no-spec against its spec. The package has tokenizer.go / parser.go / printer.go. I want findings on what's missing relative to the spec.",
+      "expected_output": "The skill detects that ./kvr-no-spec/SPEC.md does not exist, refuses to audit, and tells the user to extract a spec first (pointing at extract-text-spec). No AUDIT.md is written. No phase subagents are dispatched.",
+      "files": ["fixtures/kvr-no-spec"],
+      "assertions": [
+        {"id": "no-audit-md", "text": "kvr-no-spec/AUDIT.md was NOT created"},
+        {"id": "agent-detected-missing-spec", "text": "The agent's final response identifies that SPEC.md is missing"},
+        {"id": "agent-points-at-extract-skill", "text": "The agent's final response directs the user to run extract-text-spec (or another spec-extraction tool) before re-running the audit"},
+        {"id": "no-source-edits", "text": "tokenizer.go, parser.go, printer.go and their _test.go siblings in kvr-no-spec/ are unchanged from the fixture"},
+        {"id": "no-leftover-scratch", "text": "no _audit_*.md scratch files left in kvr-no-spec/ (the agent should not have started any phase work)"}
+      ]
+    }
+  ]
+}

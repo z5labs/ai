@@ -1,0 +1,130 @@
+{
+  "expectations": [
+    {
+      "text": "audit-md-exists",
+      "passed": true,
+      "evidence": "AUDIT.md exists"
+    },
+    {
+      "text": "header-says-binary",
+      "passed": false,
+      "evidence": "header identifies binary"
+    },
+    {
+      "text": "header-has-test-status",
+      "passed": false,
+      "evidence": "tests: line in header"
+    },
+    {
+      "text": "header-cites-chunked-tree",
+      "passed": true,
+      "evidence": "chunked tree mentioned in header"
+    },
+    {
+      "text": "types-section-present",
+      "passed": false,
+      "evidence": "## Types findings header"
+    },
+    {
+      "text": "decoder-section-present",
+      "passed": false,
+      "evidence": "## Decoder findings header"
+    },
+    {
+      "text": "encoder-section-present",
+      "passed": false,
+      "evidence": "## Encoder findings header"
+    },
+    {
+      "text": "missing-structs-category",
+      "passed": false,
+      "evidence": "### Missing struct types subsection"
+    },
+    {
+      "text": "encoding-tables-category",
+      "passed": false,
+      "evidence": "### Encoding-table coverage subsection"
+    },
+    {
+      "text": "unread-fields-category",
+      "passed": false,
+      "evidence": "### Unread fields subsection"
+    },
+    {
+      "text": "checksum-category",
+      "passed": false,
+      "evidence": "### Missing length/offset/checksum checks subsection"
+    },
+    {
+      "text": "unwritten-fields-category",
+      "passed": false,
+      "evidence": "### Unwritten fields subsection"
+    },
+    {
+      "text": "encoder-round-trip-category",
+      "passed": false,
+      "evidence": "### Round-trip test coverage subsection"
+    },
+    {
+      "text": "findings-cite-chunked-files",
+      "passed": true,
+      "evidence": "chunked spec file paths cited in findings"
+    },
+    {
+      "text": "crc32-blocker",
+      "passed": false,
+      "evidence": "CRC/checksum [blocker] finding"
+    },
+    {
+      "text": "record-type-enum-blocker",
+      "passed": false,
+      "evidence": "RecordType [blocker] finding"
+    },
+    {
+      "text": "header-flags-bit-field",
+      "passed": true,
+      "evidence": "Header.Flags bit field gap noted"
+    },
+    {
+      "text": "missing-header-struct",
+      "passed": true,
+      "evidence": "Header struct gap noted"
+    },
+    {
+      "text": "missing-record-struct",
+      "passed": true,
+      "evidence": "Record struct gap noted"
+    },
+    {
+      "text": "missing-trailer-struct",
+      "passed": true,
+      "evidence": "Trailer struct gap noted"
+    },
+    {
+      "text": "uses-blocker-severity",
+      "passed": false,
+      "evidence": "[blocker] severity prefix used"
+    },
+    {
+      "text": "no-leftover-scratch",
+      "passed": true,
+      "evidence": "0 leftover scratch files"
+    },
+    {
+      "text": "no-source-edits",
+      "passed": true,
+      "evidence": "differing source files: []"
+    },
+    {
+      "text": "no-spec-edits",
+      "passed": true,
+      "evidence": "differing spec files: []"
+    }
+  ],
+  "summary": {
+    "pass_rate": 0.4166666666666667,
+    "passed": 10,
+    "failed": 14,
+    "total": 24
+  }
+}

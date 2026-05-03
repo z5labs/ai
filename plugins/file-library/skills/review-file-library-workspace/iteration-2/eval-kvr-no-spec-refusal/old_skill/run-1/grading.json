@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "no-audit-md",
+      "passed": true,
+      "evidence": "AUDIT.md absent"
+    },
+    {
+      "text": "agent-detected-missing-spec",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "agent-points-at-extract-skill",
+      "passed": true,
+      "evidence": ""
+    },
+    {
+      "text": "no-source-edits",
+      "passed": true,
+      "evidence": "[]"
+    },
+    {
+      "text": "no-leftover-scratch",
+      "passed": true,
+      "evidence": "0 leftover files"
+    }
+  ],
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  }
+}
