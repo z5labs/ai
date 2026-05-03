@@ -118,6 +118,39 @@
         {"id": "indexes-md-regenerated", "text": "./.claude/skills/pg-evaldb/references/indexes.md exists and is non-empty"},
         {"id": "query-sh-regenerated-and-runnable", "text": "./.claude/skills/pg-evaldb/scripts/query.sh exists, is executable, and `bash query.sh \"SELECT count(*) FROM users\"` against the fixture returns `3`"}
       ]
+    },
+    {
+      "id": 7,
+      "name": "honors-output-flag-into-plugin-tree",
+      "prompt": "Run /postgres-skill-creator --output plugins/team-data/skills/pg-orders/. All five libpq env vars are exported (PGDATABASE=orders, etc.). Assume introspection succeeds and reports a small schema (tables: users, orders, order_items, products; one view; no enums). Docker is on PATH but the host can't actually reach a real Postgres — surface any smoke-test failure rather than claiming success.",
+      "expected_output": "The skill writes the generated files to plugins/team-data/skills/pg-orders/ — NOT to ./.claude/skills/pg-orders/. The generated SKILL.md's frontmatter still has `name: pg-orders` (driven by PGDATABASE=orders, not by the leaf segment of --output — though here they happen to coincide). The generated README's sample uses substitute the resolved output path (e.g. `bash plugins/team-data/skills/pg-orders/scripts/query.sh ...`), NOT a hardcoded `.claude/skills/pg-orders/...`. The verify step's checks reference the output path. The reporting step reminds the user that since --output landed inside a plugin tree, they may need to register the new skill in the plugin's plugin.json. If the smoke test fails because the database is unreachable, the assistant surfaces the failure rather than claiming success.",
+      "files": [],
+      "assertions": [
+        {"id": "writes-to-output-path", "text": "the generated files appear under plugins/team-data/skills/pg-orders/, not under ./.claude/skills/. Specifically, plugins/team-data/skills/pg-orders/SKILL.md and plugins/team-data/skills/pg-orders/README.md exist; .claude/skills/pg-orders/ does NOT exist (or is empty)"},
+        {"id": "frontmatter-name-from-pgdatabase", "text": "the generated SKILL.md's frontmatter `name` field is `pg-orders`, derived from PGDATABASE=orders. This is a sanity check on the wiring even though the leaf segment of --output also happens to be `pg-orders` here — the generator must read PGDATABASE, not derive `name` from `basename --output`"},
+        {"id": "generated-skill-is-model-invocable", "text": "the generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true` — the per-database skill is meant to fire on natural-language prompts"},
+        {"id": "readme-substitutes-resolved-output-path", "text": "the generated README's sample-uses code blocks use the resolved output path in their `bash .../scripts/query.sh` invocations — i.e. they read `bash plugins/team-data/skills/pg-orders/scripts/query.sh ...`, NOT the default-path-shaped `bash .claude/skills/pg-orders/scripts/query.sh ...`. The smoke-test, row-count, multi-statement-via-stdin, and per-environment samples all use the resolved path consistently"},
+        {"id": "readme-cp-uses-resolved-output-path", "text": "the generated README's one-time `.env` setup `cp` command uses the resolved output path: `cp plugins/team-data/skills/pg-orders/scripts/.env.example .env`, NOT `cp .claude/skills/pg-orders/scripts/.env.example .env`. A user copying the wrong source path would get a 'no such file' error"},
+        {"id": "readme-no-skill-dir-placeholder-residue", "text": "the generated README has no unsubstituted `<skill-dir>` placeholders — `grep -E '<skill-dir>'` returns nothing. The substitution must replace every occurrence in the skeleton"},
+        {"id": "readme-no-other-placeholder-residue", "text": "the generated README has no other unsubstituted `<...>` placeholders — `grep -E '<dbname>|<top tables?>|<top-table>|<table count>|<view count>|<enum count>'` returns nothing"},
+        {"id": "reminds-about-plugin-json", "text": "the assistant's report mentions that the operator may need to register the new skill in the plugin's plugin.json since --output landed inside a plugin tree (plugins/team-data/...). This mirrors the equivalent reminder in kafka-skill-creator's reporting step"},
+        {"id": "smoke-test-failure-surfaced-or-skipped", "text": "either (a) the assistant attempts the smoke test and surfaces the failure rather than claiming success, OR (b) the assistant explicitly notes that the smoke test was skipped because the DB is unreachable. The forbidden behavior is silently claiming success"}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "refuse-unsafe-output-paths",
+      "prompt": "All five libpq env vars are exported (PGDATABASE=orders, etc.). Run /postgres-skill-creator --output ../../etc. What happens?",
+      "expected_output": "The skill refuses because the --output value contains `..` segments, which would let `rm -rf` resolve to a parent directory outside the project. The refusal names the offending path, cites the path-safety rule (no `..` segments), and explains why this guard exists (the wipe is `rm -rf` against an operator-supplied path; a malformed value would be catastrophic). No `rm` is executed. No introspection runs. Nothing is written to disk.",
+      "files": [],
+      "assertions": [
+        {"id": "refuses-to-proceed", "text": "the assistant refuses to run the generator on the unsafe --output value rather than proceeding"},
+        {"id": "names-offending-path", "text": "the refusal names the offending --output value (`../../etc` or equivalent) so the user knows what specifically tripped the guard"},
+        {"id": "cites-path-safety-rule", "text": "the refusal cites the path-safety rule that fired — either `..` segments are not allowed in --output, or 'paths that escape via parent-dir references are refused', or wording to that effect. The user must understand WHY the path was rejected, not just that it was"},
+        {"id": "explains-rm-rf-rationale", "text": "the refusal explains (briefly) that the generator wipes the output directory before writing, so an unsafe path could `rm -rf` something outside the intended scope. This is the WHY behind the guard — without it, the user might think the rule is arbitrary"},
+        {"id": "no-rm-no-files-written", "text": "no rm command is run and no files are written under .claude/skills/, plugins/, or any other derived path. Specifically: ./.claude/skills/pg-orders/ does not exist (or is empty if it pre-existed), and no plugins/ directory was created or modified"},
+        {"id": "no-introspect-invocation", "text": "scripts/introspect.sh is not invoked — the path-safety guard fires before introspection per SKILL.md's ordering"}
+      ]
     }
   ]
 }

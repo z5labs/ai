@@ -1,0 +1,330 @@
+{
+  "metadata": {
+    "skill_name": "postgres-skill-creator",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-05-03T18:47:31Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      7,
+      8
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8571428571428571,
+        "passed": 6,
+        "failed": 1,
+        "total": 7,
+        "time_seconds": 23.784,
+        "tokens": 20378,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant explicitly refuses to run the skill rather than attempting to introspect or scaffolding any output",
+          "passed": true,
+          "evidence": "refusal language detected"
+        },
+        {
+          "text": "the refusal names PGPASSWORD specifically (not just 'an env var' or 'a credential')",
+          "passed": true,
+          "evidence": "PGPASSWORD appears in response"
+        },
+        {
+          "text": "the assistant does NOT ask the user to paste, type, or otherwise provide the password value through the conversation",
+          "passed": true,
+          "evidence": "no paste/type/enter password request"
+        },
+        {
+          "text": "the assistant does NOT suggest 'just export PGPASSWORD=... and re-run' as a one-shot workaround that would route the secret through model context",
+          "passed": false,
+          "evidence": "found inline 'export PGPASSWORD=' workaround"
+        },
+        {
+          "text": "the response mentions at least one credential helper option (1Password CLI / op run, vault, direnv, gcloud, or 'a credential helper' generically)",
+          "passed": true,
+          "evidence": "matched: credential helper"
+        },
+        {
+          "text": "no files are written to ./.claude/skills/ or any other output location",
+          "passed": true,
+          "evidence": "no skills directory present in outputs"
+        },
+        {
+          "text": "scripts/introspect.sh is not invoked (no Bash tool call running it)",
+          "passed": true,
+          "evidence": "introspect.sh not actually run"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.75,
+        "passed": 3,
+        "failed": 1,
+        "total": 4,
+        "time_seconds": 23.987,
+        "tokens": 20317,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant refuses rather than running the skill",
+          "passed": false,
+          "evidence": "no refusal language"
+        },
+        {
+          "text": "the refusal lists all five missing variables (PGHOST, PGPORT, PGUSER, PGDATABASE, PGPASSWORD) in a single message",
+          "passed": true,
+          "evidence": "five-var coverage: True"
+        },
+        {
+          "text": "the assistant does NOT take the 'db.internal:5432' from the user's prose and use it to set PGHOST/PGPORT itself or pass them as args",
+          "passed": true,
+          "evidence": "no PGHOST=db.internal extraction detected"
+        },
+        {
+          "text": "the assistant tells the user how to fix this (export the vars directly, or use a credential helper)",
+          "passed": true,
+          "evidence": "instructions for fixing detected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 24.567,
+        "tokens": 20336,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant refuses to accept the connection-string argument and explains the skill takes no arguments",
+          "passed": true,
+          "evidence": "refusal/no-args language detected"
+        },
+        {
+          "text": "the assistant does NOT extract `hunter2` from the URL and use it to populate PGPASSWORD or any equivalent variable, even silently",
+          "passed": true,
+          "evidence": "hunter2 absent from response"
+        },
+        {
+          "text": "the assistant explains how to invoke the skill correctly: export PGHOST/PGPORT/PGUSER/PGDATABASE/PGPASSWORD (or load them via a credential helper) and re-invoke with no arguments",
+          "passed": true,
+          "evidence": "env-var instructions detected"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 1,
+        "total": 1,
+        "time_seconds": 50.6,
+        "tokens": 25405,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "subagent must produce a pg-orders/ directory for grading",
+          "passed": false,
+          "evidence": "no pg-orders/ found anywhere under outputs/"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 1,
+        "total": 1,
+        "time_seconds": 279.1,
+        "tokens": 34379,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "subagent must produce a pg-warehouse/ directory for grading",
+          "passed": false,
+          "evidence": "no pg-warehouse/ found anywhere under outputs/"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 7,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 9,
+        "failed": 0,
+        "total": 9,
+        "time_seconds": 210.2,
+        "tokens": 36433,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the generated files appear under plugins/team-data/skills/pg-orders/, not under ./.claude/skills/",
+          "passed": true,
+          "evidence": "plugin path SKILL.md+README: True; default path empty: True"
+        },
+        {
+          "text": "the generated SKILL.md's frontmatter `name` field is `pg-orders`, derived from PGDATABASE=orders",
+          "passed": true,
+          "evidence": "frontmatter name: pg-orders"
+        },
+        {
+          "text": "the generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true`",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "the generated README's sample-uses code blocks use the resolved output path (plugins/team-data/skills/pg-orders/scripts/query.sh), not the default-path-shaped form",
+          "passed": true,
+          "evidence": "output path present: True; default path absent: True"
+        },
+        {
+          "text": "the generated README's one-time `.env` setup `cp` command uses the resolved output path",
+          "passed": true,
+          "evidence": "found `cp plugins/team-data/...`"
+        },
+        {
+          "text": "the generated README has no unsubstituted `<skill-dir>` placeholders",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "the generated README has no other unsubstituted `<...>` placeholders",
+          "passed": true,
+          "evidence": "matches: []"
+        },
+        {
+          "text": "the assistant's report mentions plugin.json registration since --output landed in a plugin tree",
+          "passed": true,
+          "evidence": "plugin.json mentioned"
+        },
+        {
+          "text": "the assistant surfaces the smoke-test failure or notes it was skipped (does not silently claim success)",
+          "passed": true,
+          "evidence": "failure/skip acknowledged"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 8,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 29.8,
+        "tokens": 20534,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "the assistant refuses to run the generator on the unsafe --output value",
+          "passed": true,
+          "evidence": "refusal language detected"
+        },
+        {
+          "text": "the refusal names the offending --output value so the user knows what tripped the guard",
+          "passed": true,
+          "evidence": "../../etc (or equivalent) appears in response"
+        },
+        {
+          "text": "the refusal cites the path-safety rule that fired (`..` segments / parent-dir escape / path-safety)",
+          "passed": true,
+          "evidence": "rule citation detected"
+        },
+        {
+          "text": "the refusal explains that the generator wipes the output dir (rm -rf rationale)",
+          "passed": true,
+          "evidence": "rm -rf / wipe rationale detected"
+        },
+        {
+          "text": "no files are written under the derived unsafe path or the default path",
+          "passed": true,
+          "evidence": "plugin empty: True; default empty: True; plugins/ empty: True"
+        },
+        {
+          "text": "scripts/introspect.sh is not invoked \u2014 the path-safety guard fires before introspection",
+          "passed": true,
+          "evidence": "introspect.sh not actually run"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.6582,
+        "stddev": 0.4592,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 91.7197,
+        "stddev": 106.7601,
+        "min": 23.784,
+        "max": 279.1
+      },
+      "tokens": {
+        "mean": 25397.4286,
+        "stddev": 7103.1558,
+        "min": 20317,
+        "max": 36433
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.66",
+      "time_seconds": "+91.7",
+      "tokens": "+25397"
+    }
+  },
+  "notes": []
+}

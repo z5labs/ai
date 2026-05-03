@@ -2,13 +2,37 @@
 name: postgres-skill-creator
 description: Introspect a Postgres database and generate a project-level skill (`pg-<dbname>`) that bakes its schema into a reference the model can consult for ad-hoc query/exploration work
 disable-model-invocation: true
+argument-hint: "[--output <skill-dir>]"
 ---
 
-Generate a project-level skill at `./.claude/skills/pg-<dbname>/` that captures the schema of the Postgres database identified by the `PGDATABASE` environment variable. The generated skill is meant for an analyst or developer doing ad-hoc reads, one-off DML, and manual exploration — so its job is to give the model enough schema context to write correct SQL without re-introspecting on every invocation.
+Generate a project-level skill that captures the schema of the Postgres database identified by the `PGDATABASE` environment variable. The default output location is `./.claude/skills/pg-<dbname>/`; pass `--output PATH` to land it elsewhere (e.g. inside a plugin tree). The generated skill is meant for an analyst or developer doing ad-hoc reads, one-off DML, and manual exploration — so its job is to give the model enough schema context to write correct SQL without re-introspecting on every invocation.
+
+## Inputs
+
+This skill takes **no positional arguments**. The only flag it accepts is `--output PATH` (described below). All connection details are read from the standard libpq environment variables, never from arguments — refuse a connection string passed positionally rather than parsing the password out of it, even silently.
+
+### Output location
+
+`--output PATH` chooses where the generated skill is written. Defaults to `./.claude/skills/pg-<dbname>/` where `<dbname>` is the value of `PGDATABASE`. The primary use case for the override is a team building their own plugin: pointing `--output` at e.g. `plugins/team-data/skills/pg-orders/` lands the generated skill directly inside the plugin tree, no copy step. There is no short-form alias — `--output` is the only spelling — so the invocation shape stays singular for evals and operator muscle memory.
+
+Throughout the rest of this document, `<output>` refers to the **resolved** output path (either the user-supplied `--output` value or the default), normalized with any trailing slashes stripped. Use `<output>` everywhere paths appear in generated content (`<output>/SKILL.md`, `<output>/scripts/query.sh`, etc.) so the rest of the workflow is agnostic to where the skill landed. The frontmatter `name` of the generated skill is **always** `pg-<dbname>` — driven by `PGDATABASE`, never by the leaf segment of `--output`. A user who passes `--output plugins/team-data/skills/pg-orders/` with `PGDATABASE=orders` gets `name: pg-orders`; a user who passes the same path with `PGDATABASE=warehouse` gets `name: pg-warehouse` (and a skill that lives in a directory whose leaf doesn't match its name — that's the operator's choice).
+
+The path's parent directory must already exist (the operator chose where the skill goes; the generator does not create arbitrary parent paths). The leaf directory itself is the generator's responsibility:
+
+- If it doesn't exist: create it.
+- If it does exist: delete it and recreate it. Overwrite is intentional — schemas drift, and stale references mislead.
+
+Before deleting anything, validate the path against three layers of guards. The wipe lands `rm -rf` on a directory the operator named, so a malformed `--output` value is the most safety-critical input this skill takes — these checks fire **before** introspection, container-runtime selection, or anything else that touches disk.
+
+1. **Reject literal danger shapes.** Refuse if `--output` is empty, all-whitespace, or starts with whitespace (a sloppy paste). Refuse if it equals `/`, `.`, `..`, `~`, or starts with `~/`. Refuse if the **leaf segment** (the last path component, after stripping trailing slashes) is empty, `.`, `..`, `~`, or `*` — the leaf is what `rm -rf` lands on most directly.
+2. **Reject paths whose components include `..`.** `rm -rf /tmp/out/..` resolves to `/tmp` (or worse), and the literal-string check above wouldn't catch it. Match `..` at any position: leading (`../foo`), trailing (`foo/..`), middle (`foo/../bar`), and lone (`..`).
+3. **Strip any number of trailing slashes** before the wipe. `rm -rf path/` (with trailing slash) on a symlink dereferences the symlink and recursively deletes its target — even one trailing slash forces deref. Iterate the strip until none remain so a sloppy `.../pg-foo///` can't slip past.
+
+If `--output` is supplied but `PGDATABASE` is unset, the missing-env refusal in Preconditions still wins — `--output` doesn't substitute for the env-var contract, it only controls where a successfully-generated skill lands. (Path-safety on the `<dbname>` value still applies independently — see Step 2 — because `<dbname>` flows into the generated frontmatter `name` and into the default `--output`'s leaf segment.)
 
 ## Preconditions
 
-This skill takes **no arguments**. All connection details are read from the standard libpq environment variables:
+All connection details are read from the standard libpq environment variables:
 
 - `PGHOST`, `PGPORT`, `PGUSER`, `PGDATABASE` — routing
 - `PGPASSWORD` — credential
@@ -27,11 +51,12 @@ Postgres schemas are often too large to keep in working memory, but most ad-hoc 
 
 ## High-level workflow
 
-1. Detect a container runtime (`docker` or `podman`) — error out with a clear message if neither is on PATH.
-2. Run introspection queries via the `alpine/psql` container against the user's database.
-3. Write the generated skill to `./.claude/skills/pg-<dbname>/`, overwriting any prior version.
-4. Verify the generated skill by sanity-checking that `SKILL.md` and at least one reference file are non-empty.
-5. Tell the user the skill is installed and how to invoke it.
+1. Parse `--output` if supplied; resolve to the default `./.claude/skills/pg-<dbname>/` otherwise. Apply the three-layer path-safety guards above before going further.
+2. Detect a container runtime (`docker` or `podman`) — error out with a clear message if neither is on PATH.
+3. Run introspection queries via the `alpine/psql` container against the user's database.
+4. Write the generated skill to `<output>/`, overwriting any prior version.
+5. Verify the generated skill by sanity-checking that `SKILL.md` and at least one reference file are non-empty.
+6. Tell the user where the skill was written and how to invoke it.
 
 The bundled `scripts/introspect.sh` does step 1 and 2. Read it before running so you understand what queries it issues — you may need to adapt if a query fails (e.g. older Postgres versions lack a column).
 
@@ -63,7 +88,7 @@ If any query fails, look at the script's error output and either fix the query i
 
 ## Step 2: Write the generated skill
 
-Create these files under `./.claude/skills/pg-<dbname>/` (where `<dbname>` is the value of `PGDATABASE`). Before using `<dbname>` in the path or deleting anything, validate that it is non-empty and matches `^[A-Za-z0-9_-]+$`. If validation fails, stop and ask the user to either re-export `PGDATABASE` with a path-safe value or supply a safe override; do not delete any directory. If the validated target directory already exists, **delete it first** — overwrite is intentional, schemas drift and stale references mislead.
+Create these files under `<output>/` (the resolved output directory from the Inputs section above). Before using `<dbname>` in any frontmatter / generated content or deleting any directory, validate that `PGDATABASE` is non-empty and matches `^[A-Za-z0-9_-]+$`. If validation fails, stop and ask the user to re-export `PGDATABASE` with a path-safe value; do not delete any directory. (`--output`'s path-safety is enforced separately by the three-layer guard in the Inputs section — both checks must pass before the wipe.) If the validated target directory already exists, **delete it first** — overwrite is intentional, schemas drift and stale references mislead.
 
 ### `SKILL.md`
 
@@ -311,11 +336,12 @@ A commented template the user copies to a real `.env` (or per-environment `.env.
 
 ### `README.md`
 
-A human-facing README the engineer reads when they open the `pg-<dbname>/` directory or onboard a new teammate. SKILL.md is written for Claude when triggering; the README is for the human who's about to use the skill.
+A human-facing README the engineer reads when they open the generated skill directory or onboard a new teammate. SKILL.md is written for Claude when triggering; the README is for the human who's about to use the skill.
 
 Read `references/generated-readme-skeleton.md` for the verbatim template. Substitute the `<...>` placeholders with real values from introspection at generation time:
 
-- `<dbname>` — the value of `PGDATABASE`
+- `<dbname>` — the value of `PGDATABASE`. Used in the frontmatter-equivalent heading and prose.
+- `<skill-dir>` — the **resolved** output path, **relative to the project root**. For the default invocation that's `.claude/skills/pg-<dbname>` (no leading `./`); for `--output plugins/team-data/skills/pg-orders/` that's `plugins/team-data/skills/pg-orders` (trailing slash stripped). Used everywhere a filesystem path appears in the README — `cp` commands, `bash <skill-dir>/scripts/query.sh`, and so on. Do not collapse `<skill-dir>` into `<dbname>` — they're independent: `<dbname>` is the schema identity, `<skill-dir>` is where the files landed.
 - `<top tables>` — the same 3–5 ranked tables you put in the SKILL.md frontmatter description, computed once by the **Top-table ranking** rule above. Render each as a bare `table` name (the description is prose, not SQL).
 - `<top-table>` — the **first** entry of `<top tables>`, formatted for SQL as a **schema-qualified, double-quoted identifier**: `"<schema>"."<table>"`. The README's row-count sample is supposed to be runnable copy-paste, so it must work for any introspected name — including non-`public` schemas, identifiers that need quoting (mixed case, spaces, reserved words like `Order`), and duplicate table names across schemas. A bare `users` would fail on `analytics."UserSessions"`-shaped tables; always-quote is safe because Postgres treats `"users"` and `users` as the same object when the stored name is lowercase.
 - `<table count>`, `<view count>`, `<enum count>` — totals from introspection (drop the enums clause entirely if `enums.tsv` was empty)
@@ -382,23 +408,26 @@ Only create this file if `enums.tsv` is non-empty.
 
 ## Step 3: Verify
 
-After writing files, check:
-- `.claude/skills/pg-<dbname>/SKILL.md` exists and is non-empty
-- `.claude/skills/pg-<dbname>/SKILL.md`'s frontmatter does **not** contain `disable-model-invocation: true` (the generated skill must be model-invocable so it fires on natural-language prompts)
-- `.claude/skills/pg-<dbname>/README.md` exists and is non-empty
-- `.claude/skills/pg-<dbname>/README.md` has no unsubstituted `<...>` placeholders — `grep -E '<dbname>|<top tables?>|<top-table>|<table count>|<view count>|<enum count>'` should return nothing. The README is assembled from a placeholder-heavy template, so a generation bug can easily leave a literal like `<table count>` in the opening paragraph; verifying README existence alone won't catch that
-- `.claude/skills/pg-<dbname>/scripts/query.sh` is executable
-- `.claude/skills/pg-<dbname>/scripts/.env.example` exists
-- At least `references/tables.md` and `references/relationships.md` exist
-- `query.sh` has no unsubstituted `<...>` placeholders (the generator must have filled in `<host>`, `<port>`, `<user>`, and `<dbname>`)
+After writing files, check (against the resolved `<output>` directory, not a hardcoded `.claude/skills/...` path — the verify step has to follow the skill wherever `--output` landed it):
 
-Run a smoke test: `bash .claude/skills/pg-<dbname>/scripts/query.sh "SELECT 1"`. The libpq env vars (`PGHOST`/`PGPORT`/`PGUSER`/`PGDATABASE`/`PGPASSWORD`) are still exported from the invocation that triggered this skill, so the script picks them up from the environment without needing a `.env` file. If this fails, the generated skill is broken — surface the error to the user instead of claiming success.
+- `<output>/SKILL.md` exists and is non-empty
+- `<output>/SKILL.md`'s frontmatter `name` is `pg-<dbname>` — driven by `PGDATABASE`, **not** by the leaf segment of `<output>`. A user who passes `--output plugins/team-data/skills/pg-orders/` with `PGDATABASE=orders` should see `name: pg-orders`; a generator bug that takes `name` from `basename <output>` would produce `name: pg-orders` here too (coincidentally correct) but `name: pg-data` if the operator named the leaf carelessly. Verify by reading the frontmatter directly, not by inspecting the path.
+- `<output>/SKILL.md`'s frontmatter does **not** contain `disable-model-invocation: true` (the generated skill must be model-invocable so it fires on natural-language prompts)
+- `<output>/README.md` exists and is non-empty
+- `<output>/README.md` has no unsubstituted `<...>` placeholders — `grep -E '<dbname>|<skill-dir>|<top tables?>|<top-table>|<table count>|<view count>|<enum count>'` should return nothing. The README is assembled from a placeholder-heavy template, so a generation bug can easily leave a literal like `<skill-dir>` in a `cp` command or `<table count>` in the opening paragraph; verifying README existence alone won't catch that.
+- `<output>/scripts/query.sh` is executable
+- `<output>/scripts/.env.example` exists
+- At least `<output>/references/tables.md` and `<output>/references/relationships.md` exist
+- `<output>/scripts/query.sh` has no unsubstituted `<...>` placeholders (the generator must have filled in `<host>`, `<port>`, `<user>`, and `<dbname>`)
+
+Run a smoke test: `bash <output>/scripts/query.sh "SELECT 1"`. The libpq env vars (`PGHOST`/`PGPORT`/`PGUSER`/`PGDATABASE`/`PGPASSWORD`) are still exported from the invocation that triggered this skill, so the script picks them up from the environment without needing a `.env` file. If this fails, the generated skill is broken — surface the error to the user instead of claiming success.
 
 ## Step 4: Report
 
 Tell the user:
-- The path the skill was written to
+- The resolved `<output>` path the skill was written to (not a generic "default location")
 - The number of tables, views, and enums captured
-- To copy `scripts/.env.example` to `.env` (or per-environment `.env.dev` / `.env.prod`), fill in real credentials, and add the chosen filename(s) to `.gitignore`
+- To copy `<output>/scripts/.env.example` to `.env` (or per-environment `.env.dev` / `.env.prod`) at the project root, fill in real credentials, and add the chosen filename(s) to `.gitignore`
+- If `--output` was pointed at a plugin tree (`plugins/<your-plugin>/skills/pg-<dbname>/`), that they may need to register the new skill in the plugin's `plugin.json` — this generator emits skill files only, not plugin manifests
 - If `PSQL_IMAGE` was set during generation (private registry / pinned version), that the same value must be exported in any session that uses the generated skill
-- That re-running this generator will overwrite the skill in place when the schema drifts
+- That re-running this generator with the same `--output` will overwrite the skill in place when the schema drifts
