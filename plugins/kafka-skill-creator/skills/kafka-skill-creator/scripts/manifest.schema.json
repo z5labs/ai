@@ -70,7 +70,7 @@
     },
     "contexts": {
       "type": "array",
-      "description": "One entry per environment (dev / staging / prod / ...). Names appear verbatim in `kafkactl --context <name>` calls and as the uppercased segment in `CONTEXTS_<NAME>_*` env vars. Per-`name` uniqueness is NOT expressible in JSON Schema draft 2020-12 (uniqueItems only rejects fully-identical objects, which would let two contexts share a name as long as their `sasl_mechanism` differs); the generator validates `contexts[].name` uniqueness explicitly before proceeding.",
+      "description": "One entry per environment (dev / staging / prod / ...). Names appear verbatim in `kafkactl --context <name>` calls and as the uppercased + hyphen-to-underscore-normalized segment in `CONTEXTS_<NAME>_*` env vars. Per-`name` uniqueness is NOT expressible in JSON Schema draft 2020-12: uniqueItems only rejects fully-identical objects (so two contexts could share a `name` if their `sasl_mechanism` differs), and the env-var normalization means `dev-1` and `dev_1` collide on the same `CONTEXTS_DEV_1_*` prefix even though the raw strings differ. The generator validates uniqueness AFTER normalization (uppercase + `-` → `_`) before proceeding.",
       "minItems": 1,
       "items": {
         "type": "object",

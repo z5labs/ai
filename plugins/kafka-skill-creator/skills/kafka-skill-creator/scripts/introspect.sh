@@ -253,6 +253,20 @@ case "$OUT" in
     exit 2
     ;;
 esac
+# Reject any path whose components include `..`. `rm -rf` resolves
+# `/tmp/out/..` to `/tmp` (or worse), and the string-shape check above
+# wouldn't catch it because the literal string isn't `..` itself. The
+# four glob alternatives below cover the four positions a `..` component
+# can take: leading (`../foo`), trailing (`foo/..`), middle (`foo/../bar`),
+# and lone (`..` — already handled in the case above but kept here for
+# documentation symmetry).
+case "$OUT" in
+  "../"*|*"/.."|*"/../"*)
+    echo "error: refusing to wipe output-dir containing '..' segment: $OUT" >&2
+    echo "       '..' would let rm -rf resolve to a parent directory." >&2
+    exit 2
+    ;;
+esac
 rm -rf -- "$OUT"
 mkdir -p "$OUT" "$OUT/topics" "$OUT/groups"
 

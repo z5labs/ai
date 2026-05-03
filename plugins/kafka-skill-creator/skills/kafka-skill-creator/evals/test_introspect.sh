@@ -202,6 +202,39 @@ assert_test \
   "$ALL_DEV" \
   --context dev "~"
 
+# String-shape checks alone are bypassable: rm -rf /tmp/out/.. resolves
+# to /tmp before deletion, even though the literal argument doesn't match
+# the simple `..` case. Cover each position a `..` path component can
+# take: leading, trailing, middle, and lone.
+
+assert_test \
+  "refuses output-dir ending in /.. (resolves to parent)" \
+  2 \
+  "refusing to wipe" \
+  "$ALL_DEV" \
+  --context dev /tmp/out/..
+
+assert_test \
+  "refuses output-dir with /../ in the middle" \
+  2 \
+  "refusing to wipe" \
+  "$ALL_DEV" \
+  --context dev /tmp/../etc
+
+assert_test \
+  "refuses relative output-dir starting with ../" \
+  2 \
+  "refusing to wipe" \
+  "$ALL_DEV" \
+  --context dev ../tmp
+
+assert_test \
+  "refuses output-dir with deeper /../../ traversal" \
+  2 \
+  "refusing to wipe" \
+  "$ALL_DEV" \
+  --context dev /tmp/a/../../etc
+
 # --- Context-name validation --------------------------------------------------
 
 # Context name flows into env-var derivation; restrict it to a charset that
