@@ -111,9 +111,20 @@ Stop and refuse if any of the following are unmet:
 
 ## Step 1: Run introspection
 
+Before invoking `introspect.sh`, export the manifest's static cluster-shape values for the chosen context. The script treats `CONTEXTS_<NAME>_SASL_MECHANISM` as optional (kafkactl has a default) but kafkactl's default is not guaranteed to match this team's cluster — a SCRAM-SHA-256 broker would silently reject SCRAM-SHA-512 auth and the whole introspection would fail with an opaque error. Setting the manifest values explicitly ties the captured references to the same auth shape the generated wrappers will use:
+
 ```bash
+upper="$(printf '%s' "$CONTEXT" | tr '[:lower:]' '[:upper:]')"
+upper="${upper//-/_}"
+
+# Static shape from the manifest. None of these are secrets.
+export CONTEXTS_${upper}_SASL_ENABLED=true
+export CONTEXTS_${upper}_SASL_MECHANISM="<sasl_mechanism for this context from manifest>"
+export CONTEXTS_${upper}_TLS_ENABLED="<true if cluster.tls=required else false>"
+# (CONTEXTS_${upper}_SCHEMAREGISTRY_AUTH only set in Step 2 when SR is configured)
+
 bash <skill-dir>/scripts/introspect.sh \
-  --context <first-context-name> \
+  --context "$CONTEXT" \
   --topic <T> [--topic <T> ...] \
   --group <G> [--group <G> ...] \
   /tmp/kafka-introspect-<team>
@@ -121,7 +132,9 @@ bash <skill-dir>/scripts/introspect.sh \
 
 `<skill-dir>` is wherever this skill is installed (the directory containing the `SKILL.md` you are reading). Use an absolute path.
 
-`introspect.sh` re-validates the env vars itself, so a missing variable surfaces with the same exit-2 refusal even if Preconditions somehow passed. Output layout:
+`introspect.sh` wipes its output directory on every run before writing, so a re-introspection after a manifest change (topic dropped, group renamed) doesn't leave stale JSON files lying around to confuse downstream rendering. Pass a path under `/tmp/` (or another scratch location) — the script refuses to operate on `/`, `.`, `..`, or `~` as a defense against catastrophic deletes from a malformed argument.
+
+`introspect.sh` also re-validates the env vars itself, so a missing variable surfaces with the same exit-2 refusal even if Preconditions somehow passed. Output layout:
 
 - `cluster.json` — broker list and cluster metadata (kafkactl `get brokers -o json`).
 - `topics/<topic>.json` — per-topic config and partition layout (kafkactl `describe topic -o json`).

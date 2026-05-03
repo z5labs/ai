@@ -49,7 +49,10 @@ Required:
                     for env-var lookup (e.g. `--context dev` reads
                     CONTEXTS_DEV_BROKERS).
 
-  <output-dir>      Where to write JSON dumps. Created if missing.
+  <output-dir>      Where to write JSON dumps. Wiped and recreated on every
+                    run so stale files from a prior manifest don't linger.
+                    Pass a scratch path like /tmp/kafka-introspect-<team>;
+                    the script refuses to wipe `/`, `.`, `..`, or `~`.
 
 Repeatable:
   --topic T         Topic to describe. Pass once per topic in the manifest.
@@ -235,6 +238,22 @@ else
   exit 1
 fi
 
+# Wipe and recreate the output directory so a re-introspection after a
+# manifest change (topic dropped, group renamed) doesn't leave stale JSON
+# files lying around to confuse downstream rendering.
+#
+# Refuse the operation on path values that would be catastrophic to wipe.
+# This is a sanity net for malformed arguments — the contract is that the
+# caller passes a scratch location like /tmp/kafka-introspect-<team>, and
+# the OS will catch un-writable paths at mkdir time.
+case "$OUT" in
+  ""|"/"|"."|".."|"~"|"~/"*|" "*)
+    echo "error: refusing to wipe suspicious output-dir: $OUT" >&2
+    echo "       pass a scratch path like /tmp/kafka-introspect-<team>." >&2
+    exit 2
+    ;;
+esac
+rm -rf -- "$OUT"
 mkdir -p "$OUT" "$OUT/topics" "$OUT/groups"
 
 # Replace anything outside [A-Za-z0-9._-] so the result is safe to use as a

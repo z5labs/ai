@@ -167,6 +167,41 @@ assert_test \
   "$ALL_DEV" \
   --context dev "--group=u:pass@host:9092" /tmp/out
 
+# --- Output-path guard tests --------------------------------------------------
+#
+# introspect.sh wipes its output directory before writing so stale files
+# from a prior manifest don't linger. That's a real ergonomic improvement,
+# but `rm -rf $OUT` on a malformed argument would be catastrophic. Pin the
+# guard against the obvious dangerous shapes.
+
+assert_test \
+  "refuses to wipe / as output-dir" \
+  2 \
+  "refusing to wipe" \
+  "$ALL_DEV" \
+  --context dev /
+
+assert_test \
+  "refuses to wipe . as output-dir" \
+  2 \
+  "refusing to wipe" \
+  "$ALL_DEV" \
+  --context dev .
+
+assert_test \
+  "refuses to wipe .. as output-dir" \
+  2 \
+  "refusing to wipe" \
+  "$ALL_DEV" \
+  --context dev ..
+
+assert_test \
+  "refuses to wipe ~ as output-dir" \
+  2 \
+  "refusing to wipe" \
+  "$ALL_DEV" \
+  --context dev "~"
+
 # --- Context-name validation --------------------------------------------------
 
 # Context name flows into env-var derivation; restrict it to a charset that

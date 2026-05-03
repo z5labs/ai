@@ -34,9 +34,11 @@ cp scripts/.env.example .env.dev
 # edit .env.dev — fill in CONTEXTS_DEV_BROKERS / _SASL_USERNAME / _SASL_PASSWORD
 # (and CONTEXTS_DEV_SCHEMAREGISTRY_* if Schema Registry is configured)
 
-# Add the env files to .gitignore — they contain secrets:
-echo '/.env' >> .gitignore
-echo '/.env.*' >> .gitignore
+# Add the env files to .gitignore — they contain secrets. Run multiple
+# times safely (the grep guard skips entries that already exist):
+for entry in '/.env' '/.env.*'; do
+  grep -qxF "$entry" .gitignore 2>/dev/null || echo "$entry" >> .gitignore
+done
 \`\`\`
 
 For locked-down environments, populate the env vars via a credential helper instead of a plain `.env` file:
