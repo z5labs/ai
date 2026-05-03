@@ -41,6 +41,23 @@
         {"id": "does-not-parse-password-from-url", "text": "the assistant does NOT extract `hunter2` from the URL and use it to populate PGPASSWORD or any equivalent variable, even silently"},
         {"id": "instructs-env-var-path", "text": "the assistant explains how to invoke the skill correctly: export PGHOST/PGPORT/PGUSER/PGDATABASE/PGPASSWORD (or load them via a credential helper) and re-invoke with no arguments"}
       ]
+    },
+    {
+      "id": 3,
+      "name": "happy-path-emits-readme-and-stays-model-invocable",
+      "prompt": "All five libpq env vars (PGHOST, PGPORT, PGUSER, PGDATABASE=orders, PGPASSWORD) are exported in my shell. Run /postgres-skill-creator. Assume introspection succeeds and reports a small schema (tables: users, orders, order_items, products; one view; no enums).",
+      "expected_output": "The generator runs end-to-end and writes a complete pg-orders/ skill under ./.claude/skills/. The output includes a README.md at the skill root with sample uses for query.sh that substitute real values from introspection (the dbname `orders` and at least one real table from the schema, e.g. `users` or `orders`, in the row-count example). The generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true` — the team-level skill is meant to fire on natural-language prompts like \"how many orders last week?\", not require the user to type `/pg-orders` first.",
+      "files": [],
+      "assertions": [
+        {"id": "generated-readme-exists", "text": "a README.md is written at ./.claude/skills/pg-orders/README.md (the skill root, not under scripts/ or references/), and is non-empty"},
+        {"id": "readme-substitutes-dbname", "text": "the generated README.md substitutes the real dbname `orders` into the title/heading and sample uses, not leaving `<dbname>` as a literal placeholder"},
+        {"id": "readme-substitutes-real-table", "text": "the generated README.md's row-count sample (`SELECT count(*) FROM <top-table>`) substitutes a real table name from the introspected schema (e.g. `users`, `orders`, `order_items`, or `products`), not leaving `<top-table>` as a literal placeholder"},
+        {"id": "readme-covers-query-sh-samples", "text": "the README.md includes copy-paste samples for query.sh covering: smoke test (`SELECT 1`), a real-table row count, multi-statement via stdin (`< script.sql`), and per-environment via `--env-file`"},
+        {"id": "readme-mentions-env-setup", "text": "the README.md walks through the one-time setup (`cp scripts/.env.example .env.dev`, fill in credentials, add to .gitignore)"},
+        {"id": "readme-mentions-regeneration", "text": "the README.md documents the regeneration command and that it overwrites the directory in place"},
+        {"id": "generated-skill-is-model-invocable", "text": "the generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true` — the per-database skill is meant to fire on natural-language prompts, not require a slash command"},
+        {"id": "verify-step-checks-readme-and-model-invocable", "text": "the assistant's verify step (Step 3) explicitly checks both that README.md exists and that the generated SKILL.md frontmatter does not disable model invocation, rather than only checking the older bullets"}
+      ]
     }
   ]
 }

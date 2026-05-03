@@ -69,6 +69,8 @@ Create these files under `./.claude/skills/pg-<dbname>/` (where `<dbname>` is th
 
 Use this skeleton; substitute the `<...>` placeholders with real content. The frontmatter `description` is what determines triggering, so make it specific to this database — name the database, mention that it's for ad-hoc reads/writes, and list a few of the most prominent table names (top 3–5 by column count or by appearing in the most foreign keys).
 
+**Do NOT set `disable-model-invocation: true` on the generated skill.** The generated `pg-<dbname>` skill is meant to fire automatically when its description matches the user's prose ("how many rows in `orders` last week?", "which users haven't logged in in 30 days?"). Disabling model invocation would force the user to type `/pg-<dbname>` explicitly to use it, which defeats the point of having a per-database skill that the model recognizes by table-name context. The meta-generator (this `postgres-skill-creator`) is slash-only because *it* requires deliberate invocation; the *generated* skill should not inherit that property. Omit the field — Claude Code's default is "model-invocable" — rather than setting it to `false` (the field's name is a footgun; explicit `false` reads like an extra knob even though it's just the default).
+
 ```markdown
 ---
 name: pg-<dbname>
@@ -299,6 +301,19 @@ A commented template the user copies to a real `.env` (or per-environment `.env.
 # forwarded to psql inside the container.
 ```
 
+### `README.md`
+
+A human-facing README the engineer reads when they open the `pg-<dbname>/` directory or onboard a new teammate. SKILL.md is written for Claude when triggering; the README is for the human who's about to use the skill.
+
+Read `references/generated-readme-skeleton.md` for the verbatim template. Substitute the `<...>` placeholders with real values from introspection at generation time:
+
+- `<dbname>` — the value of `PGDATABASE`
+- `<top tables>` — the same 3–5 prominent table names you put in the SKILL.md frontmatter description
+- `<top-table>` — the single most prominent of those, used in the row-count sample so it's runnable copy-paste
+- `<table count>`, `<view count>`, `<enum count>` — totals from introspection (drop the enums clause entirely if `enums.tsv` was empty)
+
+The README must include working samples for `query.sh` (smoke test, real-table count, multi-statement via stdin, per-environment via `--env-file`), the one-time `.env` setup, the credential-helper pointer, and the regeneration command — those are the things engineers ask first when they open the skill directory.
+
 ### `references/tables.md`
 
 For each table, a section like:
@@ -361,6 +376,8 @@ Only create this file if `enums.tsv` is non-empty.
 
 After writing files, check:
 - `.claude/skills/pg-<dbname>/SKILL.md` exists and is non-empty
+- `.claude/skills/pg-<dbname>/SKILL.md`'s frontmatter does **not** contain `disable-model-invocation: true` (the generated skill must be model-invocable so it fires on natural-language prompts)
+- `.claude/skills/pg-<dbname>/README.md` exists and is non-empty
 - `.claude/skills/pg-<dbname>/scripts/query.sh` is executable
 - `.claude/skills/pg-<dbname>/scripts/.env.example` exists
 - At least `references/tables.md` and `references/relationships.md` exist
