@@ -1,8 +1,8 @@
 {
   "summary": {
-    "passed": 10,
+    "passed": 12,
     "failed": 0,
-    "total": 10,
+    "total": 12,
     "pass_rate": 1.0
   },
   "expectations": [
@@ -35,6 +35,16 @@
       "text": "the generated README has no unsubstituted `<skill-dir>` placeholders",
       "passed": true,
       "evidence": "absent"
+    },
+    {
+      "text": "the generated README has no unsubstituted `<regen-command>` placeholders",
+      "passed": true,
+      "evidence": "absent"
+    },
+    {
+      "text": "the README's regeneration sample includes `--output plugins/team-data/skills/pg-orders` (not a bare /postgres-skill-creator invocation)",
+      "passed": true,
+      "evidence": "regen command carries --output flag"
     },
     {
       "text": "the generated README has no other unsubstituted `<...>` placeholders",

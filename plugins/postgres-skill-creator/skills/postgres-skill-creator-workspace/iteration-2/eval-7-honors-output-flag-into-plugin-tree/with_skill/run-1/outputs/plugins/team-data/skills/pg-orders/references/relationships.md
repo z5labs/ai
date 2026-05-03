@@ -1,4 +1,4 @@
-# Foreign-Key Relationships — orders
+# Foreign-key relationships
 
 orders.user_id → users.id
 order_items.order_id → orders.id

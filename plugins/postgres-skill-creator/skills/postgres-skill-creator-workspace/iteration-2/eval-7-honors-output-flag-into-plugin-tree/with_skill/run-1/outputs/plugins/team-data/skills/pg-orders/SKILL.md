@@ -1,6 +1,6 @@
 ---
 name: pg-orders
-description: Run ad-hoc SQL against the orders Postgres database (tables: orders, products, users, order_items). Use whenever the user asks to query, inspect, update, or insert data in orders, even if they don't name the DB explicitly.
+description: Run ad-hoc SQL against the orders Postgres database (tables: products, orders, users, order_items). Use whenever the user asks to query, inspect, update, or insert data in orders, even if they don't name the DB explicitly.
 ---
 
 This skill knows the schema of the `orders` Postgres database and provides a wrapper for running queries against it via a containerized `psql`.
@@ -41,14 +41,15 @@ For multi-statement scripts, pipe via stdin:
 
 ## Schema overview
 
-The `orders` database contains 4 tables and 1 view across the `public` schema. The schema models an e-commerce order management system: customers are tracked in `users`, products are catalogued in `products`, purchase transactions live in `orders` (linked to the purchasing user), and `order_items` captures each line item in an order (linked to both the order and the product). The `active_orders` view pre-joins orders with user information for non-cancelled orders, making it the go-to query pattern for operational dashboards.
+The `orders` database is an e-commerce order-management schema comprising 4 tables and 1 view in the `public` schema. The design is centered on a classic order-line-item pattern: `users` place `orders`, each `order` contains one or more `order_items`, and each `order_item` references a `product` from the `products` catalog. The `order_summary` view provides a pre-joined roll-up of per-order totals, making it convenient for reporting queries. There are no enum types — status and similar categorical fields are modeled as text or smallint.
 
 ### Tables (4)
 
 **public**
+
+- `order_items` (6 cols, PK: id)
 - `orders` (6 cols, PK: id)
-- `order_items` (5 cols, PK: id)
-- `products` (6 cols, PK: id)
+- `products` (7 cols, PK: id)
 - `users` (5 cols, PK: id)
 
 ## When you need details

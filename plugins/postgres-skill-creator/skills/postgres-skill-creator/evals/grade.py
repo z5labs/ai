@@ -552,8 +552,18 @@ def grade_honors_output_flag(outputs_dir: Path, _fixture: dict) -> list[dict]:
 
     # Placeholder residue checks.
     skill_dir_residue = "<skill-dir>" in readme_text
+    regen_command_residue = "<regen-command>" in readme_text
     other_placeholder_re = re.compile(r"<dbname>|<top tables?>|<top-table>|<table count>|<view count>|<enum count>")
     other_placeholder_residue = bool(other_placeholder_re.search(readme_text))
+
+    # Regeneration command must include the actual --output flag, not a bare invocation.
+    # Match `/postgres-skill-creator --output plugins/team-data/skills/pg-orders` with
+    # optional trailing slash, on the same logical line as the slash command. Tolerant
+    # of `--output=...` (= sign) and a few whitespace variations.
+    regen_includes_output = bool(re.search(
+        r"/postgres-skill-creator\s+--output[\s=]+plugins/team-data/skills/pg-orders/?",
+        readme_text,
+    ))
 
     # Assistant report: did it mention plugin.json registration?
     plugin_json_mentioned = bool(re.search(r"plugin\.json", response, re.I))
@@ -598,6 +608,12 @@ def grade_honors_output_flag(outputs_dir: Path, _fixture: dict) -> list[dict]:
         {**(passed if not skill_dir_residue else failed)(
             "the generated README has no unsubstituted `<skill-dir>` placeholders",
             "absent" if not skill_dir_residue else f"<skill-dir> appears {readme_text.count('<skill-dir>')} times")},
+        {**(passed if not regen_command_residue else failed)(
+            "the generated README has no unsubstituted `<regen-command>` placeholders",
+            "absent" if not regen_command_residue else f"<regen-command> appears {readme_text.count('<regen-command>')} times")},
+        {**(passed if regen_includes_output else failed)(
+            "the README's regeneration sample includes `--output plugins/team-data/skills/pg-orders` (not a bare /postgres-skill-creator invocation)",
+            "regen command carries --output flag" if regen_includes_output else "regen command missing --output flag — would regenerate into default .claude/skills/")},
         {**(passed if not other_placeholder_residue else failed)(
             "the generated README has no other unsubstituted `<...>` placeholders",
             f"matches: {other_placeholder_re.findall(readme_text)[:5]}")},

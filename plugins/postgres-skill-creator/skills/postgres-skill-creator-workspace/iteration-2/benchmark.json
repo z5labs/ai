@@ -4,7 +4,7 @@
     "skill_path": "<path/to/skill>",
     "executor_model": "<model-name>",
     "analyzer_model": "<model-name>",
-    "timestamp": "2026-05-03T23:31:46Z",
+    "timestamp": "2026-05-03T23:44:30Z",
     "evals_run": [
       0,
       1,
@@ -194,11 +194,11 @@
       "run_number": 1,
       "result": {
         "pass_rate": 1.0,
-        "passed": 10,
+        "passed": 12,
         "failed": 0,
-        "total": 10,
-        "time_seconds": 210.2,
-        "tokens": 36433,
+        "total": 12,
+        "time_seconds": 213.9,
+        "tokens": 37344,
         "tool_calls": 0,
         "errors": 0
       },
@@ -232,6 +232,16 @@
           "text": "the generated README has no unsubstituted `<skill-dir>` placeholders",
           "passed": true,
           "evidence": "absent"
+        },
+        {
+          "text": "the generated README has no unsubstituted `<regen-command>` placeholders",
+          "passed": true,
+          "evidence": "absent"
+        },
+        {
+          "text": "the README's regeneration sample includes `--output plugins/team-data/skills/pg-orders` (not a bare /postgres-skill-creator invocation)",
+          "passed": true,
+          "evidence": "regen command carries --output flag"
         },
         {
           "text": "the generated README has no other unsubstituted `<...>` placeholders",
@@ -372,22 +382,22 @@
         "max": 1.0
       },
       "time_seconds": {
-        "mean": 83.7548,
-        "stddev": 101.3755,
+        "mean": 84.2173,
+        "stddev": 102.0411,
         "min": 23.784,
         "max": 279.1
       },
       "tokens": {
-        "mean": 24849.5,
-        "stddev": 6756.3893,
+        "mean": 24963.375,
+        "stddev": 6983.3771,
         "min": 20317,
-        "max": 36433
+        "max": 37344
       }
     },
     "delta": {
       "pass_rate": "+0.70",
-      "time_seconds": "+83.8",
-      "tokens": "+24850"
+      "time_seconds": "+84.2",
+      "tokens": "+24963"
     }
   },
   "notes": []

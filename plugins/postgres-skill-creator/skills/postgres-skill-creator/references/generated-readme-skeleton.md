@@ -10,6 +10,7 @@ Substitute every `<...>` placeholder with real values from introspection at gene
   - Plugin-author invocation (`--output plugins/team-data/skills/pg-orders/`): `<skill-dir>` is `plugins/team-data/skills/pg-orders`.
 
   Use `<skill-dir>` everywhere a filesystem path appears: `cp <skill-dir>/scripts/.env.example .env`, `bash <skill-dir>/scripts/query.sh ...`. The README is read from the project root, so a project-root-relative path is what makes the samples runnable as-is. Do **not** substitute a `./.claude/skills/pg-<dbname>/`-shaped string when `--output` lands the skill in a plugin tree — the user would copy the wrong path and the smoke test would fail.
+- `<regen-command>` — the exact `/postgres-skill-creator` invocation that produced this skill, with whatever `--output` value was used. For a default install, that's just `/postgres-skill-creator`. For `--output plugins/team-data/skills/pg-orders/`, that's `/postgres-skill-creator --output plugins/team-data/skills/pg-orders/`. The Regeneration section below has to substitute the *actual* command — emitting a bare `/postgres-skill-creator` for a plugin-tree install would regenerate into the default `.claude/skills/...` path and silently leave the plugin-tree skill stale, so the regeneration sample has to carry the same `--output` the operator originally used.
 - `<top tables>` — the same 3–5 ranked tables you used in the SKILL.md frontmatter description, computed by the deterministic **Top-table ranking** rule defined in SKILL.md (FK reference row count DESC → column count DESC → `(schema, table_name)` ASC). Render each as a bare `table` name — this is prose for humans, not SQL.
 - `<top-table>` — the **first** entry of `<top tables>`, formatted for SQL as a **schema-qualified, double-quoted identifier**: `"<schema>"."<table>"`. The README's row-count sample is supposed to be runnable copy-paste, so a bare `users` won't do — it would fail on `analytics."UserSessions"`-shaped tables, on duplicate names across schemas, and on identifiers that need quoting (mixed case, spaces, reserved words). Always-quote is safe because Postgres treats `"users"` and `users` as the same object when the stored name is lowercase.
 - `<table count>`, `<view count>`, `<enum count>` — totals from the introspection output
@@ -130,7 +131,7 @@ Before writing a non-trivial query, consult the relevant reference under `refere
 Schemas drift. To pull in changes, re-export the same libpq env vars and re-run the generator with the same `--output` (or no `--output` if this skill landed at the default location):
 
 \`\`\`bash
-/postgres-skill-creator
+<regen-command>
 \`\`\`
 
 This **overwrites** every file under `<skill-dir>/` — keep any project-specific guidance somewhere else (top-level `CLAUDE.md`, a sibling skill, etc.) so it survives regeneration.
