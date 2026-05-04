@@ -1,0 +1,5 @@
+# Real-world DSF fixtures are extracted from X-Plane scenery and licensed
+# under X-Plane's terms — they cannot be redistributed in this repo.
+# Tests use these fixtures locally; the fixture filename pattern is stable
+# (`add-fixture` copies to `<package>/testdata/<package>-<name>.<ext>`).
+**/testdata/*.dsf

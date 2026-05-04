@@ -1,0 +1,27 @@
+{
+  "eval_id": 0,
+  "eval_name": "dsf-binary",
+  "agent": "file-library",
+  "kind": "dry-run-end-to-end",
+  "issue": "https://github.com/z5labs/ai/issues/88",
+  "spec_source": "https://developer.x-plane.com/article/dsf-file-format-specification/",
+  "package_name": "dsf",
+  "format_hint": "binary",
+  "target_parent_dir": "plugins/file-library/agents/file-library-workspace/iteration-1/eval-0-dsf-binary/outputs/",
+  "real_world_fixture": {
+    "path": "/home/carson/Downloads/+40-080.dsf",
+    "size_bytes": 152976,
+    "license": "X-Plane proprietary; not redistributable; gitignored via iteration-1/.gitignore"
+  },
+  "acceptance_criteria": [
+    {"id": "agent-end-to-end", "text": "Agent runs end-to-end without manual hand-off, OR documents friction points in _state_of_play.md and a follow-up issue is filed for each."},
+    {"id": "real-fixture-round-trip", "text": "At least one real-world .dsf fixture round-trips with byte-equality."},
+    {"id": "findings-writeup", "text": "Findings written up at iteration-1/findings.md summarizing what worked first try, where the agent got stuck, and what changes the run motivates."}
+  ],
+  "expected_friction": [
+    "Spec extraction: vendor HTML, may need pandoc fallback in extract-binary-spec.",
+    "Decoder: ATOM-style nested containers exercise the inner-action-loop pattern.",
+    "Encoder: MD5 footer must be deferred until after the body is written.",
+    "Round-trip: byte-equality on a real .dsf is the strongest verification gate."
+  ]
+}
