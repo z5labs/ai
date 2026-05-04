@@ -85,13 +85,17 @@ The scaffold skill runs `go mod tidy`, `go build ./...`, and `go test -race ./..
 Invoke `extract-text-spec` (text) or `extract-binary-spec` (binary) **as a subagent** with three inputs. Both skills' Phase 0 prompts for these explicitly; supplying all three up front is what keeps the run autonomous (skipping any of them stalls the skill waiting on the user):
 
 1. **Spec source** — the URL/path from the agent's inputs.
-2. **Output path** — `<parent>/<package-name>/` (the directory just scaffolded in Step 2). Extract writes `SPEC.md` directly into it; for binary, also writes `<package>/structures/*.md`, `<package>/encoding-tables/*.md`, and `<package>/examples/*.md`. None of these collide with scaffold's `*.go` files at the package root.
+2. **Output path** — the two skills take different shapes here, and passing the wrong shape will cause the skill to write to the wrong place or stall asking for clarification:
+   - **Text** (`extract-text-spec`) expects a **file path** to `SPEC.md`: pass `<parent>/<package-name>/SPEC.md`.
+   - **Binary** (`extract-binary-spec`) expects a **directory path**: pass `<parent>/<package-name>/`. The skill writes `SPEC.md`, `structures/*.md`, `encoding-tables/*.md`, and `examples/*.md` into it.
+
+   None of these collide with scaffold's `*.go` files at the package root.
 3. **Sections/features to prioritize or skip** — default: **"all sections, no exclusions"**. Override only if the user prompt named sections to scope down. Never leave this input unspecified — if you do, the skill will pause to ask.
 
 After extraction, verify:
 - `<package>/SPEC.md` exists and is non-empty.
 - For binary: `<package>/structures/` exists with at least one `.md` file, and `<package>/examples/` exists with at least one `.md` file (a binary spec with zero structures or zero worked examples means extraction silently failed — re-invoke before continuing).
-- For text: `<package>/SPEC.md` contains a `## Examples` section with at least three `###` subsections (per `extract-text-spec`'s output contract: one `## Examples` heading containing `### Minimal Valid File`, `### Typical File`, `### Complex File`). Check with `grep -A 30 '^## Examples' <package>/SPEC.md | grep -c '^### '` ≥ 3.
+- For text: `<package>/SPEC.md` contains a `## Examples` section with at least three `###` subsections (per `extract-text-spec`'s output contract: one `## Examples` heading containing `### Minimal Valid File`, `### Typical File`, `### Complex File`). The Minimal/Typical/Complex examples are full documents, not stubs, so a fixed-window grep can miss them — count subsections across the whole `## Examples` section instead: `awk '/^## Examples/{f=1; next} /^## /{f=0} f && /^### /' <package>/SPEC.md | wc -l` ≥ 3.
 
 If verification fails, re-invoke the extract skill once with a tightened scope ("focus on sections N through M only"). If it fails twice, treat as stuck and skip to `## Termination` with `_state_of_play.md` describing the extraction failure. Don't push forward against an incomplete spec.
 
@@ -101,12 +105,14 @@ Loop until either the success or stuck condition fires (see `## Termination cont
 
 1. **Choose scope.** Read `SPEC.md` *headings only* (`grep '^##' <package>/SPEC.md`) — never load the body; the implementer re-reads it. **For binary runs, also list `<package>/structures/` filenames** (`ls <package>/structures/`) — `SPEC.md` for binary holds only generic headings (`Overview`, `Conventions`, indexes); the actual per-structure scope candidates are the structure filenames, since `extract-binary-spec` writes one `.md` per structure. On iteration 1: pick the spec sections that map to the most fundamental tokens/types — tokenizer phase for text (start with the smallest token set), types phase for binary (start with the top-level header struct, identifiable from `structures/` filenames). On later iterations: focus on whichever tests just started failing, or the spec sections corresponding to test failures (use `grep` against `_iteration_log.md` to recall what's already been covered, rather than scrolling the transcript).
 2. **Invoke implementer.** Call `implement-go-text-file-library` or `implement-go-binary-file-library` **as a subagent** with a focused prompt that names the spec sections in scope this iteration. The implementer skill manages its own phase chunking and partition gate per its SKILL.md — don't second-guess it; do pass a narrow scope so the partition gate doesn't trip unnecessarily. Capture only the implementer's return summary in the orchestrator's context; the diffs themselves live on disk in `<package>/`.
-3. **Run tests.** `(cd <package> && go test -race -v ./... 2>&1)`. The `cd` is required — this repo has no root `go.mod`. The `-v` flag is required because Step 4 needs per-test PASS/FAIL events to compute the iteration-log fields below; plain `go test -race ./...` only emits failure data and would leave passing-counts uncomputable.
-4. **Parse results.** Extract only the four fields the iteration log needs:
-   - Passing count: `grep -c '^--- PASS:'` against the test output.
-   - Failing count: `grep -c '^--- FAIL:'` against the test output.
-   - Failing test names: `grep '^--- FAIL:' | awk '{print $3}'`.
-   - Newly passing this iteration: derived from the failing-name diff against the prior iteration's `Recurring failures:` line in `_iteration_log.md` — names that were failing last iteration and are not failing now. (Don't track passing names directly; the diff against failing names is sufficient and avoids carrying a long passing-test list in context.)
+3. **Run tests.** `(cd <package> && go test -race -v ./... 2>&1; echo EXIT=$?)`. The `cd` is required — this repo has no root `go.mod`. The `-v` flag is required because Step 4 needs per-test PASS/FAIL events to compute the iteration-log fields below; plain `go test -race ./...` only emits failure data and would leave passing-counts uncomputable. Capturing the exit code matters for sub-step 4 — a non-zero exit with no test events means the package didn't compile or hit a build/init error.
+4. **Parse results.** First, check the exit code:
+   - **Build/run failure**: exit code is non-zero AND the output contains zero `^--- PASS:` AND zero `^--- FAIL:` lines (typical when a compile error, missing import, or an `init()` panic kills the run before any test executes). Record this iteration as `Tests passing: 0`, `Tests failing: 1`, `Failing test names: BUILD`. Without this special case the loop would record `0 / 0` and falsely advance — `go test`'s exit status is the only signal that compilation broke. The next iteration's scope is "fix the build/run failure".
+   - **Normal run**: extract:
+     - Passing count: `grep -c '^--- PASS:'` against the test output.
+     - Failing count: `grep -c '^--- FAIL:'` against the test output.
+     - Failing test names: `grep '^--- FAIL:' | awk '{print $3}'`.
+     - Newly passing this iteration: derived from the failing-name diff against the prior iteration's `Recurring failures:` line in `_iteration_log.md` — names that were failing last iteration and are not failing now. (Don't track passing names directly; the diff against failing names is sufficient and avoids carrying a long passing-test list in context.)
 
    Do not retain the raw `go test` output beyond this extraction — once sub-step 5 has appended the iteration log entry, treat the verbose output as discarded; re-run the tests if you need them again. Long test logs are the single largest context-bloat source in this loop.
 5. **Append iteration log entry** per `## Iteration log format`.
@@ -124,7 +130,14 @@ Three gates, run in order. Each gate that fails sends control back to Step 4 wit
 
 **Gate (c) — round-trip fixtures via `add-fixture`.** Add 1–2 fixtures appropriate to the format, drawn from spec-derived sources (not implementation output, not paraphrased material). Pick fixtures that exercise the spec broadly, not edge cases:
 - **For text**: extract a `### Minimal Valid File` block from `<package>/SPEC.md`'s single `## Examples` section (`extract-text-spec` writes one `## Examples` containing `### Minimal Valid File`/`### Typical File`/`### Complex File` subsections; pull one of those subsection bodies into a tempfile).
-- **For binary**: use the byte sequence from `<package>/examples/<name>.md` (`extract-binary-spec` writes one `examples/*.md` per worked example with hex bytes; the index in `SPEC.md` only lists names). Pick the minimal example.
+- **For binary**: `extract-binary-spec`'s `examples/<name>.md` files are annotated hex-dump markdown (offset / hex / ASCII columns inside a fenced block), not raw fixture bytes — handing one of them to `add-fixture` directly would copy the markdown into `testdata/` and not exercise the decoder. First materialize the bytes from `examples/minimal.md` to a tempfile by stripping the offset prefix and ASCII suffix and piping through `xxd -r -p`:
+
+  ```bash
+  awk '/^[[:xdigit:]]{8}/ { sub(/^[[:xdigit:]]{8}  */, ""); sub(/  +.*$/, ""); gsub(/ /, ""); print }' \
+    <package>/examples/minimal.md | xxd -r -p > /tmp/<package>-minimal.bin
+  ```
+
+  Then pass `/tmp/<package>-minimal.bin` to `add-fixture` as the source file. The `awk` filters to lines that begin with an 8-hex-digit offset, strips the offset prefix and the trailing ASCII column, removes intra-row spaces, and `xxd -r -p` decodes plain hex back to bytes.
 
 After invoking `add-fixture` as a subagent, run `(cd <package> && go test -race -v ./...)` once more — `add-fixture` already runs tests but the round-trip case may legitimately fail if the implementation has gaps the earlier audit missed. A failure here sends control back to Step 4 with the failing fixture as next iteration's scope.
 
@@ -180,7 +193,7 @@ Written only on stuck-exit. The audience is a human about to take over manually:
 <2–4 concrete next-action bullets a human can pick up. Examples: "Re-read SPEC.md section X — the recurring `expected B got A` failure suggests the spec disagrees with our implementation choice at <line range>", or "Re-extract the spec with a tighter scope — current SPEC.md is missing the <feature> section the failing tests target".>
 ```
 
-Source the bullets from disk, not from transcript recall. For "Failing tests": re-run the full suite once at stuck-exit (`(cd <package> && go test -race -v ./... 2>&1 | tee /tmp/stuck-tests.txt)`) — running everything is simpler than passing failing names to `-run`, since table-driven names from `t.Run(tc.name, ...)` routinely contain `/`, parens, or other regex metacharacters that would need escaping. Then for each failing test name from the iteration log, find the first failure line in the captured output (`grep -A 2 '^--- FAIL: <name>$' /tmp/stuck-tests.txt | sed -n 2p`). For "What was attempted": pull the per-iteration `Scope:` and `Recurring failures:` lines from `_iteration_log.md` directly (`grep -E '^(## Iteration|- (Scope|Recurring))' <package>/_iteration_log.md`); paraphrasing from memory loses fidelity.
+Source the bullets from disk, not from transcript recall. For "Failing tests": re-run the full suite once at stuck-exit (`(cd <package> && go test -race -v ./... 2>&1 | tee /tmp/stuck-tests.txt)`) — running everything is simpler than passing failing names to `-run`, since table-driven names from `t.Run(tc.name, ...)` routinely contain `/`, parens, or other regex metacharacters that would need escaping. Then for each failing test name from the iteration log, find the first failure line in the captured output. `go test -v` prints `--- FAIL: <name> (<duration>)` — there's always a trailing space-paren-duration, so anchor on the trailing space, not end-of-line: `grep -A 2 "^--- FAIL: <name> " /tmp/stuck-tests.txt | sed -n 2p`. Anchoring on `$` after the name will never match. For "What was attempted": pull the per-iteration `Scope:` and `Recurring failures:` lines from `_iteration_log.md` directly (`grep -E '^(## Iteration|- (Scope|Recurring))' <package>/_iteration_log.md`); paraphrasing from memory loses fidelity.
 
 The "Suggested next steps" bullets are the most valuable part of this file; spend the time to make them specific (file/line/section pointers, not "look at the failures"). A vague handoff produces a vague follow-up.
 

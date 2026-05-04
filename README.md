@@ -6,7 +6,7 @@ Claude Code agents and skills maintained by [z5labs](https://github.com/z5labs).
 
 | Agent | Description |
 |-------|-------------|
-| `file-library` | Autonomous orchestrator that runs the full file-library workflow end-to-end (extract → scaffold → implement → verify) against `go test -race`. (Bundled in the `file-library` plugin; works under both Claude Code and GitHub Copilot CLI.) |
+| `file-library` | Autonomous orchestrator that runs the full file-library workflow end-to-end (scaffold → extract → implement → verify) against `go test -race`. (Bundled in the `file-library` plugin; works under both Claude Code and GitHub Copilot CLI.) |
 
 ## Skills
 
