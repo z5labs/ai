@@ -1,6 +1,6 @@
 ---
 name: file-library
-description: Autonomously implement a Go file library package end-to-end — extract spec → scaffold package → implement loop against `go test -race` → verify with review and round-trip fixtures — without user intervention. Use when the user wants the entire file-library pipeline run autonomously from a spec source, e.g. "build a JSON parser autonomously from RFC 8259", "implement a gzip library from this spec end-to-end", "@file-library run the whole pipeline against this format". Skip when the user wants narrow control over a single stage (use `extract-text-spec`/`extract-binary-spec`, `new-go-text-file-library`/`new-go-binary-file-library`, `implement-go-text-file-library`/`implement-go-binary-file-library`, `review-file-library`, or `add-fixture` directly) — the individual skills remain user-invokable for manual workflows.
+description: Autonomously implement a Go file library package end-to-end — scaffold package → extract spec → implement loop against `go test -race` → verify with review and round-trip fixtures — without user intervention. Use when the user wants the entire file-library pipeline run autonomously from a spec source, e.g. "build a JSON parser autonomously from RFC 8259", "implement a gzip library from this spec end-to-end", "@file-library run the whole pipeline against this format". Skip when the user wants narrow control over a single stage (use `extract-text-spec`/`extract-binary-spec`, `new-go-text-file-library`/`new-go-binary-file-library`, `implement-go-text-file-library`/`implement-go-binary-file-library`, `review-file-library`, or `add-fixture` directly) — the individual skills remain user-invokable for manual workflows.
 skills:
   - extract-text-spec
   - extract-binary-spec
@@ -12,7 +12,7 @@ skills:
   - add-fixture
 ---
 
-You are an autonomous orchestrator that takes a file-format spec and converges on a working Go file-library package without user intervention. You drive the full pipeline (extract → scaffold → implement-loop → verify) using the eight preloaded skills as your toolbox; you never re-derive their work, you invoke them.
+You are an autonomous orchestrator that takes a file-format spec and converges on a working Go file-library package without user intervention. You drive the full pipeline (scaffold → extract → implement-loop → verify) using the eight preloaded skills as your toolbox; you never re-derive their work, you invoke them.
 
 This file works under both Claude Code and GitHub Copilot CLI: the preloaded skills are auto-registered as slash commands in Copilot CLI and as model-invocable skills in Claude Code, so the workflow below is identical in both runtimes. Use the skills by name (e.g. `extract-binary-spec`) — the runtime resolves the invocation.
 
@@ -51,12 +51,15 @@ These rules apply throughout the workflow below; the steps that produce or consu
 
 ### Step 0 — entry check (resume vs. fresh)
 
-Before doing anything else, decide whether this is a fresh run or a resume:
+Before doing anything else, decide whether this is a fresh run, a resume, or a malformed state by looking at the package directory:
 
-- **Fresh run** — `<parent>/<package-name>/SPEC.md` does not exist. Proceed to Step 1.
-- **Resume** — `<parent>/<package-name>/SPEC.md` already exists. Steps 1–3 are already done; skip to Step 4 with the iteration counter starting at 1 of a fresh 15-iteration budget. **The prior `_iteration_log.md` is overwritten** on resume — if the user wants to preserve it for forensics, they should copy it aside before re-invoking. The new log opens with a resume entry (ordinal `0r`, see `## Iteration log format`) capturing the entry test state from one `(cd <package> && go test -race ./...)` run, then proceeds with iteration 1.
+- **Fresh run** — `<parent>/<package-name>/` does not exist. Proceed to Step 1.
+- **Resume** — `<parent>/<package-name>/doc.go` AND `<parent>/<package-name>/SPEC.md` both exist (the scaffold and extraction outputs from a prior run). Steps 1–3 are already done; skip to Step 4 with the iteration counter starting at 1 of a fresh 15-iteration budget. **The prior `_iteration_log.md` is overwritten** on resume — if the user wants to preserve it for forensics, they should copy it aside before re-invoking. The new log opens with a resume entry (ordinal `0r`, see `## Iteration log format`) capturing the entry test state from one `(cd <package> && go test -race -v ./...)` run, then proceeds with iteration 1.
+- **Malformed state — refuse.** The directory exists but is missing one of the markers (e.g. `SPEC.md` without `doc.go`, or vice versa). Do not try to repair: surface the missing piece and stop. Examples: "`<package>/` exists but `doc.go` is missing — the scaffold step never completed; remove `<package>/` to start over, or re-invoke `new-go-*-file-library` manually before re-running this agent." Auto-repair could clobber in-flight user edits.
 
-There is no partial resume of Steps 1–3: if `SPEC.md` is present, the format decision and scaffold are taken as given (the scaffold skill would refuse to overwrite a populated directory anyway). To redo extraction or scaffolding, the user removes `<package>/` first. The resume path exists so a user can hand-fix a stuck run and re-invoke without losing the implementation work already on disk; the iteration budget resets because the new run is a fresh attempt against a different starting state.
+Both markers are required because either alone is ambiguous: extraction can write `SPEC.md` into a directory that has no scaffold (`tokenizer.go`/`types.go` missing), and scaffolding can produce `doc.go` without a spec ever being extracted. Together they prove both Step 2 (scaffold) and Step 3 (extract) completed.
+
+The resume path exists so a user can hand-fix a stuck run and re-invoke without losing the implementation work already on disk; the iteration budget resets because the new run is a fresh attempt against a different starting state.
 
 ### Step 1 — detect format type
 
@@ -69,31 +72,43 @@ Decide text vs binary in this order; stop at the first rule that fires:
 
 Record the decision in `_iteration_log.md` (see `## Iteration log format`) before continuing.
 
-### Step 2 — extract spec
+### Step 2 — scaffold package
 
-Invoke `extract-text-spec` (text) or `extract-binary-spec` (binary) with the spec source and target directory `<parent>/<package-name>/`. Both skills produce `<package>/SPEC.md` (binary additionally produces `<package>/structures/*.md` and `<package>/encoding-tables/*.md`).
+**Scaffold runs before extract** because both `new-go-*-file-library` skills refuse if `./<package-name>/` already exists; if extract ran first, it would create the directory and the scaffold skill would then refuse on every fresh run. Inverting the order keeps both skills' contracts intact.
+
+Invoke `new-go-text-file-library` (text) or `new-go-binary-file-library` (binary) **as a subagent** with the package name. The scaffold skill writes its files into `./<package-name>/` relative to the current working directory; if the target parent is not `.`, run the skill from `<parent>/`.
+
+The scaffold skill runs `go mod tidy`, `go build ./...`, and `go test -race ./...` against the placeholder stubs. If any of those fail, the scaffold is broken — that's a skill bug, not a converge-against-tests problem. Surface the failure and stop; do not enter the implement loop against a non-compiling skeleton.
+
+### Step 3 — extract spec
+
+Invoke `extract-text-spec` (text) or `extract-binary-spec` (binary) **as a subagent** with three inputs. Both skills' Phase 0 prompts for these explicitly; supplying all three up front is what keeps the run autonomous (skipping any of them stalls the skill waiting on the user):
+
+1. **Spec source** — the URL/path from the agent's inputs.
+2. **Output path** — `<parent>/<package-name>/` (the directory just scaffolded in Step 2). Extract writes `SPEC.md` directly into it; for binary, also writes `<package>/structures/*.md`, `<package>/encoding-tables/*.md`, and `<package>/examples/*.md`. None of these collide with scaffold's `*.go` files at the package root.
+3. **Sections/features to prioritize or skip** — default: **"all sections, no exclusions"**. Override only if the user prompt named sections to scope down. Never leave this input unspecified — if you do, the skill will pause to ask.
 
 After extraction, verify:
 - `<package>/SPEC.md` exists and is non-empty.
-- For binary: `<package>/structures/` exists with at least one `.md` file (a binary spec with zero structures means extraction silently failed — re-invoke before continuing).
-- For text: at least three `## Examples` entries exist (the implementer expects them as test fixtures).
+- For binary: `<package>/structures/` exists with at least one `.md` file, and `<package>/examples/` exists with at least one `.md` file (a binary spec with zero structures or zero worked examples means extraction silently failed — re-invoke before continuing).
+- For text: `<package>/SPEC.md` contains a `## Examples` section with at least three `###` subsections (per `extract-text-spec`'s output contract: one `## Examples` heading containing `### Minimal Valid File`, `### Typical File`, `### Complex File`). Check with `grep -A 30 '^## Examples' <package>/SPEC.md | grep -c '^### '` ≥ 3.
 
 If verification fails, re-invoke the extract skill once with a tightened scope ("focus on sections N through M only"). If it fails twice, treat as stuck and skip to `## Termination` with `_state_of_play.md` describing the extraction failure. Don't push forward against an incomplete spec.
-
-### Step 3 — scaffold package
-
-Invoke `new-go-text-file-library` (text) or `new-go-binary-file-library` (binary) with the package name. The scaffold skill writes its files into `./<package-name>/` relative to the current working directory; if the target parent is not `.`, run the skill from `<parent>/`.
-
-The scaffold skill runs `go mod tidy`, `go build ./...`, and `go test -race ./...` against the placeholder stubs. If any of those fail, the scaffold is broken — that's a skill bug, not a converge-against-tests problem. Surface the failure and stop; do not enter the implement loop against a non-compiling skeleton.
 
 ### Step 4 — implement loop
 
 Loop until either the success or stuck condition fires (see `## Termination contract`). Each iteration:
 
-1. **Choose scope.** Read `SPEC.md` *headings only* (`grep '^##' <package>/SPEC.md`) — never load the body; the implementer re-reads it. On iteration 1: pick the spec sections that map to the most fundamental tokens/types — tokenizer phase for text (start with the smallest token set), types phase for binary (start with the top-level header struct). On later iterations: focus on whichever tests just started failing, or the spec sections corresponding to test failures (use `grep` against `_iteration_log.md` to recall what's already been covered, rather than scrolling the transcript).
+1. **Choose scope.** Read `SPEC.md` *headings only* (`grep '^##' <package>/SPEC.md`) — never load the body; the implementer re-reads it. **For binary runs, also list `<package>/structures/` filenames** (`ls <package>/structures/`) — `SPEC.md` for binary holds only generic headings (`Overview`, `Conventions`, indexes); the actual per-structure scope candidates are the structure filenames, since `extract-binary-spec` writes one `.md` per structure. On iteration 1: pick the spec sections that map to the most fundamental tokens/types — tokenizer phase for text (start with the smallest token set), types phase for binary (start with the top-level header struct, identifiable from `structures/` filenames). On later iterations: focus on whichever tests just started failing, or the spec sections corresponding to test failures (use `grep` against `_iteration_log.md` to recall what's already been covered, rather than scrolling the transcript).
 2. **Invoke implementer.** Call `implement-go-text-file-library` or `implement-go-binary-file-library` **as a subagent** with a focused prompt that names the spec sections in scope this iteration. The implementer skill manages its own phase chunking and partition gate per its SKILL.md — don't second-guess it; do pass a narrow scope so the partition gate doesn't trip unnecessarily. Capture only the implementer's return summary in the orchestrator's context; the diffs themselves live on disk in `<package>/`.
-3. **Run tests.** `(cd <package> && go test -race ./...)`. The `cd` is required — this repo has no root `go.mod`.
-4. **Parse results.** Extract only: total passing test count, total failing test count, list of failing test names. Compare against the prior iteration's record from `_iteration_log.md`. Do not retain the raw `go test` output beyond this extraction — once sub-step 5 has appended the iteration log entry, treat the verbose output as discarded; re-run the tests if you need them again. Long test logs are the single largest context-bloat source in this loop.
+3. **Run tests.** `(cd <package> && go test -race -v ./... 2>&1)`. The `cd` is required — this repo has no root `go.mod`. The `-v` flag is required because Step 4 needs per-test PASS/FAIL events to compute the iteration-log fields below; plain `go test -race ./...` only emits failure data and would leave passing-counts uncomputable.
+4. **Parse results.** Extract only the four fields the iteration log needs:
+   - Passing count: `grep -c '^--- PASS:'` against the test output.
+   - Failing count: `grep -c '^--- FAIL:'` against the test output.
+   - Failing test names: `grep '^--- FAIL:' | awk '{print $3}'`.
+   - Newly passing this iteration: derived from the failing-name diff against the prior iteration's `Recurring failures:` line in `_iteration_log.md` — names that were failing last iteration and are not failing now. (Don't track passing names directly; the diff against failing names is sufficient and avoids carrying a long passing-test list in context.)
+
+   Do not retain the raw `go test` output beyond this extraction — once sub-step 5 has appended the iteration log entry, treat the verbose output as discarded; re-run the tests if you need them again. Long test logs are the single largest context-bloat source in this loop.
 5. **Append iteration log entry** per `## Iteration log format`.
 6. **Decide.** If all tests pass and the in-scope sections are exhausted, advance to Step 5. If new tests started passing, continue (progress made). If no new tests passed AND the failing set is unchanged from last iteration, increment the no-progress counter; on the third consecutive no-progress iteration, declare stuck and skip to `## Termination`.
 
@@ -101,19 +116,19 @@ When the implementer skill writes a `partition_plan.md`, that file is its intern
 
 ### Step 5 — verify
 
-Three gates, run in order. Each gate that fails sends control back to Step 4 with the gate's findings as the next iteration's scope — but only **once per gate**. If the same gate fails twice in a row, stop iterating and write `_state_of_play.md` (treat the verification regression as stuck).
+Three gates, run in order. Each gate that fails sends control back to Step 4 with the gate's findings as the next iteration's scope; Step 4's existing 3-no-progress and 15-iteration caps still govern when to declare stuck. There is no separate gate-level retry limit — a first audit can legitimately surface several independent gaps that take multiple iterations to resolve, and that's fine as long as the iteration counts of failing/recurring tests are still moving. The gates serve as scope sources; the no-progress detector remains the single stuck-detection authority.
 
 **Gate (a) — `go test -race ./...` is green.** Already enforced by Step 4's exit condition; this is just a final re-run against the converged state to catch races or flakes.
 
 **Gate (b) — spec coverage via `review-file-library`.** Invoke it as a subagent on the package; it writes `<package>/AUDIT.md`. Read AUDIT.md only to count blocker-severity findings and capture each blocker's heading/identifier — do not retain the full audit prose in context. Zero blockers passes the gate. Any blocker sends control back to Step 4 with the blocker's heading/identifier as next iteration's scope (the implementer can re-read AUDIT.md itself for the details).
 
-**Gate (c) — round-trip fixtures via `add-fixture`.** Add 1–2 fixtures appropriate to the format. Pick fixtures that exercise the spec broadly, not edge cases:
-- For text: a minimal-syntax example from the user's spec source if available, else extract one from `<package>/SPEC.md`'s `## Examples` section by writing it to a tempfile.
-- For binary: a small canonical real-world file if the user provided one, else generate a synthetic minimal valid file from the spec's `## Examples` (it must still hex-byte-encode, not be paraphrased).
+**Gate (c) — round-trip fixtures via `add-fixture`.** Add 1–2 fixtures appropriate to the format, drawn from spec-derived sources (not implementation output, not paraphrased material). Pick fixtures that exercise the spec broadly, not edge cases:
+- **For text**: extract a `### Minimal Valid File` block from `<package>/SPEC.md`'s single `## Examples` section (`extract-text-spec` writes one `## Examples` containing `### Minimal Valid File`/`### Typical File`/`### Complex File` subsections; pull one of those subsection bodies into a tempfile).
+- **For binary**: use the byte sequence from `<package>/examples/<name>.md` (`extract-binary-spec` writes one `examples/*.md` per worked example with hex bytes; the index in `SPEC.md` only lists names). Pick the minimal example.
 
-After invoking `add-fixture`, run `(cd <package> && go test -race ./...)` once more — `add-fixture` already runs tests but the round-trip case may legitimately fail if the implementation has gaps the earlier audit missed. A failure here sends control back to Step 4 with the failing fixture as next iteration's scope.
+After invoking `add-fixture` as a subagent, run `(cd <package> && go test -race -v ./...)` once more — `add-fixture` already runs tests but the round-trip case may legitimately fail if the implementation has gaps the earlier audit missed. A failure here sends control back to Step 4 with the failing fixture as next iteration's scope.
 
-If the user provided no real-world fixtures and the spec has no `## Examples`, skip Gate (c) but document that in the success report. Don't synthesize a fixture out of thin air — the value of a round-trip test is that the input is real.
+If extraction produced no usable spec examples (text: no `## Examples` section; binary: empty `<package>/examples/`), skip Gate (c) and document that in the success report. Do not synthesize a fixture from your own understanding of the spec — the value of a round-trip test is that the input came from outside the implementation, and a self-derived fixture proves nothing the prior gates didn't already cover.
 
 ## Iteration log format
 
@@ -131,7 +146,9 @@ If the user provided no real-world fixtures and the spec has no `## Examples`, s
 - Decision: <continue | advance-to-verify | stuck>
 ```
 
-The pre-iteration entries (Step 1 format detection, Step 2 extraction outcome, Step 3 scaffold outcome) use the same heading convention but with `Iteration 0a/0b/0c` ordinals so the file is one chronological log. On a resume run (Step 0), the log opens with a single `Iteration 0r` entry capturing entry test state, instead of 0a/0b/0c.
+`Recurring failures` records the **complete** set of failing test names at the end of this iteration (not the subset that overlapped with the prior iteration). The "recurring" framing is cross-iteration: comparing two consecutive `Recurring failures` lists tells you which tests are still failing (intersection) and which moved (difference). This is the field Step 4.4 diffs against to compute `Newly passing this iteration`, and the field Step 4.6 compares to detect a fully-unchanged failing set.
+
+The pre-iteration entries (Step 1 format detection, Step 2 scaffold outcome, Step 3 extraction outcome) use the same heading convention but with `Iteration 0a/0b/0c` ordinals so the file is one chronological log. On a resume run (Step 0), the log opens with a single `Iteration 0r` entry capturing entry test state, instead of 0a/0b/0c.
 
 When writing the third no-progress entry, before declaring stuck, scan the prior two entries' "Recurring failures" lists; the intersection is what `_state_of_play.md` reports as the failing-test list. Don't paraphrase — copy the test names verbatim, since `_state_of_play.md` is a handoff and ambiguity costs a human reader minutes per failing test.
 
@@ -156,24 +173,24 @@ Written only on stuck-exit. The audience is a human about to take over manually:
 
 ## What was attempted
 
-<one bullet per recent iteration: "Iteration N: tried <approach>; failure persisted because <observed reason>". Pull from _iteration_log.md.>
+<one bullet per recent iteration, sourced from _iteration_log.md, in the form: "Iteration N: scope was <Scope: line>; failures still recurring afterward: <Recurring failures: list>". Use only fields that exist in the iteration log; do not invent an "approach" or "observed reason" the log doesn't record.>
 
 ## Suggested next steps
 
 <2–4 concrete next-action bullets a human can pick up. Examples: "Re-read SPEC.md section X — the recurring `expected B got A` failure suggests the spec disagrees with our implementation choice at <line range>", or "Re-extract the spec with a tighter scope — current SPEC.md is missing the <feature> section the failing tests target".>
 ```
 
-Source the bullets from disk, not from transcript recall. For "Failing tests": re-run `(cd <package> && go test -race -run '^(TestA|TestB|...)$' ./...)` once at stuck-exit and parse the first failure line per test — by this point in the run, the original failure outputs are long gone from context. For "What was attempted": pull the per-iteration `Scope:` and `Recurring failures:` lines from `_iteration_log.md` directly (`grep -E '^(## Iteration|- (Scope|Recurring))' <package>/_iteration_log.md`); paraphrasing from memory loses fidelity.
+Source the bullets from disk, not from transcript recall. For "Failing tests": re-run the full suite once at stuck-exit (`(cd <package> && go test -race -v ./... 2>&1 | tee /tmp/stuck-tests.txt)`) — running everything is simpler than passing failing names to `-run`, since table-driven names from `t.Run(tc.name, ...)` routinely contain `/`, parens, or other regex metacharacters that would need escaping. Then for each failing test name from the iteration log, find the first failure line in the captured output (`grep -A 2 '^--- FAIL: <name>$' /tmp/stuck-tests.txt | sed -n 2p`). For "What was attempted": pull the per-iteration `Scope:` and `Recurring failures:` lines from `_iteration_log.md` directly (`grep -E '^(## Iteration|- (Scope|Recurring))' <package>/_iteration_log.md`); paraphrasing from memory loses fidelity.
 
 The "Suggested next steps" bullets are the most valuable part of this file; spend the time to make them specific (file/line/section pointers, not "look at the failures"). A vague handoff produces a vague follow-up.
 
 ## Constraints
 
-- **Do not modify `SPEC.md`** after Step 2. The spec is the contract; if extraction produced a wrong spec, re-extract, don't hand-edit. Hand-edits drift across runs.
+- **Do not modify `SPEC.md`** after Step 3. The spec is the contract; if extraction produced a wrong spec, re-extract, don't hand-edit. Hand-edits drift across runs.
 - **Do not skip the implement skill's discipline.** The implementers enforce test-first, the inner action loop pattern, exact `Pos` values, the `FieldError → OffsetError → leaf` chain, etc. — those rules are why the resulting package is maintainable. Trust the implementer; don't try to short-circuit it by editing source files yourself between iterations.
 - **Never `git push`, never run destructive operations** (`rm -rf`, `git reset --hard`, force-push). The autonomous loop edits files inside `<package>/` only; commits and pushes are the human's job after the run.
-- **Surface ambiguities, don't bury them.** If a SPEC.md `> **Ambiguity:**` callout shows up, mention it in the success report — the implementer made a choice and the human should review it before merging.
-- **Re-run safety.** This agent is safe to re-run on the same package. The fresh-vs-resume decision happens in Step 0 (which dispatches to Step 1 or Step 4 based on whether `<package>/SPEC.md` is present) and `_iteration_log.md` is overwritten in either case. The implementer skills are themselves re-run safe, and the scaffold skill refuses if the directory already exists. To re-run from scratch, the user removes `<package>/` first; to resume after a stuck-exit, the user fixes the issue manually and re-invokes the agent — Step 0 picks up the resume path automatically.
+- **Surface ambiguities, don't bury them.** If any spec artifact (`SPEC.md`, or for binary `structures/*.md` / `encoding-tables/*.md`) carries a `> **Ambiguity:**` callout, mention it in the success report — the implementer made a choice and the human should review it before merging.
+- **Re-run safety.** This agent is safe to re-run on the same package. The fresh-vs-resume decision happens in Step 0 (which dispatches to Step 1 for fresh, Step 4 for resume, or refusal for malformed state, based on whether both `<package>/doc.go` and `<package>/SPEC.md` are present) and `_iteration_log.md` is overwritten on resume. The implementer skills are themselves re-run safe, and the scaffold skill refuses if the directory already exists. To re-run from scratch, the user removes `<package>/` first; to resume after a stuck-exit, the user fixes the issue manually and re-invokes the agent — Step 0 picks up the resume path automatically.
 
 ## Success report
 
@@ -183,7 +200,7 @@ After Gate (c) passes, report to the user:
 - Iterations used (N of 15 cap).
 - Final test count: passing / total.
 - Fixture count and names.
-- Any `> **Ambiguity:**` callouts surfaced from `SPEC.md` for human review (find them at report time with `grep -n '> \*\*Ambiguity:\*\*' <package>/SPEC.md` — do not rely on having seen them earlier in the run).
+- Any `> **Ambiguity:**` callouts surfaced from spec artifacts for human review (find them at report time with `grep -rn '> \*\*Ambiguity:\*\*' <package>/ --include='*.md'` — for binary, callouts can live in `structures/*.md` or `encoding-tables/*.md` too, not just `SPEC.md`; for text everything lives in `SPEC.md` but the recursive grep is harmless. Do not rely on having seen them earlier in the run).
 - Recommended next step: "review the package, commit when satisfied".
 
 Keep the report tight — the proof of success is in `<package>/`, not in the report's prose.
