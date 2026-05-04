@@ -126,6 +126,7 @@
       "then": {
         "properties": {
           "cluster": {
+            "required": ["tls"],
             "properties": {
               "tls": { "const": "required" }
             }
