@@ -905,8 +905,11 @@ assert_test \
 # --- MTLS positive-path: cert mounts reach the runtime ------------------------
 #
 # When all cert vars are valid, introspect.sh should bind-mount each cert
-# at <path>:<path>:ro and skip the SCRAM mechanism translation. Reuse the
-# fake-runtime pattern from the SASL compat tests.
+# at <path>:<path>:ro,z and skip the SCRAM mechanism translation. The `:z`
+# is required for SELinux hosts (Fedora/RHEL) — same reason the config-mount
+# uses `:ro,z`; without it the container hits Permission denied reading
+# the cert file even though the bind-mount is in place. Reuse the fake-
+# runtime pattern from the SASL compat tests.
 
 INVOCATION_LOG_MTLS="$(mktemp)"
 TMPOUT_MTLS="$(mktemp -d "${TMPDIR:-/tmp}/kafka-introspect-XXXXXX")"
@@ -926,14 +929,14 @@ env -i PATH="$PATH" HOME="$HOME" \
 mtls_invocation="$(awk '/---END---/{exit} {print}' "$INVOCATION_LOG_MTLS")"
 
 assert_compat_line \
-  "MTLS bind-mounts client cert at <path>:<path>:ro" \
+  "MTLS bind-mounts client cert at <path>:<path>:ro,z" \
   "ARG -v" \
   "$mtls_invocation"
 
 for cert_path in "$MTLS_TMP/client.crt" "$MTLS_TMP/client.key" "$MTLS_TMP/ca.crt"; do
   assert_compat_line \
-    "MTLS bind-mounts $cert_path :ro into the container" \
-    "ARG ${cert_path}:${cert_path}:ro" \
+    "MTLS bind-mounts $cert_path :ro,z into the container (SELinux relabel marker required)" \
+    "ARG ${cert_path}:${cert_path}:ro,z" \
     "$mtls_invocation"
 done
 
@@ -996,8 +999,8 @@ else
   echo "PASS: --context dev does not bind-mount prod cert paths"
 fi
 
-# But the dev cert paths SHOULD appear (sanity).
-if grep -qF "ARG ${MTLS_TMP}/client.crt:${MTLS_TMP}/client.crt:ro" <<<"$leak_invocation"; then
+# But the dev cert paths SHOULD appear with the SELinux relabel marker (sanity).
+if grep -qF "ARG ${MTLS_TMP}/client.crt:${MTLS_TMP}/client.crt:ro,z" <<<"$leak_invocation"; then
   PASS=$((PASS + 1))
   echo "PASS: --context dev still bind-mounts dev cert paths in the leak-prevention test"
 else

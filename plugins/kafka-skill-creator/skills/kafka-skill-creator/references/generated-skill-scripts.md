@@ -195,7 +195,12 @@ build_cert_mount_args() {
     local cert_var val
     for cert_var in "CONTEXTS_${upper}_TLS_CERT" "CONTEXTS_${upper}_TLS_CERTKEY" "CONTEXTS_${upper}_TLS_CA"; do
       val="${!cert_var}"
-      MOUNT_ARGS+=(-v "$val:$val:ro")
+      # `:z` is the SELinux shared-relabel marker; ignored on systems
+      # without SELinux. Same reason the config-mount in each wrapper
+      # uses `:ro,z`: without it, Fedora/RHEL hosts hit "Permission
+      # denied" reading the cert from inside the container even though
+      # the file exists and is mounted.
+      MOUNT_ARGS+=(-v "$val:$val:ro,z")
     done
   fi
 }

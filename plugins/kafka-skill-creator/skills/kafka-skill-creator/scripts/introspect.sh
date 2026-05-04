@@ -481,7 +481,13 @@ done < <(compgen -e | grep -E "$FORWARD_PATTERN" || true)
 # SASL_SCRAM.
 MOUNT_ARGS=()
 for cert_path in "${CERT_PATHS[@]}"; do
-  MOUNT_ARGS+=(-v "$cert_path:$cert_path:ro")
+  # `:z` is the SELinux shared-relabel marker; ignored on systems without
+  # SELinux. Same reason `run_kafkactl`'s config-mount uses `:ro,z`:
+  # without it, Fedora/RHEL hosts hit "Permission denied" reading the
+  # cert from inside the container even though the file exists and is
+  # bind-mounted, because the host's file context isn't accessible from
+  # the container's process context.
+  MOUNT_ARGS+=(-v "$cert_path:$cert_path:ro,z")
 done
 
 if [ -n "${KAFKA_CONTAINER_RUNTIME:-}" ]; then
