@@ -4,7 +4,7 @@ A Claude Code plugin that introspects a Postgres database and generates a projec
 
 ## What it produces
 
-After running, you get a skill at `./.claude/skills/pg-<dbname>/` containing:
+After running, you get a skill at `<output>/` (default `./.claude/skills/pg-<dbname>/`) containing:
 
 - `SKILL.md` — what Claude reads when the skill triggers. Model-invocable by default (no `disable-model-invocation`) so it fires on natural-language prompts like "how many rows in `orders` last week?", not just on `/pg-<dbname>` slash invocations.
 - `README.md` — human-facing quickstart with copy-paste samples for `query.sh` (smoke test, real-table count, multi-statement via stdin, per-environment via `--env-file`), the `.env`-per-environment workflow, the credential-helper pointer, and the regeneration command. This is the file an engineer reads when onboarding to a project that uses the skill.
@@ -25,14 +25,14 @@ From a Claude Code session:
 
 ## Generating a skill
 
-The generator takes **no arguments**. Connection details come from the standard libpq environment variables:
+The generator takes no positional arguments. The only flag it accepts is `--output PATH` (covered in the next section). Connection details come from the standard libpq environment variables:
 
 | Variable | Purpose |
 |---|---|
 | `PGHOST` | Database host. |
 | `PGPORT` | Database port. |
 | `PGUSER` | Database user. |
-| `PGDATABASE` | Database name. Also determines the generated skill's path (`./.claude/skills/pg-$PGDATABASE/`). |
+| `PGDATABASE` | Database name. Drives the generated skill's frontmatter `name` (`pg-$PGDATABASE`) and the default output path (`./.claude/skills/pg-$PGDATABASE/`); `--output` overrides the path but never the name. |
 | `PGPASSWORD` | Database password. Never seen by the model — read directly from the environment by `psql` inside the container. |
 
 All five must be set before invocation. If any is missing, the skill stops and lists the missing variables; it will not prompt for them, accept them inline, or fall back to a default.
@@ -44,6 +44,20 @@ Beyond the five required vars, **any other libpq env var** is forwarded to `psql
 ```
 
 The generated `query.sh` does **not** retain the password — see the [`.env` workflow](#env-per-environment-workflow) below for how the *runtime* picks credentials up per environment.
+
+### Output location
+
+`--output PATH` chooses where the generated skill is written. Default is `./.claude/skills/pg-<dbname>/`, where `<dbname>` is the value of `PGDATABASE`. The override exists so a team building their own plugin can land the generated skill directly inside it — for example:
+
+```
+/postgres-skill-creator --output plugins/team-data/skills/pg-orders/
+```
+
+The frontmatter `name` of the generated skill is **always** `pg-<dbname>` driven by `PGDATABASE`, never by the leaf segment of `--output`. So `--output plugins/team-data/skills/pg-orders/` with `PGDATABASE=orders` produces a skill named `pg-orders` (the leaf and the name happen to match), while `--output plugins/team-data/skills/pg-data/` with `PGDATABASE=warehouse` produces `pg-warehouse` living in a `pg-data/` directory — that mismatch is the operator's call, not the generator's.
+
+The leaf directory is overwritten on every run; treat any local edits to generated files as ephemeral. The generator refuses unsafe `--output` values before any deletion happens — the wipe is `rm -rf` against an operator-supplied path, so a malformed value would be catastrophic. Specifically: empty paths; `/`, `.`, `..`, `~`, or anything starting with `~/` (the home-directory branch — `~/skills/pg-orders` is rejected too, not just bare `~`); values containing **any whitespace** (including `plugins/team data/...` — substitute hyphens or underscores instead); paths whose components include `..` (`../foo`, `foo/..`, `foo/../bar`); paths with a **`.git` segment anywhere** (`.git`, `subdir/.git/skills/...` — wiping `.git` would destroy the repository's history); and paths whose canonical form (after resolving symlinks) escapes the project root.
+
+If the output path lands inside a plugin tree, you may need to register the new skill in the plugin's `plugin.json` — this generator emits skill files only, not plugin manifests.
 
 ### Pairing with a credential helper
 
@@ -64,13 +78,13 @@ This is the recommended pattern. Exporting `PGPASSWORD` globally in your shell r
 
 ## Regenerating / updating an installed skill
 
-Schemas drift. To pull in changes, re-export the same env vars and re-run the generator:
+Schemas drift. To pull in changes, re-export the same env vars and re-run the generator with the same `--output` (or no `--output` if the skill landed at the default location):
 
 ```
-/postgres-skill-creator
+/postgres-skill-creator [--output <same-path-as-before>]
 ```
 
-This **overwrites** the existing `./.claude/skills/pg-<dbname>/` directory in place. That is intentional — stale references mislead the model. Any local edits you made to files under `pg-<dbname>/` will be lost, so keep project-specific guidance somewhere else (e.g. a top-level `CLAUDE.md` or a sibling skill).
+This **overwrites** the existing skill directory in place. That is intentional — stale references mislead the model. Any local edits you made to files under the skill directory will be lost, so keep project-specific guidance somewhere else (e.g. a top-level `CLAUDE.md` or a sibling skill).
 
 You do **not** need to reinstall the plugin to regenerate the skill. The plugin is the generator; the generated `pg-<dbname>/` skill is the output.
 
@@ -78,13 +92,15 @@ You do **not** need to reinstall the plugin to regenerate the skill. The plugin 
 
 The same logical database is often deployed across multiple environments. Rather than regenerating the skill for each one (or exporting `PGHOST`/`PGUSER`/etc. by hand every session), you keep one `.env` file per environment and tell `query.sh` which one to use.
 
+The samples below use `<skill-dir>` as a stand-in for the resolved output path — that's `.claude/skills/pg-<dbname>` for the default install, or whatever you passed to `--output` (e.g. `plugins/team-data/skills/pg-orders`). Substitute the actual path before pasting.
+
 ### Setup
 
 1. Copy the example env file out of the skill, once per environment:
 
    ```
-   cp .claude/skills/pg-mydb/scripts/.env.example .env.dev
-   cp .claude/skills/pg-mydb/scripts/.env.example .env.prod
+   cp <skill-dir>/scripts/.env.example .env.dev
+   cp <skill-dir>/scripts/.env.example .env.prod
    ```
 
 2. Fill in the real host/port/user/password for each environment. `PGDATABASE` is intentionally absent from `.env.example` — the dbname is hardcoded in `query.sh` and any value set in `.env` is overwritten at runtime.
@@ -109,14 +125,14 @@ If none of these resolve to an existing file, `query.sh` falls back to the gener
 
 ```
 # explicit per-invocation
-bash .claude/skills/pg-mydb/scripts/query.sh --env-file .env.prod "SELECT 1"
+bash <skill-dir>/scripts/query.sh --env-file .env.prod "SELECT 1"
 
 # whole-shell
 export PG_ENV_FILE=.env.staging
-bash .claude/skills/pg-mydb/scripts/query.sh < script.sql
+bash <skill-dir>/scripts/query.sh < script.sql
 
 # default (./.env)
-bash .claude/skills/pg-mydb/scripts/query.sh "SELECT 1"
+bash <skill-dir>/scripts/query.sh "SELECT 1"
 ```
 
 ## Runtime overrides

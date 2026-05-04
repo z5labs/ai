@@ -1,0 +1,43 @@
+{
+  "eval_id": 7,
+  "eval_name": "honors-output-flag-into-plugin-tree",
+  "prompt": "Run /postgres-skill-creator --output plugins/team-data/skills/pg-orders/. All five libpq env vars are exported (PGDATABASE=orders, etc.). Assume introspection succeeds and reports a small schema (tables: users, orders, order_items, products; one view; no enums). Docker is on PATH but the host can't actually reach a real Postgres \u2014 surface any smoke-test failure rather than claiming success.",
+  "assertions": [
+    {
+      "id": "writes-to-output-path",
+      "text": "the generated files appear under plugins/team-data/skills/pg-orders/, not under ./.claude/skills/. Specifically, plugins/team-data/skills/pg-orders/SKILL.md and plugins/team-data/skills/pg-orders/README.md exist; .claude/skills/pg-orders/ does NOT exist (or is empty)"
+    },
+    {
+      "id": "frontmatter-name-from-pgdatabase",
+      "text": "the generated SKILL.md's frontmatter `name` field is `pg-orders`, derived from PGDATABASE=orders. This is a sanity check on the wiring even though the leaf segment of --output also happens to be `pg-orders` here \u2014 the generator must read PGDATABASE, not derive `name` from `basename --output`"
+    },
+    {
+      "id": "generated-skill-is-model-invocable",
+      "text": "the generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true` \u2014 the per-database skill is meant to fire on natural-language prompts"
+    },
+    {
+      "id": "readme-substitutes-resolved-output-path",
+      "text": "the generated README's sample-uses code blocks use the resolved output path in their `bash .../scripts/query.sh` invocations \u2014 i.e. they read `bash plugins/team-data/skills/pg-orders/scripts/query.sh ...`, NOT the default-path-shaped `bash .claude/skills/pg-orders/scripts/query.sh ...`. The smoke-test, row-count, multi-statement-via-stdin, and per-environment samples all use the resolved path consistently"
+    },
+    {
+      "id": "readme-cp-uses-resolved-output-path",
+      "text": "the generated README's one-time `.env` setup `cp` command uses the resolved output path: `cp plugins/team-data/skills/pg-orders/scripts/.env.example .env`, NOT `cp .claude/skills/pg-orders/scripts/.env.example .env`. A user copying the wrong source path would get a 'no such file' error"
+    },
+    {
+      "id": "readme-no-skill-dir-placeholder-residue",
+      "text": "the generated README has no unsubstituted `<skill-dir>` placeholders \u2014 `grep -E '<skill-dir>'` returns nothing. The substitution must replace every occurrence in the skeleton"
+    },
+    {
+      "id": "readme-no-other-placeholder-residue",
+      "text": "the generated README has no other unsubstituted `<...>` placeholders \u2014 `grep -E '<dbname>|<top tables?>|<top-table>|<table count>|<view count>|<enum count>'` returns nothing"
+    },
+    {
+      "id": "reminds-about-plugin-json",
+      "text": "the assistant's report mentions that the operator may need to register the new skill in the plugin's plugin.json since --output landed inside a plugin tree (plugins/team-data/...). This mirrors the equivalent reminder in kafka-skill-creator's reporting step"
+    },
+    {
+      "id": "smoke-test-failure-surfaced-or-skipped",
+      "text": "either (a) the assistant attempts the smoke test and surfaces the failure rather than claiming success, OR (b) the assistant explicitly notes that the smoke test was skipped because the DB is unreachable. The forbidden behavior is silently claiming success"
+    }
+  ]
+}

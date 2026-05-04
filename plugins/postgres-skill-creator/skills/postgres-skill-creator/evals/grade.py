@@ -507,6 +507,330 @@ def grade_regeneration(outputs_dir: Path, fixture: dict) -> list[dict]:
     return results
 
 
+# ---------- --output-flag graders ----------
+
+OUTPUT_FLAG_PATH = Path("plugins/team-data/skills/pg-orders")
+
+
+def grade_honors_output_flag(outputs_dir: Path, _fixture: dict) -> list[dict]:
+    """Eval 7 — happy-path with --output landing in a plugin tree.
+
+    The subagent is asked to write the generated skill at plugins/team-data/skills/pg-orders/
+    instead of the default .claude/skills/pg-orders/. Assertions cover: files at the
+    output path, frontmatter `name` driven by PGDATABASE (not by --output's leaf), README
+    samples use the resolved output path (no `<skill-dir>` placeholder residue, no
+    .claude/skills/ leakage), assistant report mentions plugin.json registration, and
+    the smoke-test failure is surfaced (the prompt stipulates DB is unreachable).
+    """
+    response = read_text(outputs_dir / "_assistant_response.md")
+
+    # Locate the generated skill at the output path.
+    plugin_skill = outputs_dir / OUTPUT_FLAG_PATH
+    default_skill = outputs_dir / ".claude" / "skills" / "pg-orders"
+
+    skill_md = plugin_skill / "SKILL.md"
+    readme = plugin_skill / "README.md"
+    skill_text = read_text(skill_md)
+    readme_text = read_text(readme)
+
+    files_at_output = skill_md.exists() and readme.exists()
+    nothing_at_default = (not default_skill.exists()) or not any(default_skill.rglob("*"))
+
+    # Frontmatter `name` parse — read the first occurrence of `name:` in the YAML block.
+    name_field = re.search(r"^name:\s*(\S+)", skill_text, re.M)
+    name_is_pg_orders = bool(name_field) and name_field.group(1).strip() == "pg-orders"
+
+    no_disable_invocation = "disable-model-invocation: true" not in skill_text
+
+    # The README's bash samples should reference the output path, not .claude/skills/.
+    output_path_in_readme = "plugins/team-data/skills/pg-orders/scripts/query.sh" in readme_text
+    no_default_path_in_readme = ".claude/skills/pg-orders/scripts/query.sh" not in readme_text
+    cp_uses_output_path = bool(re.search(
+        r"cp\s+plugins/team-data/skills/pg-orders/scripts/\.env\.example",
+        readme_text,
+    ))
+
+    # Placeholder residue checks.
+    skill_dir_residue = "<skill-dir>" in readme_text
+    regen_command_residue = "<regen-command>" in readme_text
+    other_placeholder_re = re.compile(r"<dbname>|<top tables?>|<top-table>|<table count>|<view count>|<enum count>")
+    other_placeholder_residue = bool(other_placeholder_re.search(readme_text))
+
+    # Generated SKILL.md body checks. SKILL.md and README.md are separate files; the
+    # README assertions above don't catch a SKILL.md whose `cp .../scripts/.env.example`
+    # and `bash .../scripts/query.sh` lines still hardcode .claude/skills/pg-orders/.
+    skill_md_uses_output_path = "plugins/team-data/skills/pg-orders/scripts" in skill_text
+    skill_md_avoids_default_path = ".claude/skills/pg-orders/scripts" not in skill_text
+    skill_md_skill_dir_residue = "<skill-dir>" in skill_text
+
+    # Regeneration command must include the actual --output flag, not a bare invocation.
+    # Match `/postgres-skill-creator --output plugins/team-data/skills/pg-orders` with
+    # optional trailing slash, on the same logical line as the slash command. Tolerant
+    # of `--output=...` (= sign) and a few whitespace variations.
+    regen_includes_output = bool(re.search(
+        r"/postgres-skill-creator\s+--output[\s=]+plugins/team-data/skills/pg-orders/?",
+        readme_text,
+    ))
+
+    # Assistant report: did it mention plugin.json registration?
+    plugin_json_mentioned = bool(re.search(r"plugin\.json", response, re.I))
+
+    # Verify step must follow the resolved output path, not the default. The bad shape
+    # is a response that lists generated files at .claude/skills/pg-orders/ in its verify
+    # bullets even though `--output` redirected them. Concretely: the response should
+    # reference the plugin-tree path when describing verify or smoke-test steps, and must
+    # NOT report verifying against .claude/skills/pg-orders/.
+    verify_uses_output_path = "plugins/team-data/skills/pg-orders" in response
+    verify_avoids_default_path = not re.search(
+        r"\.claude/skills/pg-orders/(?:SKILL\.md|README\.md|scripts/|references/)",
+        response,
+    )
+
+    # Smoke test: did the assistant either surface a failure or skip? Forbidden behavior
+    # is silently claiming success. Detect "claims success without failure surfacing" by
+    # looking for celebratory language without any error/skipped acknowledgement.
+    smoke_test_acknowledged = bool(re.search(
+        r"\b(failed|failure|error|unreachable|cannot reach|could not connect|skipped|skip(ping)?|"
+        r"can('t| not)|did not run|deferred|surface|connection refused|timed out)\b",
+        response, re.I,
+    ))
+
+    return [
+        {**(passed if files_at_output and nothing_at_default else failed)(
+            "the generated files appear under plugins/team-data/skills/pg-orders/, not under ./.claude/skills/",
+            f"plugin path SKILL.md+README: {files_at_output}; default path empty: {nothing_at_default}")},
+        {**(passed if name_is_pg_orders else failed)(
+            "the generated SKILL.md's frontmatter `name` field is `pg-orders`, derived from PGDATABASE=orders",
+            f"frontmatter name: {name_field.group(1) if name_field else '(not found)'}")},
+        {**(passed if no_disable_invocation else failed)(
+            "the generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true`",
+            "absent" if no_disable_invocation else "found `disable-model-invocation: true`")},
+        {**(passed if output_path_in_readme and no_default_path_in_readme else failed)(
+            "the generated README's sample-uses code blocks use the resolved output path "
+            "(plugins/team-data/skills/pg-orders/scripts/query.sh), not the default-path-shaped form",
+            f"output path present: {output_path_in_readme}; default path absent: {no_default_path_in_readme}")},
+        {**(passed if cp_uses_output_path else failed)(
+            "the generated README's one-time `.env` setup `cp` command uses the resolved output path",
+            "found `cp plugins/team-data/...`" if cp_uses_output_path else "no `cp plugins/team-data/...` match")},
+        {**(passed if not skill_dir_residue else failed)(
+            "the generated README has no unsubstituted `<skill-dir>` placeholders",
+            "absent" if not skill_dir_residue else f"<skill-dir> appears {readme_text.count('<skill-dir>')} times")},
+        {**(passed if not regen_command_residue else failed)(
+            "the generated README has no unsubstituted `<regen-command>` placeholders",
+            "absent" if not regen_command_residue else f"<regen-command> appears {readme_text.count('<regen-command>')} times")},
+        {**(passed if regen_includes_output else failed)(
+            "the README's regeneration sample includes `--output plugins/team-data/skills/pg-orders` (not a bare /postgres-skill-creator invocation)",
+            "regen command carries --output flag" if regen_includes_output else "regen command missing --output flag — would regenerate into default .claude/skills/")},
+        {**(passed if not other_placeholder_residue else failed)(
+            "the generated README has no other unsubstituted `<...>` placeholders",
+            f"matches: {other_placeholder_re.findall(readme_text)[:5]}")},
+        {**(passed if skill_md_uses_output_path and skill_md_avoids_default_path else failed)(
+            "the generated SKILL.md's body samples use the resolved output path, not .claude/skills/pg-orders",
+            f"output path in SKILL.md: {skill_md_uses_output_path}; default path absent: {skill_md_avoids_default_path}")},
+        {**(passed if not skill_md_skill_dir_residue else failed)(
+            "the generated SKILL.md has no unsubstituted `<skill-dir>` placeholders",
+            "absent" if not skill_md_skill_dir_residue else f"<skill-dir> appears {skill_text.count('<skill-dir>')} times in SKILL.md")},
+        {**(passed if plugin_json_mentioned else failed)(
+            "the assistant's report mentions plugin.json registration since --output landed in a plugin tree",
+            "plugin.json mentioned" if plugin_json_mentioned else "no plugin.json mention in response")},
+        {**(passed if verify_uses_output_path and verify_avoids_default_path else failed)(
+            "the assistant's response references the resolved output path when describing verify/smoke, not .claude/skills/pg-orders/...",
+            f"output path referenced: {verify_uses_output_path}; default-path absent: {verify_avoids_default_path}")},
+        {**(passed if smoke_test_acknowledged else failed)(
+            "the assistant surfaces the smoke-test failure or notes it was skipped (does not silently claim success)",
+            "failure/skip acknowledged" if smoke_test_acknowledged else "no failure/skip language found")},
+    ]
+
+
+def grade_refuse_unsafe_output(outputs_dir: Path, _fixture: dict) -> list[dict]:
+    """Eval 8 — refusal on `--output ../../etc`.
+
+    The skill must refuse before any rm/introspection, naming the offending path,
+    citing the `..`-segments rule, and explaining the rm -rf rationale.
+    """
+    response = read_text(outputs_dir / "_assistant_response.md")
+
+    refused = bool(re.search(
+        r"\b(refuse|refusing|cannot|will not|can't|won['’]t|stop|stopping|abort|aborting|reject|rejecting|unsafe|not\s+safe)\b",
+        response, re.I,
+    ))
+    names_path = bool(re.search(r"\.\./\.\./etc|\.\./\.\.|`?\.\./\.\.", response))
+    cites_dotdot_rule = bool(re.search(
+        r"`?\.\.`?\s*(segment|component|reference|path|escape|parent)|"
+        r"parent[ -]directory|"
+        r"escape\s+(?:via\s+)?(?:parent|\.\.)|"
+        r"path[- ]safety|"
+        r"contains?\s+`?\.\.`?",
+        response, re.I,
+    ))
+    explains_rm_rf = bool(re.search(
+        r"\brm\s*-?rf\b|recursively\s+(?:delete|remove|wipe)|wipe\s+(?:the\s+)?(?:output|directory|dir)",
+        response, re.I,
+    ))
+
+    # No files written derived from the unsafe path. The default path also should not be
+    # populated (the refusal happens before introspection, so no skill is generated at all).
+    plugin_skill = outputs_dir / OUTPUT_FLAG_PATH
+    default_skill = outputs_dir / ".claude" / "skills" / "pg-orders"
+    plugins_root = outputs_dir / "plugins"
+    no_plugin_files = (not plugin_skill.exists()) or not any(plugin_skill.rglob("*"))
+    no_default_files = (not default_skill.exists()) or not any(default_skill.rglob("*"))
+    no_plugins_root = not plugins_root.exists() or not any(plugins_root.rglob("*"))
+
+    # Escape check — `--output ../../etc` resolved from the subagent's CWD lands files
+    # OUTSIDE outputs/, which the three checks above can't see. Catch the escape by
+    # asserting the eval-8 directory tree is pristine: outputs/ contains only the
+    # response file (no subdirs), and the parent dirs above outputs/ contain only the
+    # workspace bookkeeping files (run-1/, eval_metadata.json, with_skill/, timing.json,
+    # grading.json). Any "etc/" directory or other unexpected entry anywhere in this
+    # tree means the subagent followed `--output ../../etc` literally instead of
+    # refusing — files would have landed at outputs_dir/../../etc/... which evaluates
+    # to a path inside the eval directory tree.
+    def tree_pristine(d: Path, allowed: set[str]) -> tuple[bool, list[str]]:
+        if not d.is_dir():
+            return True, []
+        unexpected = [p.name for p in d.iterdir() if p.name not in allowed]
+        return not unexpected, unexpected
+    outputs_only_response, outputs_extra = tree_pristine(outputs_dir, {"_assistant_response.md"})
+    run_only_outputs, run_extra = tree_pristine(
+        outputs_dir.parent, {"outputs", "timing.json", "grading.json"}
+    )
+    with_skill_only_run, ws_extra = tree_pristine(
+        outputs_dir.parent.parent, {"run-1"}
+    )
+    eval_dir_only_with_skill, eval_extra = tree_pristine(
+        outputs_dir.parent.parent.parent, {"eval_metadata.json", "with_skill", "old_skill"}
+    )
+    tree_pristine_overall = (
+        outputs_only_response and run_only_outputs
+        and with_skill_only_run and eval_dir_only_with_skill
+    )
+
+    no_introspect = (
+        "introspect.sh" not in response
+        or refused
+        or "did not run" in response.lower()
+        or "not invoked" in response.lower()
+        or "would not run" in response.lower()
+        or "does not run" in response.lower()
+    )
+
+    return [
+        {**(passed if refused else failed)(
+            "the assistant refuses to run the generator on the unsafe --output value",
+            "refusal language detected" if refused else "no refusal language found")},
+        {**(passed if names_path else failed)(
+            "the refusal names the offending --output value so the user knows what tripped the guard",
+            "../../etc (or equivalent) appears in response" if names_path else "offending path not echoed back")},
+        {**(passed if cites_dotdot_rule else failed)(
+            "the refusal cites the path-safety rule that fired (`..` segments / parent-dir escape / path-safety)",
+            "rule citation detected" if cites_dotdot_rule else "no rule citation found")},
+        {**(passed if explains_rm_rf else failed)(
+            "the refusal explains that the generator wipes the output dir (rm -rf rationale)",
+            "rm -rf / wipe rationale detected" if explains_rm_rf else "no wipe-rationale language")},
+        {**(passed if no_plugin_files and no_default_files and no_plugins_root else failed)(
+            "no files are written under the derived unsafe path or the default path",
+            f"plugin empty: {no_plugin_files}; default empty: {no_default_files}; plugins/ empty: {no_plugins_root}")},
+        {**(passed if tree_pristine_overall else failed)(
+            "the eval-8 directory tree is pristine — `--output ../../etc` did not cause writes outside outputs/. "
+            "A buggy generator that ran `mkdir -p ../../etc` from a CWD inside outputs/ would land files in the "
+            "parent eval directories; this check catches that escape, which the inside-outputs/ checks above cannot.",
+            f"outputs extras: {outputs_extra}; run-1 extras: {run_extra}; with_skill extras: {ws_extra}; eval-dir extras: {eval_extra}")},
+        {**(passed if no_introspect else failed)(
+            "scripts/introspect.sh is not invoked — the path-safety guard fires before introspection",
+            "introspect.sh not actually run" if no_introspect else "transcript suggests introspect.sh ran")},
+    ]
+
+
+def grade_refuse_unsafe_output_git(outputs_dir: Path, _fixture: dict) -> list[dict]:
+    """Eval 9 — refusal on `--output .git/skills/pg-orders`.
+
+    Same shape as eval 8 but the failure branch is "leaf has a `.git` segment"
+    rather than "path contains `..`". The grader looks for refusal language,
+    that the .git-segment rule was cited (not just a generic "unsafe path"),
+    and that no rm or write actually landed.
+    """
+    response = read_text(outputs_dir / "_assistant_response.md")
+
+    refused = bool(re.search(
+        r"\b(refuse|refusing|cannot|will not|can't|won['’]t|stop|stopping|abort|aborting|reject|rejecting|unsafe|not\s+safe)\b",
+        response, re.I,
+    ))
+    names_path = bool(re.search(r"\.git/skills/pg-orders|`?\.git/skills`?|`?\.git`?", response))
+    cites_git_rule = bool(re.search(
+        r"\.git\b.*(segment|component|forbidden|reject|unsafe|metadata|repository|history|cannot|forbid|target)|"
+        r"(segment|component|forbidden|reject|unsafe|metadata|repository|history|target).*\.git\b|"
+        r"\.git\s+(?:segment|component|path|directory|target)",
+        response, re.I,
+    ))
+    explains_rm_rf = bool(re.search(
+        r"\brm\s*-?rf\b|recursively\s+(?:delete|remove|wipe)|wipe\s+(?:the\s+)?(?:output|directory|dir|\.git|repository|history)|"
+        r"destroy\s+(?:the\s+)?(?:repository|history|metadata|\.git)",
+        response, re.I,
+    ))
+
+    # No files written under .git, .claude/skills, plugins, or anywhere else.
+    git_skills_dir = outputs_dir / ".git" / "skills"
+    default_skill = outputs_dir / ".claude" / "skills" / "pg-orders"
+    plugins_root = outputs_dir / "plugins"
+    no_git_writes = (not git_skills_dir.exists()) or not any(git_skills_dir.rglob("*"))
+    no_default_files = (not default_skill.exists()) or not any(default_skill.rglob("*"))
+    no_plugins_root = not plugins_root.exists() or not any(plugins_root.rglob("*"))
+
+    # Tree-pristine check (same shape as eval 8). Reuses the parent-traversal logic
+    # so an escape via `mkdir -p .git/skills` from a CWD inside outputs/ is caught.
+    def tree_pristine(d: Path, allowed: set[str]) -> tuple[bool, list[str]]:
+        if not d.is_dir():
+            return True, []
+        unexpected = [p.name for p in d.iterdir() if p.name not in allowed]
+        return not unexpected, unexpected
+    outputs_only_response, outputs_extra = tree_pristine(outputs_dir, {"_assistant_response.md"})
+    run_only_outputs, run_extra = tree_pristine(
+        outputs_dir.parent, {"outputs", "timing.json", "grading.json"}
+    )
+    with_skill_only_run, ws_extra = tree_pristine(outputs_dir.parent.parent, {"run-1"})
+    eval_dir_only_with_skill, eval_extra = tree_pristine(
+        outputs_dir.parent.parent.parent, {"eval_metadata.json", "with_skill", "old_skill"}
+    )
+    tree_pristine_overall = (
+        outputs_only_response and run_only_outputs
+        and with_skill_only_run and eval_dir_only_with_skill
+    )
+
+    no_introspect = (
+        "introspect.sh" not in response
+        or refused
+        or "did not run" in response.lower()
+        or "not invoked" in response.lower()
+        or "would not run" in response.lower()
+        or "does not run" in response.lower()
+    )
+
+    return [
+        {**(passed if refused else failed)(
+            "the assistant refuses to run the generator on the unsafe --output value",
+            "refusal language detected" if refused else "no refusal language found")},
+        {**(passed if names_path else failed)(
+            "the refusal names the offending --output value so the user knows what tripped the guard",
+            ".git path appears in response" if names_path else "offending path not echoed back")},
+        {**(passed if cites_git_rule else failed)(
+            "the refusal cites the `.git`-segment rule (not just generic 'unsafe path')",
+            ".git-segment rule citation detected" if cites_git_rule else "no .git-specific rule citation found")},
+        {**(passed if explains_rm_rf else failed)(
+            "the refusal explains that the generator wipes the output dir / would destroy `.git` (rm -rf rationale)",
+            "rm -rf / wipe / destroy rationale detected" if explains_rm_rf else "no wipe/destroy rationale language")},
+        {**(passed if no_git_writes and no_default_files and no_plugins_root else failed)(
+            "no files written under .git/skills/, .claude/skills/pg-orders/, or plugins/",
+            f".git/skills empty: {no_git_writes}; default empty: {no_default_files}; plugins/ empty: {no_plugins_root}")},
+        {**(passed if tree_pristine_overall else failed)(
+            "the eval-9 directory tree is pristine — `--output .git/skills/pg-orders` did not cause writes outside outputs/",
+            f"outputs extras: {outputs_extra}; run-1 extras: {run_extra}; with_skill extras: {ws_extra}; eval-dir extras: {eval_extra}")},
+        {**(passed if no_introspect else failed)(
+            "scripts/introspect.sh is not invoked — the path-safety guard fires before introspection",
+            "introspect.sh not actually run" if no_introspect else "transcript suggests introspect.sh ran")},
+    ]
+
+
 # ---------- Dispatcher ----------
 
 GRADERS: dict[str, Callable[[Path, dict | None], list[dict]]] = {
@@ -517,6 +841,9 @@ GRADERS: dict[str, Callable[[Path, dict | None], list[dict]]] = {
     "top-table-substitution-is-schema-qualified-and-quoted": grade_top_table_lightweight,
     "e2e-against-real-postgres": grade_e2e,
     "regeneration-overwrites-stale-skill": grade_regeneration,
+    "honors-output-flag-into-plugin-tree": grade_honors_output_flag,
+    "refuse-unsafe-output-paths": grade_refuse_unsafe_output,
+    "refuse-unsafe-output-git-target": grade_refuse_unsafe_output_git,
 }
 
 

@@ -1,0 +1,80 @@
+{
+  "summary": {
+    "passed": 14,
+    "failed": 0,
+    "total": 14,
+    "pass_rate": 1.0
+  },
+  "expectations": [
+    {
+      "text": "the generated files appear under plugins/team-data/skills/pg-orders/, not under ./.claude/skills/",
+      "passed": true,
+      "evidence": "plugin path SKILL.md+README: True; default path empty: True"
+    },
+    {
+      "text": "the generated SKILL.md's frontmatter `name` field is `pg-orders`, derived from PGDATABASE=orders",
+      "passed": true,
+      "evidence": "frontmatter name: pg-orders"
+    },
+    {
+      "text": "the generated SKILL.md's frontmatter does NOT contain `disable-model-invocation: true`",
+      "passed": true,
+      "evidence": "absent"
+    },
+    {
+      "text": "the generated README's sample-uses code blocks use the resolved output path (plugins/team-data/skills/pg-orders/scripts/query.sh), not the default-path-shaped form",
+      "passed": true,
+      "evidence": "output path present: True; default path absent: True"
+    },
+    {
+      "text": "the generated README's one-time `.env` setup `cp` command uses the resolved output path",
+      "passed": true,
+      "evidence": "found `cp plugins/team-data/...`"
+    },
+    {
+      "text": "the generated README has no unsubstituted `<skill-dir>` placeholders",
+      "passed": true,
+      "evidence": "absent"
+    },
+    {
+      "text": "the generated README has no unsubstituted `<regen-command>` placeholders",
+      "passed": true,
+      "evidence": "absent"
+    },
+    {
+      "text": "the README's regeneration sample includes `--output plugins/team-data/skills/pg-orders` (not a bare /postgres-skill-creator invocation)",
+      "passed": true,
+      "evidence": "regen command carries --output flag"
+    },
+    {
+      "text": "the generated README has no other unsubstituted `<...>` placeholders",
+      "passed": true,
+      "evidence": "matches: []"
+    },
+    {
+      "text": "the generated SKILL.md's body samples use the resolved output path, not .claude/skills/pg-orders",
+      "passed": true,
+      "evidence": "output path in SKILL.md: True; default path absent: True"
+    },
+    {
+      "text": "the generated SKILL.md has no unsubstituted `<skill-dir>` placeholders",
+      "passed": true,
+      "evidence": "absent"
+    },
+    {
+      "text": "the assistant's report mentions plugin.json registration since --output landed in a plugin tree",
+      "passed": true,
+      "evidence": "plugin.json mentioned"
+    },
+    {
+      "text": "the assistant's response references the resolved output path when describing verify/smoke, not .claude/skills/pg-orders/...",
+      "passed": true,
+      "evidence": "output path referenced: True; default-path absent: True"
+    },
+    {
+      "text": "the assistant surfaces the smoke-test failure or notes it was skipped (does not silently claim success)",
+      "passed": true,
+      "evidence": "failure/skip acknowledged"
+    }
+  ]
+}
