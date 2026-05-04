@@ -94,7 +94,7 @@ Invoke `extract-text-spec` (text) or `extract-binary-spec` (binary) **as a subag
 
 After extraction, verify:
 - `<package>/SPEC.md` exists and is non-empty.
-- For binary: `<package>/structures/` exists with at least one `.md` file, and `<package>/examples/` exists with at least one `.md` file (a binary spec with zero structures or zero worked examples means extraction silently failed — re-invoke before continuing).
+- For binary: `<package>/structures/` exists with at least one `.md` file, and `<package>/examples/` contains all three of `minimal.md`, `typical.md`, and `complex.md` (per `extract-binary-spec`'s output contract — it produces those three names specifically). A partial extraction that drops one of them must be re-invoked; checking only "at least one .md exists" would let Gate (c) later fail trying to read a missing `examples/typical.md`.
 - For text: `<package>/SPEC.md` contains a `## Examples` section with at least three `###` subsections (per `extract-text-spec`'s output contract: one `## Examples` heading containing `### Minimal Valid File`, `### Typical File`, `### Complex File`). The Minimal/Typical/Complex examples are full documents, not stubs, so a fixed-window grep can miss them — count subsections across the whole `## Examples` section instead: `awk '/^## Examples/{f=1; next} /^## /{f=0} f && /^### /' <package>/SPEC.md | wc -l` ≥ 3.
 
 If verification fails, re-invoke the extract skill once with a tightened scope ("focus on sections N through M only"). If it fails twice, treat as stuck and skip to `## Termination` with `_state_of_play.md` describing the extraction failure. Don't push forward against an incomplete spec.
@@ -107,7 +107,7 @@ Loop until either the success or stuck condition fires (see `## Termination cont
 2. **Invoke implementer.** Call `implement-go-text-file-library` or `implement-go-binary-file-library` **as a subagent** with a focused prompt that names the spec sections in scope this iteration. The implementer skill manages its own phase chunking and partition gate per its SKILL.md — don't second-guess it; do pass a narrow scope so the partition gate doesn't trip unnecessarily. Capture only the implementer's return summary in the orchestrator's context; the diffs themselves live on disk in `<package>/`.
 3. **Run tests.** `(cd <package> && go test -race -v ./... 2>&1; echo EXIT=$?)`. The `cd` is required — this repo has no root `go.mod`. The `-v` flag is required because Step 4 needs per-test PASS/FAIL events to compute the iteration-log fields below; plain `go test -race ./...` only emits failure data and would leave passing-counts uncomputable. Capturing the exit code matters for sub-step 4 — a non-zero exit with no test events means the package didn't compile or hit a build/init error.
 4. **Parse results.** First, check the exit code:
-   - **Build/run failure**: exit code is non-zero AND the output contains zero `^--- PASS:` AND zero `^--- FAIL:` lines (typical when a compile error, missing import, or an `init()` panic kills the run before any test executes). Record this iteration as `Tests passing: 0`, `Tests failing: 1`, `Failing test names: BUILD`. Without this special case the loop would record `0 / 0` and falsely advance — `go test`'s exit status is the only signal that compilation broke. The next iteration's scope is "fix the build/run failure".
+   - **Build/run failure**: exit code is non-zero AND the output contains zero `^--- PASS:` AND zero `^--- FAIL:` lines (typical when a compile error, missing import, or an `init()` panic kills the run before any test executes). Record this iteration as `Tests passing: 0`, `Tests failing: 1`, `Newly passing this iteration: 0 (none)`, `Recurring failures: 1 (BUILD)` — using the iteration log's actual field names so the next iteration can diff failing-name sets normally. Without this special case the loop would record `0 / 0` and falsely advance — `go test`'s exit status is the only signal that compilation broke. The next iteration's scope is "fix the build/run failure".
    - **Normal run**: extract:
      - Passing count: `grep -c '^--- PASS:'` against the test output.
      - Failing count: `grep -c '^--- FAIL:'` against the test output.
@@ -128,16 +128,20 @@ Three gates, run in order. Each gate that fails sends control back to Step 4 wit
 
 **Gate (b) — spec coverage via `review-file-library`.** Invoke it as a subagent on the package; it writes `<package>/AUDIT.md`. Read AUDIT.md only to count blocker-severity findings and capture each blocker's heading/identifier — do not retain the full audit prose in context. Zero blockers passes the gate. Any blocker sends control back to Step 4 with the blocker's heading/identifier as next iteration's scope (the implementer can re-read AUDIT.md itself for the details).
 
-**Gate (c) — round-trip fixtures via `add-fixture`.** Add 1–2 fixtures appropriate to the format, drawn from spec-derived sources (not implementation output, not paraphrased material). Pick fixtures that exercise the spec broadly, not edge cases:
-- **For text**: extract a `### Minimal Valid File` block from `<package>/SPEC.md`'s single `## Examples` section (`extract-text-spec` writes one `## Examples` containing `### Minimal Valid File`/`### Typical File`/`### Complex File` subsections; pull one of those subsection bodies into a tempfile).
-- **For binary**: `extract-binary-spec`'s `examples/<name>.md` files are annotated hex-dump markdown (offset / hex / ASCII columns inside a fenced block), not raw fixture bytes — handing one of them to `add-fixture` directly would copy the markdown into `testdata/` and not exercise the decoder. First materialize the bytes from `examples/minimal.md` to a tempfile by stripping the offset prefix and ASCII suffix and piping through `xxd -r -p`:
+**Gate (c) — round-trip fixtures via `add-fixture`.** Add **two** fixtures: `minimal` and `typical`. Both should round-trip in a fully-converged package — `minimal` is a smoke test of basic shape, `typical` exercises the common-but-not-universal features that a single-example gate would miss. Skip `complex` (its constructs may exceed what the implementer has reached, and it's closer to fuzzing than verification). Both fixtures must be drawn from spec-derived sources (not implementation output, not paraphrased material):
+
+- **For text**: extract the `### Minimal Valid File` and `### Typical File` blocks from `<package>/SPEC.md`'s single `## Examples` section (`extract-text-spec` writes one `## Examples` containing `### Minimal Valid File`/`### Typical File`/`### Complex File` subsections; pull each subsection body into its own tempfile).
+- **For binary**: `extract-binary-spec`'s `examples/<name>.md` files are annotated hex-dump markdown (offset / hex / ASCII columns inside a fenced block), not raw fixture bytes — handing one of them to `add-fixture` directly would copy the markdown into `testdata/` and never exercise the decoder. Materialize the bytes from each example to a tempfile by extracting the hex column with `cut` and piping through `xxd -r -p`:
 
   ```bash
-  awk '/^[[:xdigit:]]{8}/ { sub(/^[[:xdigit:]]{8}  */, ""); sub(/  +.*$/, ""); gsub(/ /, ""); print }' \
-    <package>/examples/minimal.md | xxd -r -p > /tmp/<package>-minimal.bin
+  for ex in minimal typical; do
+    awk '/^[[:xdigit:]]{8}  / { print }' <package>/examples/${ex}.md \
+      | cut -c11-58 | tr -d ' ' \
+      | xxd -r -p > /tmp/<package>-${ex}.bin
+  done
   ```
 
-  Then pass `/tmp/<package>-minimal.bin` to `add-fixture` as the source file. The `awk` filters to lines that begin with an 8-hex-digit offset, strips the offset prefix and the trailing ASCII column, removes intra-row spaces, and `xxd -r -p` decodes plain hex back to bytes.
+  Then pass each `/tmp/<package>-${ex}.bin` to `add-fixture` as a separate fixture. The `awk` filters to lines that begin with an 8-hex-digit offset followed by two spaces (the data rows in the documented hex-dump template); `cut -c11-58` extracts exactly the hex section by column position (cols 11–58 hold the 16 hex bytes, with intra-row spaces and the inter-group double-space included as whitespace); `tr -d ' '` collapses to plain hex; `xxd -r -p` decodes to bytes. Column-based extraction avoids the trap of regex-stripping the inter-group double-space (which is indistinguishable from the hex/ASCII separator), which would truncate every full row to its first 8 bytes.
 
 After invoking `add-fixture` as a subagent, run `(cd <package> && go test -race -v ./...)` once more — `add-fixture` already runs tests but the round-trip case may legitimately fail if the implementation has gaps the earlier audit missed. A failure here sends control back to Step 4 with the failing fixture as next iteration's scope.
 
@@ -193,7 +197,13 @@ Written only on stuck-exit. The audience is a human about to take over manually:
 <2–4 concrete next-action bullets a human can pick up. Examples: "Re-read SPEC.md section X — the recurring `expected B got A` failure suggests the spec disagrees with our implementation choice at <line range>", or "Re-extract the spec with a tighter scope — current SPEC.md is missing the <feature> section the failing tests target".>
 ```
 
-Source the bullets from disk, not from transcript recall. For "Failing tests": re-run the full suite once at stuck-exit (`(cd <package> && go test -race -v ./... 2>&1 | tee /tmp/stuck-tests.txt)`) — running everything is simpler than passing failing names to `-run`, since table-driven names from `t.Run(tc.name, ...)` routinely contain `/`, parens, or other regex metacharacters that would need escaping. Then for each failing test name from the iteration log, find the first failure line in the captured output. `go test -v` prints `--- FAIL: <name> (<duration>)` — there's always a trailing space-paren-duration, so anchor on the trailing space, not end-of-line: `grep -A 2 "^--- FAIL: <name> " /tmp/stuck-tests.txt | sed -n 2p`. Anchoring on `$` after the name will never match. For "What was attempted": pull the per-iteration `Scope:` and `Recurring failures:` lines from `_iteration_log.md` directly (`grep -E '^(## Iteration|- (Scope|Recurring))' <package>/_iteration_log.md`); paraphrasing from memory loses fidelity.
+Source the bullets from disk, not from transcript recall. For "Failing tests": re-run the full suite once at stuck-exit (`(cd <package> && go test -race -v ./... 2>&1 | tee /tmp/stuck-tests.txt)`) — running everything is simpler than passing failing names to `-run`, since table-driven names from `t.Run(tc.name, ...)` routinely contain `/`, parens, or other regex metacharacters that would need escaping. Then for each failing test name from the iteration log, find the first failure line in the captured output. `go test -v` prints `--- FAIL: <name> (<duration>)` — there's always a trailing space-paren-duration after the name. Don't pass `<name>` to `grep` — table-driven names like `TestFoo/(bad)` or `TestFoo/size=1+2` contain regex metacharacters that would either fail to match or match the wrong line. Use `awk` with `index()` for a regex-free prefix match against the literal name, then print the next line:
+
+```bash
+awk -v n="<name>" 'index($0, "--- FAIL: " n " ") == 1 { getline; print; exit }' /tmp/stuck-tests.txt
+```
+
+`index()` does substring matching with no regex semantics, and `== 1` constrains it to line-start (the prefix appears at column 1). The `getline; print` pulls the line immediately after the FAIL header, which is the first failure-detail line. For "What was attempted": pull the per-iteration `Scope:` and `Recurring failures:` lines from `_iteration_log.md` directly (`grep -E '^(## Iteration|- (Scope|Recurring))' <package>/_iteration_log.md`); paraphrasing from memory loses fidelity.
 
 The "Suggested next steps" bullets are the most valuable part of this file; spend the time to make them specific (file/line/section pointers, not "look at the failures"). A vague handoff produces a vague follow-up.
 
