@@ -38,28 +38,13 @@ Both paths are needed: introspection runs against operator-supplied env vars, th
 
 ## Required keys for v1 (per context)
 
-The required set depends on the manifest's `cluster.auth`. `BROKERS` is always required.
-
-**`auth: SASL_SCRAM`:**
-
 ```
 CONTEXTS_<CTX>_BROKERS               # whitespace-separated host:port list
 CONTEXTS_<CTX>_SASL_USERNAME
 CONTEXTS_<CTX>_SASL_PASSWORD
 ```
 
-**`auth: MTLS`:**
-
-```
-CONTEXTS_<CTX>_BROKERS               # whitespace-separated host:port list
-CONTEXTS_<CTX>_TLS_CERT              # absolute path to client cert PEM
-CONTEXTS_<CTX>_TLS_CERTKEY           # absolute path to client key PEM
-CONTEXTS_<CTX>_TLS_CA                # absolute path to CA bundle PEM
-```
-
-For MTLS, the wrapper bind-mounts each cert path **read-only** into the kafkactl container at the same path the env var declares (e.g. `/etc/ssl/kafka/prod.crt:/etc/ssl/kafka/prod.crt:ro,z`). That keeps kafkactl's view of the path identical inside and outside the container — no in-container path translation, no in-container cert staging. The `:z` is the SELinux shared-relabel marker — ignored on hosts without SELinux, but required on Fedora/RHEL so the container process can actually read the bind-mounted cert files (without it the host's file context is inaccessible from the container's process context and reads fail with `Permission denied`). Cert paths must be **absolute** (docker bind-mount syntax requires it) and must **exist on the host** at validation time. Only the active `--context`'s cert paths get mounted; paths exported for other contexts are also dropped by the per-context-scoped env-forwarding filter (see "What the forwarding filter passes" below), so kafkactl in the container neither sees them as env vars nor has a mount to read them through — a prod cert path can't leak into a dev container at either layer.
-
-Optional, when the manifest declares Schema Registry (independent of broker auth):
+Optional, when the manifest declares Schema Registry:
 
 ```
 CONTEXTS_<CTX>_SCHEMAREGISTRY_URL
@@ -75,14 +60,12 @@ Whitespace-separated. `BROKERS="b1.dev:9093 b2.dev:9093"` becomes the broker lis
 
 ## What the forwarding filter passes
 
-`introspect.sh` and the generated wrappers forward env vars whose names match `^(CONTEXTS_<ACTIVE_UPPER>_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)`, where `<ACTIVE_UPPER>` is the `--context` value uppercased and hyphen-to-underscored. This covers:
+`introspect.sh` and the generated wrappers forward env vars whose names match `^(CONTEXTS_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)`. This covers:
 
-- The **active context's** per-context overrides only (`CONTEXTS_<ACTIVE_UPPER>_*`).
+- All `CONTEXTS_*` per-context overrides.
 - The default-context shorthand `BROKERS`, `SASL_*`, `TLS_*`, `SCHEMAREGISTRY_*`.
 
-`CONTEXTS_<OTHER>_*` vars (other contexts' per-context overrides) are intentionally **not** forwarded. kafkactl with `--context <active>` only consults the active context's vars anyway, so other-context vars would be functionally useless inside the container — and forwarding e.g. `CONTEXTS_PROD_TLS_CERT` to a `--context dev` container would leak the prod cert path string into the container even though the file is not bind-mounted. Scoping the filter to the active context closes that path-leak.
-
-It also does **not** forward names starting with `KAFKA_` — those are reserved for this plugin's internal config (`KAFKA_ENV_FILE`, `KAFKA_DOCKER_ARGS`, `KAFKA_CONTAINER_RUNTIME`) and are not kafkactl-shaped — nor any name starting with `CONTEXT_AUTH_MODE_`, which is the wrappers' internal auth-mode selector (see `references/generated-skill-scripts.md`).
+It does **not** forward names starting with `KAFKA_` — those are reserved for this plugin's internal config (`KAFKA_ENV_FILE`, `KAFKA_DOCKER_ARGS`, `KAFKA_CONTAINER_RUNTIME`) and are not kafkactl-shaped.
 
 ## Why we use env vars instead of a connection string
 

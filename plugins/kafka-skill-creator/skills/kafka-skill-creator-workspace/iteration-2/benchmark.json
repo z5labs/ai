@@ -1,0 +1,53 @@
+{
+  "skill_name": "kafka-skill-creator",
+  "iteration": 2,
+  "iteration_focus": "Add mTLS auth support (issue #64). Focused iteration: only the mTLS positive eval (id 1) was run end-to-end against the model, since it's the eval whose expected behavior changed. Other evals are covered by the 78-test script-level suite (test_introspect.sh, all passing) and JSON Schema validation of both example manifests.",
+  "configurations": [
+    {
+      "name": "with_skill",
+      "label": "New mTLS-supporting skill",
+      "evals": [
+        {
+          "eval_id": 1,
+          "eval_name": "accepts-mtls-manifest",
+          "pass_count": 8,
+          "total_count": 8,
+          "pass_rate": 1.0,
+          "duration_seconds": 594.3,
+          "total_tokens": 115327
+        }
+      ],
+      "summary": {
+        "pass_rate": 1.0,
+        "mean_duration_seconds": 594.3,
+        "mean_total_tokens": 115327
+      }
+    },
+    {
+      "name": "old_skill",
+      "label": "Pre-mTLS git HEAD snapshot (baseline)",
+      "evals": [
+        {
+          "eval_id": 1,
+          "eval_name": "accepts-mtls-manifest",
+          "pass_count": 0,
+          "total_count": 8,
+          "pass_rate": 0.0,
+          "duration_seconds": 77.5,
+          "total_tokens": 34078
+        }
+      ],
+      "summary": {
+        "pass_rate": 0.0,
+        "mean_duration_seconds": 77.5,
+        "mean_total_tokens": 34078
+      }
+    }
+  ],
+  "comparison": {
+    "pass_rate_delta": 1.0,
+    "duration_delta_seconds": 516.8,
+    "tokens_delta": 81249,
+    "notes": "The pass-rate delta is by design: the OLD skill correctly refuses MTLS manifests (that was the v1 contract — Precondition 2 hard-fails on non-SASL_SCRAM auth) and so fails every assertion in the new positive eval. The NEW skill accepts the manifest, generates the kafka-payments/ skill with the right MTLS shape (CONTEXTS_<UPPER>_TLS_ENABLED only, no SASL_*), wires build_cert_mount_args into every wrapper, and surfaces the unreachable-broker smoke-test failure honestly. Tokens / time are higher because the new skill has more work to do (the OLD skill exits at Precondition 2 in a few hundred tokens; the NEW skill walks all six steps end-to-end)."
+  }
+}

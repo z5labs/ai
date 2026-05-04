@@ -1,0 +1,15 @@
+{
+  "eval_id": 1,
+  "eval_name": "accepts-mtls-manifest",
+  "configuration": "old_skill",
+  "expectations": [
+    {"text": "the assistant accepts the MTLS manifest and proceeds through generation rather than refusing it as an unsupported auth mode", "passed": false, "evidence": "OLD skill (pre-MTLS) refuses at Precondition 2 by design: it hard-fails on cluster.auth values other than SASL_SCRAM. This is the baseline behavior the new skill is meant to improve on. The agent's refusal message correctly cites issue #64 and writes no files."},
+    {"text": "/tmp/skill-out-eval1-new/SKILL.md exists with frontmatter `name: kafka-payments`", "passed": false, "evidence": "no skill files generated under /tmp/skill-out-eval1-old/ — refusal happened first"},
+    {"text": "/tmp/skill-out-eval1-new/scripts/_common.sh contains the literal export `CONTEXTS_DEV_TLS_ENABLED=true`", "passed": false, "evidence": "no _common.sh generated"},
+    {"text": "/tmp/skill-out-eval1-new/scripts/_common.sh does NOT contain `CONTEXTS_DEV_SASL_ENABLED` or `CONTEXTS_DEV_SASL_MECHANISM`", "passed": false, "evidence": "no _common.sh generated (vacuously not-applicable, marked false to keep the comparison honest)"},
+    {"text": "/tmp/skill-out-eval1-new/scripts/_common.sh's validate_context_env requires the cert env vars when TLS_ENABLED is set without SASL_ENABLED", "passed": false, "evidence": "no _common.sh generated"},
+    {"text": "/tmp/skill-out-eval1-new/scripts/_common.sh defines a build_cert_mount_args helper and the wrappers splice MOUNT_ARGS into their docker run line", "passed": false, "evidence": "no _common.sh and no wrappers generated"},
+    {"text": "/tmp/skill-out-eval1-new/scripts/.env.example documents CONTEXTS_DEV_TLS_CERT/CERTKEY/CA and not SASL_USERNAME/PASSWORD for the dev context", "passed": false, "evidence": "no .env.example generated"},
+    {"text": "if Step 5's smoke test fails (broker unreachable), the assistant surfaces the failure rather than claiming success", "passed": false, "evidence": "smoke test was never reached — the refusal happened at Precondition 2, before Step 1 ran"}
+  ]
+}

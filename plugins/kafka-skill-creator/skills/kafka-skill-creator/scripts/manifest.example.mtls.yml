@@ -1,0 +1,62 @@
+# kafka-skill-creator manifest (v1) — mTLS variant
+#
+# Same shape as manifest.example.yml, but for clusters whose brokers
+# terminate mutual-TLS (client certs) rather than SASL/SCRAM. The cert
+# is the auth — there's no SASL exchange — so contexts here do NOT
+# carry a `sasl_mechanism` field. The schema enforces this: a manifest
+# with `cluster.auth: MTLS` AND a per-context `sasl_mechanism` is
+# rejected at validation time.
+#
+# Per-environment cert/key/CA paths live in `.env.<context>` files at
+# runtime, not here. The generated wrappers bind-mount each cert path
+# read-only into the kafkactl container so kafkactl can read the file
+# at the same absolute path the env var declares.
+
+# Drives the generated skill name (kafka-payments) and its triggering
+# description. Path-safe characters only: [A-Za-z0-9_-].
+team: payments
+
+# Topics this team owns. Becomes the topic allowlist embedded in every
+# generated script. A clever model invocation that names a topic outside
+# this list is refused by the script source — there is no passthrough.
+topics:
+  - payments.orders.v1
+  - payments.refunds.v1
+
+# Consumer groups this team owns. Same allowlist treatment as topics.
+consumer_groups:
+  - payments-orders-projector
+  - payments-refunds-archiver
+
+cluster:
+  # Mutual TLS: the broker authenticates the client by its certificate.
+  # No SASL exchange happens, so contexts below have no sasl_mechanism.
+  auth: MTLS
+
+  # Mutual TLS implies TLS. The schema requires `tls: required` here;
+  # `none` is rejected at validation time for MTLS manifests.
+  tls: required
+
+  # Optional. Omit this whole block if the team's topics aren't
+  # schema-versioned. Schema Registry auth is independent of broker
+  # auth — `basic` here means HTTP Basic credentials per context.
+  schema_registry:
+    auth: basic
+
+# One entry per environment. The `name` here flows into `kafkactl
+# --context <name>` and into the uppercased segment of the runtime env
+# vars. For MTLS, each context expects these env vars:
+#
+#   CONTEXTS_<NAME>_BROKERS       (whitespace-separated host:port list)
+#   CONTEXTS_<NAME>_TLS_CERT      (absolute path to client cert PEM)
+#   CONTEXTS_<NAME>_TLS_CERTKEY   (absolute path to client key PEM)
+#   CONTEXTS_<NAME>_TLS_CA        (absolute path to CA bundle PEM)
+#
+# Plus the SCHEMAREGISTRY_* vars when the schema_registry block above
+# is present. The wrappers bind-mount each cert path :ro,z into the
+# kafkactl container (`:z` is the SELinux shared-relabel marker —
+# required on Fedora/RHEL, ignored elsewhere).
+contexts:
+  - name: dev
+  - name: staging
+  - name: prod

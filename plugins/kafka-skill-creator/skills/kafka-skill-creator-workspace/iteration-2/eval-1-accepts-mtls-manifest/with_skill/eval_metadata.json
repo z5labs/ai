@@ -1,0 +1,15 @@
+{
+  "eval_id": 1,
+  "eval_name": "accepts-mtls-manifest",
+  "prompt": "Run /kafka-skill-creator with the manifest below and --output /tmp/skill-out-eval1-new. Manifest:\n\nteam: payments\ntopics: [payments.orders.v1]\nconsumer_groups: [payments-orders-projector]\ncluster:\n  auth: MTLS\n  tls: required\ncontexts:\n  - {name: dev}\n\nThe following env vars are exported (cert files exist at the listed absolute paths and contain stub PEM bytes; the broker is unreachable so introspection / the smoke test will fail):\n\nCONTEXTS_DEV_BROKERS=broker.unreachable:9093\nCONTEXTS_DEV_TLS_CERT=/tmp/kafka-mtls-dev/client.crt\nCONTEXTS_DEV_TLS_CERTKEY=/tmp/kafka-mtls-dev/client.key\nCONTEXTS_DEV_TLS_CA=/tmp/kafka-mtls-dev/ca.crt\n\ndocker is on PATH but the broker host doesn't resolve. Generate the skill end-to-end through Step 4 (verify); when Step 5 (smoke test) fails because the broker is unreachable, surface the failure rather than claiming success.",
+  "assertions": [
+    {"id": "manifest-accepted", "text": "the assistant accepts the MTLS manifest and proceeds through generation rather than refusing it as an unsupported auth mode"},
+    {"id": "skill-md-exists", "text": "/tmp/skill-out-eval1-new/SKILL.md exists with frontmatter `name: kafka-payments`"},
+    {"id": "common-sh-tls-enabled", "text": "/tmp/skill-out-eval1-new/scripts/_common.sh contains the literal export `CONTEXTS_DEV_TLS_ENABLED=true`"},
+    {"id": "common-sh-no-sasl-exports", "text": "/tmp/skill-out-eval1-new/scripts/_common.sh does NOT contain `CONTEXTS_DEV_SASL_ENABLED` or `CONTEXTS_DEV_SASL_MECHANISM`"},
+    {"id": "common-sh-validates-tls-vars", "text": "/tmp/skill-out-eval1-new/scripts/_common.sh's validate_context_env requires the cert env vars when TLS_ENABLED is set without SASL_ENABLED"},
+    {"id": "common-sh-mount-builder", "text": "/tmp/skill-out-eval1-new/scripts/_common.sh defines a build_cert_mount_args helper and the wrappers splice MOUNT_ARGS into their docker run line"},
+    {"id": "env-example-mtls-shape", "text": "/tmp/skill-out-eval1-new/scripts/.env.example documents CONTEXTS_DEV_TLS_CERT/CERTKEY/CA and not SASL_USERNAME/PASSWORD for the dev context"},
+    {"id": "smoke-test-failure-surfaced", "text": "if Step 5's smoke test fails (broker unreachable), the assistant surfaces the failure rather than claiming success"}
+  ]
+}

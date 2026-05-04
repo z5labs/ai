@@ -4,35 +4,19 @@
 #
 # Usage:
 #   introspect.sh \
-#     --auth SASL_SCRAM|MTLS \
 #     --context <NAME> \
 #     --topic <T> [--topic <T> ...] \
 #     --group <G> [--group <G> ...] \
 #     <output-dir>
 #
 # Reads connection details from env vars matching kafkactl's documented
-# CONTEXTS_<NAME>_* convention. Required keys depend on --auth:
+# CONTEXTS_<NAME>_* convention. Three keys per context are required:
 #
-#   --auth SASL_SCRAM (default while v1 only had one auth mode — kept
-#                      explicit so the script doesn't auto-detect):
-#     CONTEXTS_<NAME>_BROKERS                  (whitespace-separated host:port list)
-#     CONTEXTS_<NAME>_SASL_USERNAME
-#     CONTEXTS_<NAME>_SASL_PASSWORD
+#   CONTEXTS_<NAME>_BROKERS                  (whitespace-separated host:port list)
+#   CONTEXTS_<NAME>_SASL_USERNAME
+#   CONTEXTS_<NAME>_SASL_PASSWORD
 #
-#   --auth MTLS:
-#     CONTEXTS_<NAME>_BROKERS
-#     CONTEXTS_<NAME>_TLS_CERT       (absolute path to client cert PEM, must exist)
-#     CONTEXTS_<NAME>_TLS_CERTKEY    (absolute path to client key PEM,  must exist)
-#     CONTEXTS_<NAME>_TLS_CA         (absolute path to CA bundle PEM,   must exist)
-#
-#   Each cert path is bind-mounted into the kafkactl container read-only at
-#   the same path the env var declares, so kafkactl reads the file at the
-#   path it sees in its own env. Only the active --context's cert paths are
-#   mounted — paths for other contexts (if they happen to be exported) never
-#   reach this run's argv.
-#
-# One key is optional under SASL_SCRAM (kafkactl's default — pass it
-# explicitly to override). Not used under MTLS:
+# One key is optional (kafkactl's default — pass it explicitly to override):
 #
 #   CONTEXTS_<NAME>_SASL_MECHANISM
 #
@@ -65,19 +49,9 @@ SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 usage() {
   cat <<'EOF' >&2
-usage: introspect.sh --auth SASL_SCRAM|MTLS --context <NAME> [--topic <T>]... [--group <G>]... <output-dir>
+usage: introspect.sh --context <NAME> [--topic <T>]... [--group <G>]... <output-dir>
 
 Required:
-  --auth MODE       Authentication mode the manifest declared. SASL_SCRAM
-                    requires CONTEXTS_<NAME>_SASL_USERNAME / _SASL_PASSWORD.
-                    MTLS requires CONTEXTS_<NAME>_TLS_CERT / _TLS_CERTKEY /
-                    _TLS_CA, each an absolute path that exists on disk;
-                    the cert files are bind-mounted :ro,z into the kafkactl
-                    container at the same path (`:z` is the SELinux
-                    shared-relabel marker — required on Fedora/RHEL,
-                    ignored elsewhere). Other auth values are rejected
-                    by the parent SKILL.md before reaching here.
-
   --context NAME    The kafkactl context to introspect against. Must match
                     one of the manifest's contexts[].name values, uppercased
                     for env-var lookup (e.g. `--context dev` reads
@@ -132,7 +106,6 @@ reject_positional_dsn() {
 }
 
 CONTEXT=""
-AUTH=""
 TOPICS=()
 # `GROUPS` is a Bash readonly built-in (the supplementary group IDs of
 # the current user); assignments to it are silently ignored, so we use
@@ -143,15 +116,6 @@ POSITIONAL=()
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --auth)
-      [ $# -ge 2 ] || { echo "error: --auth requires a value" >&2; exit 2; }
-      AUTH="$2"
-      shift 2
-      ;;
-    --auth=*)
-      AUTH="${1#--auth=}"
-      shift
-      ;;
     --context)
       [ $# -ge 2 ] || { echo "error: --context requires a value" >&2; exit 2; }
       CONTEXT="$2"
@@ -210,23 +174,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if [ -z "$CONTEXT" ] || [ -z "$AUTH" ] || [ ${#POSITIONAL[@]} -ne 1 ]; then
+if [ -z "$CONTEXT" ] || [ ${#POSITIONAL[@]} -ne 1 ]; then
   usage
   exit 2
 fi
-
-# `--auth` selects which env-var validator and (for MTLS) which cert-mount
-# branch runs below. Pin the accepted values explicitly — the parent SKILL.md
-# already refuses unsupported auth modes (SASL_PLAIN #63, OAUTHBEARER #65)
-# before reaching here, so any other value is a script-level misuse.
-case "$AUTH" in
-  SASL_SCRAM|MTLS) ;;
-  *)
-    echo "error: --auth value '$AUTH' is not supported here." >&2
-    echo "       expected SASL_SCRAM or MTLS." >&2
-    exit 2
-    ;;
-esac
 
 # Context name flows into env-var lookups (CONTEXTS_<NAME>_*) and into kafkactl
 # `--context <NAME>`. Restrict to a charset that survives uppercasing without
@@ -337,25 +288,11 @@ prefix="CONTEXTS_${ctx_upper}"
 # Validate every credential-bearing env var up front so the caller gets a
 # single complete missing-list rather than discovering them one kafkactl
 # failure at a time. Same shape postgres-skill-creator landed in issue #42.
-# Auth mode picks which keys are required: SASL_SCRAM needs username +
-# password, MTLS needs the three cert paths.
-case "$AUTH" in
-  SASL_SCRAM)
-    required=(
-      "${prefix}_BROKERS"
-      "${prefix}_SASL_USERNAME"
-      "${prefix}_SASL_PASSWORD"
-    )
-    ;;
-  MTLS)
-    required=(
-      "${prefix}_BROKERS"
-      "${prefix}_TLS_CERT"
-      "${prefix}_TLS_CERTKEY"
-      "${prefix}_TLS_CA"
-    )
-    ;;
-esac
+required=(
+  "${prefix}_BROKERS"
+  "${prefix}_SASL_USERNAME"
+  "${prefix}_SASL_PASSWORD"
+)
 missing=()
 for var in "${required[@]}"; do
   if [ -z "${!var:-}" ]; then
@@ -364,7 +301,7 @@ for var in "${required[@]}"; do
 done
 if [ ${#missing[@]} -gt 0 ]; then
   {
-    echo "error: missing required environment variables for context '$CONTEXT' (auth: $AUTH):"
+    echo "error: missing required environment variables for context '$CONTEXT':"
     for v in "${missing[@]}"; do echo "  - $v"; done
     echo
     echo "export them (or load them from a credential helper such as op run, vault,"
@@ -372,55 +309,6 @@ if [ ${#missing[@]} -gt 0 ]; then
     echo "CONTEXTS_<NAME>_* convention; see ${SKILL_DIR}/references/kafkactl-env-vars.md."
   } >&2
   exit 2
-fi
-
-# For MTLS, the three cert vars must each be absolute paths to existing
-# files — kafkactl will read them from inside the container at the same
-# path the env var declares, and docker's bind-mount syntax requires the
-# host path be absolute. Surface every offender in one error so an operator
-# fixing a missing-cert mistake doesn't have to re-run the script three
-# times to discover the next problem. CERT_PATHS stays declared (empty)
-# under SASL_SCRAM so the later mount-args loop is a no-op without
-# tripping `set -u` on an unset array.
-CERT_PATHS=()
-if [ "$AUTH" = "MTLS" ]; then
-  cert_problems=()
-  for var in "${prefix}_TLS_CERT" "${prefix}_TLS_CERTKEY" "${prefix}_TLS_CA"; do
-    val="${!var}"
-    case "$val" in
-      /*) ;;
-      *)
-        cert_problems+=("$var=$val (must be an absolute path; got relative)")
-        continue
-        ;;
-    esac
-    if [ ! -f "$val" ]; then
-      cert_problems+=("$var=$val (file not found on host)")
-      continue
-    fi
-    # `-r` is distinct from `-f`: a file the running process cannot read
-    # (wrong owner, restrictive mode, or covered by mandatory access
-    # control like SELinux at the host level) would still pass `-f` and
-    # then fail opaquely inside the container — the wrapper's job is to
-    # surface every preflight problem up front, so reject unreadable
-    # cert paths with a named error too.
-    if [ ! -r "$val" ]; then
-      cert_problems+=("$var=$val (file exists but is not readable by this process; check permissions/SELinux)")
-      continue
-    fi
-    CERT_PATHS+=("$val")
-  done
-  if [ ${#cert_problems[@]} -gt 0 ]; then
-    {
-      echo "error: cert paths for context '$CONTEXT' are not usable:"
-      for p in "${cert_problems[@]}"; do echo "  - $p"; done
-      echo
-      echo "each TLS_CERT / TLS_CERTKEY / TLS_CA must be an absolute path to a file the"
-      echo "host can read; the wrapper bind-mounts each path :ro,z into the kafkactl"
-      echo "container at the same path the env var declares."
-    } >&2
-    exit 2
-  fi
 fi
 
 KAFKACTL_IMAGE="${KAFKACTL_IMAGE:-docker.io/deviceinsight/kafkactl:v5.18.0-scratch}"
@@ -431,16 +319,13 @@ KAFKACTL_IMAGE="${KAFKACTL_IMAGE:-docker.io/deviceinsight/kafkactl:v5.18.0-scrat
 # and rejects the canonical Kafka spelling with `Unknown sasl mechanism`.
 # Re-export under the same env-var name so the container's forwarding
 # filter picks up the corrected value without us touching the FORWARD_PATTERN.
-# Only relevant under SASL_SCRAM — MTLS has no SASL exchange.
-if [ "$AUTH" = "SASL_SCRAM" ]; then
-  mech_var="${prefix}_SASL_MECHANISM"
-  if [ -n "${!mech_var:-}" ]; then
-    case "${!mech_var}" in
-      SCRAM-SHA-256|scram-sha-256) export "$mech_var"=scram-sha256 ;;
-      SCRAM-SHA-512|scram-sha-512) export "$mech_var"=scram-sha512 ;;
-      *) ;;  # leave alone; kafkactl will surface its own error
-    esac
-  fi
+mech_var="${prefix}_SASL_MECHANISM"
+if [ -n "${!mech_var:-}" ]; then
+  case "${!mech_var}" in
+    SCRAM-SHA-256|scram-sha-256) export "$mech_var"=scram-sha256 ;;
+    SCRAM-SHA-512|scram-sha-512) export "$mech_var"=scram-sha512 ;;
+    *) ;;  # leave alone; kafkactl will surface its own error
+  esac
 fi
 
 # Generate a kafkactl config.yml that pre-declares the chosen context.
@@ -460,50 +345,18 @@ EOF
 read -r -a EXTRA_ARGS <<< "${KAFKA_DOCKER_ARGS:-}"
 
 # Forward kafkactl-relevant env vars into the container. The filter is the
-# union of:
-#   - CONTEXTS_<ACTIVE_UPPER>_*    (only the active context's per-context vars)
-#   - TLS_*, SASL_*, SCHEMAREGISTRY_*, BROKERS  (kafkactl's bare shorthand
-#     for the `default` context — not per-context, so safe to forward)
-#
-# Other contexts' CONTEXTS_<OTHER>_* vars are intentionally NOT forwarded.
-# kafkactl with --context <active> only consults <active>'s vars anyway, so
-# the OTHER vars are functionally useless inside the container — and (this
-# is the security-relevant part) forwarding e.g. CONTEXTS_PROD_TLS_CERT to
-# a `--context dev` container would leak the prod cert path string into
-# the container's environment even though the file is not bind-mounted.
-# Scoping the pattern to the active context closes that path-leak.
-#
-# Internal config (KAFKA_DOCKER_ARGS, KAFKA_CONTAINER_RUNTIME,
+# union of kafkactl's documented prefixes (CONTEXTS_, TLS_, SASL_,
+# SCHEMAREGISTRY_) plus the bare BROKERS shorthand kafkactl honors for the
+# default context. Internal config (KAFKA_DOCKER_ARGS, KAFKA_CONTAINER_RUNTIME,
 # KAFKACTL_IMAGE) starts with KAFKA_ and is intentionally excluded — those
 # names are for this script, not for kafkactl, and forwarding them as
 # environment to the container would either be no-ops or actively confusing.
-FORWARD_PATTERN="^(CONTEXTS_${ctx_upper}_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS\$)"
+FORWARD_PATTERN='^(CONTEXTS_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)'
 KAFKACTL_ENV_ARGS=()
 while IFS= read -r var; do
   [ -z "$var" ] && continue
   KAFKACTL_ENV_ARGS+=(-e "$var")
 done < <(compgen -e | grep -E "$FORWARD_PATTERN" || true)
-
-# Build cert mount args. For MTLS, the three cert paths from CERT_PATHS
-# (already validated absolute + existing) bind-mount :ro,z into the
-# container at the same path so kafkactl reads them at the path the env
-# var declares. The `:z` is the SELinux shared-relabel marker — required
-# on Fedora/RHEL so the container's process context can read the mounted
-# file, ignored elsewhere; same flag the config-mount uses for the same
-# reason. Only the active context's paths reach the runtime:
-# CONTEXTS_<OTHER>_* vars are dropped by the per-context-scoped
-# FORWARD_PATTERN above, so they don't reach the container as env vars
-# OR as mounts. Empty under SASL_SCRAM.
-MOUNT_ARGS=()
-for cert_path in "${CERT_PATHS[@]}"; do
-  # `:z` is the SELinux shared-relabel marker; ignored on systems without
-  # SELinux. Same reason `run_kafkactl`'s config-mount uses `:ro,z`:
-  # without it, Fedora/RHEL hosts hit "Permission denied" reading the
-  # cert from inside the container even though the file exists and is
-  # bind-mounted, because the host's file context isn't accessible from
-  # the container's process context.
-  MOUNT_ARGS+=(-v "$cert_path:$cert_path:ro,z")
-done
 
 if [ -n "${KAFKA_CONTAINER_RUNTIME:-}" ]; then
   RUNTIME="$KAFKA_CONTAINER_RUNTIME"
@@ -539,7 +392,6 @@ run_kafkactl() {
   # container's process context.
   if "$RUNTIME" run --rm -i \
     -v "$KAFKACTL_CONFIG_DIR/config.yml:/.config/kafkactl/config.yml:ro,z" \
-    "${MOUNT_ARGS[@]}" \
     "${KAFKACTL_ENV_ARGS[@]}" \
     "${EXTRA_ARGS[@]}" \
     "$KAFKACTL_IMAGE" \

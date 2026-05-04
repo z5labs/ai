@@ -16,21 +16,16 @@
     },
     {
       "id": 1,
-      "name": "accepts-mtls-manifest",
-      "prompt": "Run /kafka-skill-creator --manifest /tmp/team.yml --output /tmp/skill-out. Manifest contents:\n\n```yaml\nteam: payments\ntopics: [payments.orders.v1]\nconsumer_groups: [payments-orders-projector]\ncluster:\n  auth: MTLS\n  tls: required\ncontexts:\n  - {name: dev}\n```\n\nThe following env vars are exported in the parent shell (cert files exist at the listed absolute paths and contain dummy PEM bytes; the broker is unreachable so introspection / the smoke test will fail):\n\n```\nCONTEXTS_DEV_BROKERS=broker.unreachable:9093\nCONTEXTS_DEV_TLS_CERT=/tmp/kafka-mtls-dev/client.crt\nCONTEXTS_DEV_TLS_CERTKEY=/tmp/kafka-mtls-dev/client.key\nCONTEXTS_DEV_TLS_CA=/tmp/kafka-mtls-dev/ca.crt\n```\n\ndocker is on PATH but the broker host doesn't resolve. Generate the skill end-to-end up through Step 4 (verify); when Step 5 (smoke test) fails because the broker is unreachable, surface the failure rather than claiming success.",
-      "expected_output": "The skill accepts the MTLS manifest and writes the generated kafka-payments/ skill to /tmp/skill-out/. The schema validation succeeds (no sasl_mechanism on the dev context, and the absence is correct under MTLS). The generated _common.sh emits CONTEXTS_DEV_TLS_ENABLED=true and does NOT emit CONTEXTS_DEV_SASL_ENABLED or CONTEXTS_DEV_SASL_MECHANISM. The .env.example uses an MTLS shape: CONTEXTS_DEV_TLS_CERT/CERTKEY/CA, not SASL_USERNAME/PASSWORD. The wrappers' docker run lines splice ${MOUNT_ARGS[@]} for the cert bind-mounts. The smoke test is run, fails because the broker is unreachable, and the failure is surfaced honestly — no silent retry, no claim of success.",
+      "name": "refuse-with-mtls-manifest",
+      "prompt": "Run /kafka-skill-creator --manifest /tmp/team.yml — manifest contents:\n\n```yaml\nteam: payments\ntopics: [payments.orders.v1]\nconsumer_groups: [payments-orders-projector]\ncluster:\n  auth: MTLS\n  tls: required\ncontexts:\n  - {name: dev, sasl_mechanism: SCRAM-SHA-512}\n```\n\nWhat happens?",
+      "expected_output": "The skill refuses because v1 supports SASL/SCRAM only; mTLS is deferred. The refusal names mTLS specifically, cites the deferred-auth issue (#64), and tells the user that v1 accepts auth: SASL_SCRAM. The assistant does not silently fall back to SASL/SCRAM, does not attempt to generate a partial skill, and does not write any files.",
       "files": [],
       "assertions": [
-        {"id": "manifest-accepted", "text": "the assistant accepts the MTLS manifest and proceeds through generation rather than refusing it as an unsupported auth mode"},
-        {"id": "skill-md-exists", "text": "/tmp/skill-out/SKILL.md exists with frontmatter `name: kafka-payments`"},
-        {"id": "common-sh-tls-enabled", "text": "/tmp/skill-out/scripts/_common.sh contains the literal export `CONTEXTS_DEV_TLS_ENABLED=true`"},
-        {"id": "common-sh-no-sasl-exports", "text": "/tmp/skill-out/scripts/_common.sh does NOT contain `CONTEXTS_DEV_SASL_ENABLED` or `CONTEXTS_DEV_SASL_MECHANISM` — under MTLS there is no SASL exchange"},
-        {"id": "common-sh-readonly-auth-mode", "text": "/tmp/skill-out/scripts/_common.sh declares `readonly CONTEXT_AUTH_MODE_DEV=MTLS` (the per-context auth-mode selector that drives validate_context_env's branching — distinct from the kafkactl-shape CONTEXTS_DEV_TLS_ENABLED export, which a .env file could otherwise flip)"},
-        {"id": "common-sh-validates-tls-vars", "text": "/tmp/skill-out/scripts/_common.sh's validate_context_env requires the cert env vars when CONTEXT_AUTH_MODE_<UPPER> is `MTLS` — grep for `CONTEXTS_${upper}_TLS_CERT`, `CONTEXTS_${upper}_TLS_CERTKEY`, and `CONTEXTS_${upper}_TLS_CA` as required keys in the MTLS branch of the case statement"},
-        {"id": "load-env-file-rejects-auth-mode-override", "text": "/tmp/skill-out/scripts/_common.sh's load_env_file refuses any .env line that tries to set CONTEXT_AUTH_MODE_* — grep for an explicit refusal/exit on that key prefix in load_env_file"},
-        {"id": "common-sh-mount-builder", "text": "/tmp/skill-out/scripts/_common.sh defines a build_cert_mount_args helper that emits `-v <path>:<path>:ro,z` entries for the active context's cert paths (the `:z` SELinux relabel marker is required so the mounted certs are readable inside the container on Fedora/RHEL), and the wrappers splice MOUNT_ARGS into their docker run line"},
-        {"id": "env-example-mtls-shape", "text": "/tmp/skill-out/scripts/.env.example documents `CONTEXTS_DEV_TLS_CERT`, `CONTEXTS_DEV_TLS_CERTKEY`, `CONTEXTS_DEV_TLS_CA` in its dev-context block (and does NOT document `CONTEXTS_DEV_SASL_USERNAME` / `CONTEXTS_DEV_SASL_PASSWORD` for the MTLS context)"},
-        {"id": "smoke-test-failure-surfaced", "text": "if Step 5's smoke test fails because the broker is unreachable, the assistant surfaces the failure rather than claiming success"}
+        {"id": "refuses-to-proceed", "text": "the assistant refuses rather than running the generator"},
+        {"id": "names-mtls-as-deferred", "text": "the refusal explicitly identifies mTLS as the unsupported value (not just 'unknown auth')"},
+        {"id": "cites-issue-64", "text": "the refusal cites issue #64 (or links the GitHub URL) as where mTLS support is tracked"},
+        {"id": "does-not-fall-back-silently", "text": "the assistant does NOT silently treat the manifest as SASL_SCRAM and proceed; it requires the user to fix the manifest"},
+        {"id": "no-files-written", "text": "no files are written under .claude/skills/kafka-* or anywhere else"}
       ]
     },
     {
@@ -131,21 +126,6 @@
         {"id": "describe-group-sh-smoke-succeeded", "text": "the transcript shows `describe-group.sh payments-orders-projector --context dev` ran against the live fixture, exited 0, and produced non-empty JSON output describing the consumer group"},
         {"id": "lag-sh-smoke-totallag-positive", "text": "the transcript shows `lag.sh payments-refunds-replayer --context dev` ran against the live fixture, exited 0, and reports totalLag > 0 for payments.refunds.v1 (the seed leaves this group lagging by 50 — the wrapper must reflect that, not return zero or fail)"},
         {"id": "reset-offsets-sh-dry-run-succeeded", "text": "the transcript shows `reset-offsets.sh payments-refunds-replayer --topic payments.refunds.v1 --to-earliest --dry-run --context dev` ran against the live fixture, exited 0, and produced non-empty output describing the planned offset reset (no actual offset change since --dry-run)"}
-      ]
-    },
-    {
-      "id": 8,
-      "name": "refuse-oauthbearer-manifest",
-      "prompt": "Run /kafka-skill-creator --manifest /tmp/team.yml — manifest contents:\n\n```yaml\nteam: payments\ntopics: [payments.orders.v1]\nconsumer_groups: [payments-orders-projector]\ncluster:\n  auth: OAUTHBEARER\n  tls: required\ncontexts:\n  - {name: dev, sasl_mechanism: SCRAM-SHA-512}\n```\n\nWhat happens?",
-      "expected_output": "The skill refuses because OAUTHBEARER is a deferred auth mode (#65). The refusal names OAUTHBEARER specifically, cites the deferred-auth issue (#65), and tells the user that v1 accepts auth: SASL_SCRAM or MTLS. The assistant does not silently fall back to SASL/SCRAM, does not attempt to generate a partial skill, and does not write any files.",
-      "files": [],
-      "assertions": [
-        {"id": "refuses-to-proceed", "text": "the assistant refuses rather than running the generator"},
-        {"id": "names-oauthbearer-as-deferred", "text": "the refusal explicitly identifies OAUTHBEARER as the unsupported value (not just 'unknown auth')"},
-        {"id": "cites-issue-65", "text": "the refusal cites issue #65 (or links the GitHub URL) as where OAUTHBEARER support is tracked"},
-        {"id": "mentions-supported-modes", "text": "the refusal mentions that v1 currently accepts SASL_SCRAM and MTLS"},
-        {"id": "does-not-fall-back-silently", "text": "the assistant does NOT silently treat the manifest as SASL_SCRAM or MTLS and proceed; it requires the user to fix the manifest"},
-        {"id": "no-files-written", "text": "no files are written under .claude/skills/kafka-* or anywhere else"}
       ]
     }
   ]

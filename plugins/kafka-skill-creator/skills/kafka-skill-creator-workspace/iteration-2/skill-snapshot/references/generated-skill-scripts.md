@@ -37,20 +37,6 @@ load_env_file() {
       if [[ "$value" =~ ^\"(.*)\"$ ]] || [[ "$value" =~ ^\'(.*)\'$ ]]; then
         value="${BASH_REMATCH[1]}"
       fi
-      # CONTEXT_AUTH_MODE_* is the per-context auth-mode constant baked in
-      # at generation time (see the readonly block further down). It must
-      # NOT be redefinable from a .env file — flipping it would silently
-      # bypass validate_context_env's mode-correct branch (e.g. an MTLS
-      # context could end up validated as SASL with no SASL creds present,
-      # or vice-versa). The readonly declaration would also catch this and
-      # exit, but a named refusal here gives the operator the *why*.
-      if [[ "$key" =~ ^CONTEXT_AUTH_MODE_ ]]; then
-        echo "error: refusing to load $key from $file —" >&2
-        echo "       auth mode is set at skill-generation time and cannot be" >&2
-        echo "       overridden via .env. Re-generate the skill from a manifest" >&2
-        echo "       with the desired cluster.auth value if you need to change it." >&2
-        exit 1
-      fi
       export "$key=$value"
     else
       echo "invalid env assignment in $file: $line" >&2
@@ -93,35 +79,9 @@ validate_context_env() {
   upper="${upper//-/_}"
   local required=(
     "CONTEXTS_${upper}_BROKERS"
+    "CONTEXTS_${upper}_SASL_USERNAME"
+    "CONTEXTS_${upper}_SASL_PASSWORD"
   )
-  # The generator baked a `readonly CONTEXT_AUTH_MODE_<UPPER>=SASL_SCRAM|MTLS`
-  # constant per declared context above this function (see "Per-context
-  # static values from the manifest" below). That readonly is the source of
-  # truth for which credential branch to take — NOT the kafkactl-shaped
-  # CONTEXTS_<UPPER>_SASL_ENABLED / _TLS_ENABLED exports, which a .env file
-  # could plausibly override and silently flip the wrapper into the wrong
-  # validation/mount branch. Auth mode is a manifest-level fact frozen at
-  # generation time, so it lives outside the kafkactl env surface.
-  local mode_var="CONTEXT_AUTH_MODE_${upper}"
-  local mode="${!mode_var:-}"
-  case "$mode" in
-    SASL_SCRAM)
-      required+=("CONTEXTS_${upper}_SASL_USERNAME" "CONTEXTS_${upper}_SASL_PASSWORD")
-      ;;
-    MTLS)
-      required+=(
-        "CONTEXTS_${upper}_TLS_CERT"
-        "CONTEXTS_${upper}_TLS_CERTKEY"
-        "CONTEXTS_${upper}_TLS_CA"
-      )
-      ;;
-    *)
-      echo "error: no $mode_var baked into _common.sh — context '$context'" >&2
-      echo "       isn't in the manifest the skill was generated from. Edit" >&2
-      echo "       scripts/manifest.yml and re-run /kafka-skill-creator." >&2
-      exit 2
-      ;;
-  esac
   # When the manifest declared a schema_registry block, the generator
   # baked a CONTEXTS_<UPPER>_SCHEMAREGISTRY_AUTH export above. Use its
   # presence as the signal that SR env vars should also be required for
@@ -148,74 +108,6 @@ validate_context_env() {
     } >&2
     exit 2
   fi
-  # MTLS-only post-check: each cert path must be absolute and the file
-  # must exist on the host. Docker bind-mount syntax requires absolute
-  # paths, and a missing cert produces an opaque kafkactl error from
-  # inside the container — surface both up-front in one message.
-  if [ "$mode" = "MTLS" ]; then
-    local cert_problems=() cert_var val
-    for cert_var in "CONTEXTS_${upper}_TLS_CERT" "CONTEXTS_${upper}_TLS_CERTKEY" "CONTEXTS_${upper}_TLS_CA"; do
-      val="${!cert_var}"
-      case "$val" in
-        /*) ;;
-        *) cert_problems+=("$cert_var=$val (must be an absolute path; got relative)"); continue ;;
-      esac
-      if [ ! -f "$val" ]; then
-        cert_problems+=("$cert_var=$val (file not found on host)")
-        continue
-      fi
-      # `-r` is distinct from `-f`: a file the running process cannot read
-      # (wrong owner, restrictive mode, or covered by mandatory access
-      # control like SELinux at the host level) would still pass `-f` and
-      # then fail opaquely inside the container. Reject unreadable cert
-      # paths up front so the operator sees the problem here, not as a
-      # cryptic kafkactl error from inside the container.
-      [ -r "$val" ] || cert_problems+=("$cert_var=$val (file exists but is not readable by this process; check permissions/SELinux)")
-    done
-    if [ ${#cert_problems[@]} -gt 0 ]; then
-      {
-        echo "error: cert paths for context '$context' are not usable:"
-        for p in "${cert_problems[@]}"; do echo "  - $p"; done
-        echo "       each TLS_CERT / TLS_CERTKEY / TLS_CA must be an absolute path to a"
-        echo "       file the host can read; the wrapper bind-mounts each :ro,z into the"
-        echo "       kafkactl container at the same path the env var declares."
-      } >&2
-      exit 2
-    fi
-  fi
-}
-
-# For MTLS contexts, build -v <path>:<path>:ro,z args so kafkactl in the
-# container can read each cert at the same path its env var declares.
-# `:z` is the SELinux shared-relabel marker (ignored on systems without
-# SELinux; required on Fedora/RHEL so the container's process context
-# can read the bind-mounted file). Only the active context's paths reach
-# the runtime — paths exported for OTHER contexts are filtered OUT by
-# build_env_args's per-context-scoped forwarding pattern, so kafkactl in
-# the container neither sees them as env vars nor has a mount to read
-# them through. Empty under SASL_SCRAM. Sets MOUNT_ARGS for the caller.
-# Reads the auth mode from the readonly CONTEXT_AUTH_MODE_<UPPER>
-# constant (same source-of-truth as validate_context_env, for the same
-# .env-can't-flip-it reason).
-build_cert_mount_args() {
-  local context="$1"
-  local upper
-  upper="$(printf '%s' "$context" | tr '[:lower:]' '[:upper:]')"
-  upper="${upper//-/_}"
-  MOUNT_ARGS=()
-  local mode_var="CONTEXT_AUTH_MODE_${upper}"
-  if [ "${!mode_var:-}" = "MTLS" ]; then
-    local cert_var val
-    for cert_var in "CONTEXTS_${upper}_TLS_CERT" "CONTEXTS_${upper}_TLS_CERTKEY" "CONTEXTS_${upper}_TLS_CA"; do
-      val="${!cert_var}"
-      # `:z` is the SELinux shared-relabel marker; ignored on systems
-      # without SELinux. Same reason the config-mount in each wrapper
-      # uses `:ro,z`: without it, Fedora/RHEL hosts hit "Permission
-      # denied" reading the cert from inside the container even though
-      # the file exists and is mounted.
-      MOUNT_ARGS+=(-v "$val:$val:ro,z")
-    done
-  fi
 }
 
 pick_runtime() {
@@ -227,22 +119,11 @@ pick_runtime() {
 }
 
 build_env_args() {
-  local context="$1"
-  local upper
-  upper="$(printf '%s' "$context" | tr '[:lower:]' '[:upper:]')"
-  upper="${upper//-/_}"
-  # Per-context scoping: only forward CONTEXTS_<ACTIVE_UPPER>_* plus the
-  # bare default-context shorthand (TLS_*, SASL_*, SCHEMAREGISTRY_*,
-  # BROKERS). CONTEXTS_<OTHER>_* vars are dropped — kafkactl with
-  # `--context <active>` only consults the active context's vars anyway,
-  # so forwarding e.g. CONTEXTS_PROD_TLS_CERT to a `--context dev`
-  # container would leak the prod cert path string into the container
-  # for no kafkactl-level benefit.
   KAFKACTL_ENV_ARGS=()
   while IFS= read -r v; do
     [ -z "$v" ] && continue
     KAFKACTL_ENV_ARGS+=(-e "$v")
-  done < <(compgen -e | grep -E "^(CONTEXTS_${upper}_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS\$)" || true)
+  done < <(compgen -e | grep -E '^(CONTEXTS_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)' || true)
   read -r -a EXTRA_RUNTIME_ARGS <<< "${KAFKA_DOCKER_ARGS:-}"
 }
 
@@ -290,18 +171,6 @@ require_eq_value() {
 
 KAFKACTL_IMAGE="${KAFKACTL_IMAGE:-docker.io/deviceinsight/kafkactl:v5.18.0-scratch}"
 
-# Per-context auth mode, frozen at generation time. `readonly` so a stray
-# `.env` override can't flip the wrapper into the wrong validation/mount
-# branch — auth mode is a manifest-level fact, not a per-environment knob.
-# Lives outside the kafkactl env surface (CONTEXTS_*/TLS_*/SASL_*/...) so
-# `build_env_args`'s forwarding filter never propagates it into the
-# container; it's purely an internal-to-the-wrapper selector consumed by
-# `validate_context_env` and `build_cert_mount_args`. `load_env_file`
-# explicitly refuses any `.env` line that tries to set CONTEXT_AUTH_MODE_*.
-readonly CONTEXT_AUTH_MODE_<UPPER-1>=<SASL_SCRAM|MTLS — from cluster.auth>
-readonly CONTEXT_AUTH_MODE_<UPPER-2>=<SASL_SCRAM|MTLS>
-# (one per declared context)
-
 # Per-context static values from the manifest. These are the cluster-shape
 # fields that don't change between environments (sasl mechanism, tls mode,
 # schema registry auth) — secrets still come from .env at runtime. The
@@ -309,50 +178,22 @@ readonly CONTEXT_AUTH_MODE_<UPPER-2>=<SASL_SCRAM|MTLS>
 # container, where kafkactl's CONTEXTS_<NAME>_<FIELD> overlay populates
 # the context that prepare_kafkactl_config has declared in config.yml.
 #
-# Generation rule: emit one block per manifest context, shape depending on
-# `cluster.auth`:
-#
-#   SASL_SCRAM:
-#     - CONTEXTS_<UPPER>_SASL_ENABLED=true
-#     - CONTEXTS_<UPPER>_SASL_MECHANISM=<translated SCRAM casing>
-#     - CONTEXTS_<UPPER>_TLS_ENABLED=<true|false from cluster.tls>
-#
-#     Translate the manifest's `sasl_mechanism` to kafkactl's casing at
-#     generation time: `SCRAM-SHA-256` -> `scram-sha256`, `SCRAM-SHA-512`
-#     -> `scram-sha512`. kafkactl rejects the canonical Kafka spelling
-#     (`SCRAM-SHA-512`) with "Unknown sasl mechanism" — the lowercase,
-#     squashed-dash form is the only one it accepts.
-#
-#   MTLS:
-#     - CONTEXTS_<UPPER>_TLS_ENABLED=true   (mTLS implies TLS, always)
-#     - NO SASL_* exports
-#
-#     These are kafkactl-shape: they describe cluster shape so kafkactl
-#     can dial the broker correctly. They do NOT drive the wrapper's
-#     branching decisions — those come from the readonly
-#     `CONTEXT_AUTH_MODE_<UPPER>` constant declared just above this
-#     block. validate_context_env reads CONTEXT_AUTH_MODE_<UPPER> to
-#     pick which credential vars to require, and build_cert_mount_args
-#     reads it to decide whether to emit -v mounts. That separation
-#     is what makes the wrapper resistant to a .env file flipping
-#     CONTEXTS_<UPPER>_TLS_ENABLED out from under us — auth mode is
-#     a manifest fact, kafkactl exports are runtime config.
-#
-# Emit the SCHEMAREGISTRY_AUTH line in either case only when the manifest
-# declares a `schema_registry` block.
+# Generation rule: emit one block per manifest context. Translate the
+# manifest's `sasl_mechanism` value into kafkactl's casing convention
+# at generation time: `SCRAM-SHA-256` -> `scram-sha256`, `SCRAM-SHA-512`
+# -> `scram-sha512`. kafkactl rejects the canonical Kafka spelling
+# (`SCRAM-SHA-512`) with "Unknown sasl mechanism" — the lowercase,
+# squashed-dash form is the only one it accepts. TLS_ENABLED is `true`
+# when cluster.tls is `required`, `false` when it is `none`. Emit the
+# SCHEMAREGISTRY_AUTH line only when the manifest declares schema_registry.
 
-# context: <ctx-1>  (SASL_SCRAM)
+# context: <ctx-1>
 export CONTEXTS_<UPPER-1>_SASL_ENABLED=true
 export CONTEXTS_<UPPER-1>_SASL_MECHANISM=<scram-sha256|scram-sha512 — see translation rule above>
 export CONTEXTS_<UPPER-1>_TLS_ENABLED=<true|false>
 # export CONTEXTS_<UPPER-1>_SCHEMAREGISTRY_AUTH=basic   # only when SR configured
 
-# context: <ctx-2>  (MTLS — example shape)
-# export CONTEXTS_<UPPER-2>_TLS_ENABLED=true
-# # No SASL_* exports under MTLS. Cert paths come from .env at runtime.
-# # export CONTEXTS_<UPPER-2>_SCHEMAREGISTRY_AUTH=basic   # only when SR configured
-
-# context: <ctx-N>  (same shape as the manifest's auth)
+# context: <ctx-2>  (same shape)
 ```
 
 ## `describe-topic.sh`
@@ -395,21 +236,17 @@ require_allowed "topic" "$TOPIC" "${ALLOWED_TOPICS[@]}"
 resolve_env_file
 validate_context_env "$CONTEXT"
 pick_runtime
-build_env_args "$CONTEXT"
-build_cert_mount_args "$CONTEXT"
+build_env_args
 prepare_kafkactl_config "$CONTEXT"
 
 exec "$RUNTIME" run --rm -i \
   -v "$KAFKACTL_CONFIG_DIR/config.yml:/.config/kafkactl/config.yml:ro,z" \
-  "${MOUNT_ARGS[@]}" \
   "${KAFKACTL_ENV_ARGS[@]}" "${EXTRA_RUNTIME_ARGS[@]}" \
   "$KAFKACTL_IMAGE" --context "$CONTEXT" \
   describe topic "$TOPIC" --output json
 ```
 
 The `:z` is the SELinux shared-relabel marker; ignored on systems without SELinux. Without it, Fedora/RHEL hosts hit "Permission denied" reading the config because the host's file context isn't accessible from the container's process context.
-
-`build_cert_mount_args` populates `MOUNT_ARGS` with `-v <path>:<path>:ro,z` entries for each cert path the active context needs (`:z` is the SELinux shared-relabel marker — required on Fedora/RHEL, ignored elsewhere; same flag the config-mount uses for the same reason). Under SASL_SCRAM the array stays empty, so the splice is a no-op; under MTLS it adds three mounts so kafkactl in the container reads each cert at the same absolute path the env var declares. Splice it BEFORE `${KAFKACTL_ENV_ARGS[@]}` rather than after — argument order doesn't matter to docker, but keeping `-v` flags adjacent makes a `docker run` printout easier to scan during incident debugging.
 
 `require_value` and `require_eq_value` come from `_common.sh` (sourced above the flag parser); the wrapper just defines `$USAGE` so those helpers print the right shape on a missing-value error.
 

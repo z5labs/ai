@@ -1,0 +1,15 @@
+{
+  "eval_id": 1,
+  "eval_name": "accepts-mtls-manifest",
+  "configuration": "with_skill",
+  "expectations": [
+    {"text": "the assistant accepts the MTLS manifest and proceeds through generation rather than refusing it as an unsupported auth mode", "passed": true, "evidence": "transcript notes manifest schema validation PASS (MTLS branch satisfied), then proceeded through Step 3 to write the full skill"},
+    {"text": "/tmp/skill-out-eval1-new/SKILL.md exists with frontmatter `name: kafka-payments`", "passed": true, "evidence": "outputs/SKILL.md present and non-empty; first frontmatter line: `name: kafka-payments`"},
+    {"text": "/tmp/skill-out-eval1-new/scripts/_common.sh contains the literal export `CONTEXTS_DEV_TLS_ENABLED=true`", "passed": true, "evidence": "grep matched the literal line in outputs/scripts/_common.sh"},
+    {"text": "/tmp/skill-out-eval1-new/scripts/_common.sh does NOT contain `CONTEXTS_DEV_SASL_ENABLED` or `CONTEXTS_DEV_SASL_MECHANISM`", "passed": true, "evidence": "no SASL_* exports under the dev context block in outputs/scripts/_common.sh"},
+    {"text": "/tmp/skill-out-eval1-new/scripts/_common.sh's validate_context_env requires the cert env vars when TLS_ENABLED is set without SASL_ENABLED", "passed": true, "evidence": "validate_context_env adds CONTEXTS_${upper}_TLS_CERT/CERTKEY/CA to the required array when TLS_ENABLED is true and SASL_ENABLED is empty"},
+    {"text": "/tmp/skill-out-eval1-new/scripts/_common.sh defines a build_cert_mount_args helper and the wrappers splice MOUNT_ARGS into their docker run line", "passed": true, "evidence": "build_cert_mount_args function present in _common.sh; all five wrappers (describe-topic.sh, describe-group.sh, consume.sh, lag.sh, reset-offsets.sh) reference both build_cert_mount_args and MOUNT_ARGS"},
+    {"text": "/tmp/skill-out-eval1-new/scripts/.env.example documents CONTEXTS_DEV_TLS_CERT/CERTKEY/CA and not SASL_USERNAME/PASSWORD for the dev context", "passed": true, "evidence": "env example contains the three TLS_* keys for DEV and no SASL_USERNAME/PASSWORD lines"},
+    {"text": "if Step 5's smoke test fails (broker unreachable), the assistant surfaces the failure rather than claiming success", "passed": true, "evidence": "transcript surfaces Step 5 smoke-test failure explicitly (sandbox blocked spawn + unresolvable broker host) rather than claiming success"}
+  ]
+}
