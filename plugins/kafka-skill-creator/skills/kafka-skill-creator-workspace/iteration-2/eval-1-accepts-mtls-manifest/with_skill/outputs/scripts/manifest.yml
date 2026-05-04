@@ -1,0 +1,8 @@
+team: payments
+topics: [payments.orders.v1]
+consumer_groups: [payments-orders-projector]
+cluster:
+  auth: MTLS
+  tls: required
+contexts:
+  - {name: dev}

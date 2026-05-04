@@ -1,0 +1,7 @@
+Refusing to generate kafka-payments: manifest declares cluster.auth: MTLS, which is not supported in v1.
+
+The kafka-skill-creator v1 scope accepts only cluster.auth: SASL_SCRAM. mTLS support is deferred and tracked in issue #64 (https://github.com/z5labs/ai/issues/64). Per the skill's v1 scope and Precondition 2 ("v1 hard-fails on cluster.auth values other than SASL_SCRAM"), I will not silently accept and degrade.
+
+No files were written under /tmp/skill-out-eval1-old/. To proceed, either:
+  - change the manifest to cluster.auth: SASL_SCRAM (and supply CONTEXTS_<CTX>_SASL_USERNAME / _SASL_PASSWORD per context), or
+  - wait for issue #64 (mTLS) to land and re-run with the updated skill.

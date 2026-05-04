@@ -1,26 +1,9 @@
-# Generated-skill SKILL.md skeleton
-
-The `SKILL.md` that ships inside every generated `kafka-<team>/`. Read this file when executing Step 3 of the parent `SKILL.md` (specifically the `<output>/SKILL.md` substep). The substitution rules live in the parent SKILL.md (description template + bullet list rendering); this file carries the verbatim body.
-
-The frontmatter `description` is generated from a fixed template — substitution only, no paraphrasing. Two runs against the same manifest must produce byte-identical descriptions. **Do not** add `disable-model-invocation: true` to the frontmatter; the generated skill is meant to fire on natural-language prompts, not require slash invocation.
-
-## Substitutions to make
-
-- `<team>` — the manifest's `team` field, verbatim.
-- `<top topics>` — the **first up to 5** entries from the manifest's `topics:` list, in manifest order, joined by `", "`.
-- `<env list>` — the manifest's `contexts[].name` values, in manifest order, joined by `" / "` (e.g. `dev / staging / prod`).
-- `<bullet list>` for owned topics and groups — emit one `- ` line per item under `topics:` and `consumer_groups:`.
-- `<list of context names>` in the Environments section — same as `<env list>` above.
-
-## Skeleton
-
-```markdown
 ---
-name: kafka-<team>
-description: Read-only investigation of the <team> team's Kafka topics (<top topics>) and consumer groups across <env list>. Use whenever the user asks to peek at messages, check consumer-group lag, describe a topic's config, or reset an offset for a <team>-owned topic, even if they don't say "Kafka" explicitly. Non-destructive only — does not produce, alter, or delete.
+name: kafka-payments
+description: Read-only investigation of the payments team's Kafka topics (payments.orders.v1) and consumer groups across dev. Use whenever the user asks to peek at messages, check consumer-group lag, describe a topic's config, or reset an offset for a payments-owned topic, even if they don't say "Kafka" explicitly. Non-destructive only — does not produce, alter, or delete.
 ---
 
-This skill knows the <team> team's Kafka topics and consumer groups, and provides fixed-shape wrappers for investigation tasks. Posture is **non-destructive**: reads and offset resets only. No produce, no topic create/alter/delete, no consumer-group delete.
+This skill knows the payments team's Kafka topics and consumer groups, and provides fixed-shape wrappers for investigation tasks. Posture is **non-destructive**: reads and offset resets only. No produce, no topic create/alter/delete, no consumer-group delete.
 
 ## What this skill is for
 
@@ -41,14 +24,16 @@ This skill knows the <team> team's Kafka topics and consumer groups, and provide
 
 This skill operates only on the team's owned set, embedded in each script's allowlist:
 
-- Topics: <bullet list>
-- Consumer groups: <bullet list>
+- Topics:
+  - payments.orders.v1
+- Consumer groups:
+  - payments-orders-projector
 
 Attempting to invoke any of the scripts with a topic or group outside this list is refused at script entry. To extend the list, edit the team's `manifest.yml` and re-run `/kafka-skill-creator --manifest …` — do **not** edit the embedded array in scripts directly, it gets overwritten on regeneration.
 
 ## Environments
 
-The team operates against these contexts: <list of context names>.
+The team operates against these contexts: dev.
 
 Each script reads an env file at runtime, resolved in this order (first match wins): `--env-file PATH` (per-invocation), `KAFKA_ENV_FILE` (whole-shell), `./.env` (cwd). There is no automatic `.env.<ctx>` lookup — the convention is to *name* per-environment files `.env.dev` / `.env.prod` / etc. and select one with `--env-file` or `KAFKA_ENV_FILE`. Each script also passes `--context <ctx>` to kafkactl, which selects which `CONTEXTS_<UPPER>_*` env vars (loaded from the env file) apply.
 
@@ -77,7 +62,7 @@ Repeat for each context. Add the chosen filename(s) to `.gitignore` so secrets d
 
 ### Per-invocation usage
 
-Paths below are relative to this skill's directory. If you're invoking from elsewhere, use the full path the generator wrote (e.g. `./.claude/skills/kafka-<team>/scripts/...`, or `plugins/team-<team>/skills/kafka-<team>/scripts/...` if the skill lives in a plugin tree).
+Paths below are relative to this skill's directory. If you're invoking from elsewhere, use the full path the generator wrote (e.g. `./.claude/skills/kafka-payments/scripts/...`, or `plugins/team-payments/skills/kafka-payments/scripts/...` if the skill lives in a plugin tree).
 
     bash scripts/describe-topic.sh <topic> --context dev
     bash scripts/lag.sh <group> --context prod --env-file .env.prod
@@ -93,6 +78,3 @@ If `--context` doesn't match a context the loaded env file populated, kafkactl's
 - `references/schemas/<topic>.json` — Schema Registry latest-version dumps (when configured)
 
 These are written **once at generation time**. Re-run `/kafka-skill-creator` when topics drift or new groups appear.
-```
-
-The description copy above is the canonical template. Don't paraphrase it for "tone", don't add team-specific color, don't drop the "even if they don't say 'Kafka' explicitly" clause to make it shorter — the wording is what triggers reliably. Substitution only.

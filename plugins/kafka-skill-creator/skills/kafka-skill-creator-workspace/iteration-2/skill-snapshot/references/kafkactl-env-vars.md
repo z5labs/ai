@@ -38,28 +38,13 @@ Both paths are needed: introspection runs against operator-supplied env vars, th
 
 ## Required keys for v1 (per context)
 
-The required set depends on the manifest's `cluster.auth`. `BROKERS` is always required.
-
-**`auth: SASL_SCRAM`:**
-
 ```
 CONTEXTS_<CTX>_BROKERS               # whitespace-separated host:port list
 CONTEXTS_<CTX>_SASL_USERNAME
 CONTEXTS_<CTX>_SASL_PASSWORD
 ```
 
-**`auth: MTLS`:**
-
-```
-CONTEXTS_<CTX>_BROKERS               # whitespace-separated host:port list
-CONTEXTS_<CTX>_TLS_CERT              # absolute path to client cert PEM
-CONTEXTS_<CTX>_TLS_CERTKEY           # absolute path to client key PEM
-CONTEXTS_<CTX>_TLS_CA                # absolute path to CA bundle PEM
-```
-
-For MTLS, the wrapper bind-mounts each cert path **read-only** into the kafkactl container at the same path the env var declares (e.g. `/etc/ssl/kafka/prod.crt:/etc/ssl/kafka/prod.crt:ro`). That keeps kafkactl's view of the path identical inside and outside the container — no in-container path translation, no in-container cert staging. Cert paths must be **absolute** (docker bind-mount syntax requires it) and must **exist on the host** at validation time. Only the active `--context`'s cert paths get mounted; paths exported for other contexts are forwarded as env vars by the env-var filter but never get a mount, so kafkactl in the container has no way to read them.
-
-Optional, when the manifest declares Schema Registry (independent of broker auth):
+Optional, when the manifest declares Schema Registry:
 
 ```
 CONTEXTS_<CTX>_SCHEMAREGISTRY_URL

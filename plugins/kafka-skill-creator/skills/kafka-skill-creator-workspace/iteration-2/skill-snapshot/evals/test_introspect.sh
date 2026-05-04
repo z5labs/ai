@@ -33,24 +33,8 @@ FAILURES=()
 # Run introspect.sh with a controlled environment. env_spec is a string of
 # `export KEY=VAL` lines (or empty). Args after env_spec are passed to the
 # script. Captures merged stdout+stderr and exit code.
-#
-# Auto-injects `--auth SASL_SCRAM` when the args neither contain `--auth`
-# nor are empty, so existing tests written against the SASL-only v1 keep
-# passing after the --auth flag was added. Tests that exercise the auth
-# flag itself (missing / unknown / MTLS) pass it explicitly and bypass
-# the auto-injection.
 run_introspect() {
   local env_spec="$1"; shift
-  local has_auth=false
-  local arg
-  for arg in "$@"; do
-    case "$arg" in
-      --auth|--auth=*) has_auth=true; break ;;
-    esac
-  done
-  if [ $# -gt 0 ] && ! $has_auth; then
-    set -- --auth SASL_SCRAM "$@"
-  fi
   env -i PATH="$PATH" HOME="$HOME" bash -c "
     $env_spec
     bash '$INTROSPECT' \"\$@\" 2> /tmp/kafka_introspect_err.\$\$ > /tmp/kafka_introspect_out.\$\$
@@ -341,7 +325,7 @@ for cmd in bash sh tr printf cat mkdir rm grep sed paste env dirname; do
 done
 no_runtime_output="$(env -i PATH="$SANDBOX_BIN" HOME="$HOME" "$SANDBOX_BIN/bash" -c "
   $ALL_DEV
-  bash '$INTROSPECT' --auth SASL_SCRAM --context dev /tmp/some-other-dir 2>&1
+  bash '$INTROSPECT' --context dev /tmp/some-other-dir 2>&1
 " || true)"
 if grep -qF -- "kafka-introspect-" <<<"$no_runtime_output" \
    && ! grep -qF -- "neither docker nor podman" <<<"$no_runtime_output"; then
@@ -383,7 +367,7 @@ chmod +x "$SYMLINK_FAKE_RUNTIME"
 env -i PATH="$PATH" HOME="$HOME" bash -c "
   $ALL_DEV
   export KAFKA_CONTAINER_RUNTIME='$SYMLINK_FAKE_RUNTIME'
-  bash '$INTROSPECT' --auth SASL_SCRAM --context dev '$SYMLINK_PATH/' > /dev/null 2>&1 || true
+  bash '$INTROSPECT' --context dev '$SYMLINK_PATH/' > /dev/null 2>&1 || true
 "
 
 if [ -f "$SENTINEL_FILE" ]; then
@@ -414,7 +398,7 @@ multislash_exit=0
 env -i PATH="$PATH" HOME="$HOME" bash -c "
   $ALL_DEV
   export KAFKA_CONTAINER_RUNTIME='$SYMLINK_FAKE_RUNTIME'
-  bash '$INTROSPECT' --auth SASL_SCRAM --context dev '${SYMLINK_PATH}///' > /dev/null 2>&1
+  bash '$INTROSPECT' --context dev '${SYMLINK_PATH}///' > /dev/null 2>&1
 " || multislash_exit=$?
 
 if [ -f "$SENTINEL_FILE" ] && [ "$multislash_exit" -eq 0 ]; then
@@ -596,7 +580,7 @@ env -i PATH="$PATH" HOME="$HOME" \
     export KAFKA_DOCKER_ARGS='--network=host'
     export KAFKA_CONTAINER_RUNTIME='$FAKE_RUNTIME'
     export KAFKACTL_IMAGE='myregistry.example.com/kafkactl:custom'
-    bash '$INTROSPECT' --auth SASL_SCRAM --context dev --topic payments.orders.v1 --group payments-orders-projector '$TMPOUT'
+    bash '$INTROSPECT' --context dev --topic payments.orders.v1 --group payments-orders-projector '$TMPOUT'
   " > /dev/null 2>&1
 
 # Pick the first invocation block.
@@ -720,7 +704,7 @@ run_compat_invocation() {
       export CONTEXTS_DEV_SASL_PASSWORD=secret
       export CONTEXTS_DEV_SASL_MECHANISM='$mechanism'
       export KAFKA_CONTAINER_RUNTIME='$FAKE_RUNTIME_COMPAT'
-      bash '$INTROSPECT' --auth SASL_SCRAM --context dev --topic t1 --group g1 '$TMPOUT_COMPAT'
+      bash '$INTROSPECT' --context dev --topic t1 --group g1 '$TMPOUT_COMPAT'
     " > /dev/null 2>&1
   awk '/---END---/{exit} {print}' "$INVOCATION_LOG_COMPAT"
 }
@@ -789,209 +773,6 @@ assert_compat_grep \
   "mounts config.yml at /.config/kafkactl/config.yml inside the container" \
   '^ARG .*:/.config/kafkactl/config\.yml:ro,z$' \
   "$captured_512"
-
-# --- Auth flag tests (added with mTLS support, #64) ---------------------------
-#
-# The --auth flag was added so introspect.sh knows whether to require
-# SASL_USERNAME/PASSWORD or TLS_CERT/CERTKEY/CA per context, and (for MTLS)
-# so it can bind-mount the cert paths into the kafkactl container. Pin the
-# refusal shape and the positive-path mount/env behavior.
-
-# Refuses without --auth. The auto-injection in run_introspect doesn't fire
-# here because we pass the flag explicitly with no value.
-assert_test \
-  "refuses missing --auth value" \
-  2 \
-  "--auth requires a value" \
-  "$ALL_DEV" \
-  --auth
-
-# Refuses unknown --auth value.
-assert_test \
-  "refuses unknown --auth value" \
-  2 \
-  "is not supported here" \
-  "$ALL_DEV" \
-  --auth BOGUS --context dev /tmp/kafka-introspect-test
-
-# Without --auth at all (overrides the auto-inject by passing args that
-# include --context but no --auth — wait, run_introspect auto-injects in
-# that case. So the only way to test "no --auth" is via the raw bash call.
-# Do that here instead.
-no_auth_output="$(env -i PATH="$PATH" HOME="$HOME" bash -c "
-  $ALL_DEV
-  bash '$INTROSPECT' --context dev /tmp/kafka-introspect-test 2>&1
-" || true)"
-if grep -qF -- "usage:" <<<"$no_auth_output" \
-   && ! grep -qF -- "missing required environment variables" <<<"$no_auth_output"; then
-  PASS=$((PASS + 1))
-  echo "PASS: refuses without --auth (usage shown, env-var check not reached)"
-else
-  FAIL=$((FAIL + 1))
-  FAILURES+=("expected usage refusal when --auth is missing. Output:
-$no_auth_output")
-  echo "FAIL: refuses without --auth (usage shown, env-var check not reached)"
-fi
-
-# --- MTLS env-var validation tests --------------------------------------------
-
-# Under --auth MTLS, the cert vars (not SASL) are required. Refusal lists
-# every missing cert var in one error.
-mtls_missing_output="$(run_introspect "" \
-  --auth MTLS --context dev /tmp/kafka-introspect-test 2>&1 || true)"
-for v in CONTEXTS_DEV_BROKERS CONTEXTS_DEV_TLS_CERT CONTEXTS_DEV_TLS_CERTKEY CONTEXTS_DEV_TLS_CA; do
-  if grep -q -- "$v" <<<"$mtls_missing_output"; then
-    PASS=$((PASS + 1))
-    echo "PASS: MTLS missing-list includes $v"
-  else
-    FAIL=$((FAIL + 1))
-    FAILURES+=("MTLS missing-list should include $v. Output:
-$mtls_missing_output")
-    echo "FAIL: MTLS missing-list includes $v"
-  fi
-done
-
-# Under --auth MTLS, the SASL vars must NOT be required (so a SASL-only
-# env doesn't accidentally pass MTLS validation).
-mtls_sasl_only_output="$(run_introspect \
-  'export CONTEXTS_DEV_BROKERS=b CONTEXTS_DEV_SASL_USERNAME=u CONTEXTS_DEV_SASL_PASSWORD=p' \
-  --auth MTLS --context dev /tmp/kafka-introspect-test 2>&1 || true)"
-if grep -q "CONTEXTS_DEV_TLS_CERT" <<<"$mtls_sasl_only_output"; then
-  PASS=$((PASS + 1))
-  echo "PASS: MTLS doesn't accept SASL-only env (still demands TLS_CERT etc.)"
-else
-  FAIL=$((FAIL + 1))
-  FAILURES+=("MTLS validation should still demand TLS_CERT when only SASL vars are set. Output:
-$mtls_sasl_only_output")
-  echo "FAIL: MTLS doesn't accept SASL-only env (still demands TLS_CERT etc.)"
-fi
-
-# Cert paths must be absolute. A relative path is rejected with a named
-# error.
-MTLS_TMP="$(mktemp -d "${TMPDIR:-/tmp}/kafka-mtls-test-XXXXXX")"
-trap 'rm -rf -- "$FAKE_RUNTIME" "$INVOCATION_LOG" "$TMPOUT" "$SANDBOX_BIN" "$FAKE_RUNTIME_COMPAT" "$INVOCATION_LOG_COMPAT" "$TMPOUT_COMPAT" "$MTLS_TMP"' EXIT
-echo "stub-cert" > "$MTLS_TMP/client.crt"
-echo "stub-key" > "$MTLS_TMP/client.key"
-echo "stub-ca"  > "$MTLS_TMP/ca.crt"
-
-assert_test \
-  "MTLS rejects relative cert path with named error" \
-  2 \
-  "must be an absolute path" \
-  "export CONTEXTS_DEV_BROKERS=b CONTEXTS_DEV_TLS_CERT=relative.crt CONTEXTS_DEV_TLS_CERTKEY=$MTLS_TMP/client.key CONTEXTS_DEV_TLS_CA=$MTLS_TMP/ca.crt" \
-  --auth MTLS --context dev /tmp/kafka-introspect-test
-
-assert_test \
-  "MTLS rejects nonexistent cert path with named error" \
-  2 \
-  "file not found" \
-  "export CONTEXTS_DEV_BROKERS=b CONTEXTS_DEV_TLS_CERT=/tmp/does-not-exist.crt CONTEXTS_DEV_TLS_CERTKEY=$MTLS_TMP/client.key CONTEXTS_DEV_TLS_CA=$MTLS_TMP/ca.crt" \
-  --auth MTLS --context dev /tmp/kafka-introspect-test
-
-# --- MTLS positive-path: cert mounts reach the runtime ------------------------
-#
-# When all cert vars are valid, introspect.sh should bind-mount each cert
-# at <path>:<path>:ro and skip the SCRAM mechanism translation. Reuse the
-# fake-runtime pattern from the SASL compat tests.
-
-INVOCATION_LOG_MTLS="$(mktemp)"
-TMPOUT_MTLS="$(mktemp -d "${TMPDIR:-/tmp}/kafka-introspect-XXXXXX")"
-trap 'rm -rf -- "$FAKE_RUNTIME" "$INVOCATION_LOG" "$TMPOUT" "$SANDBOX_BIN" "$FAKE_RUNTIME_COMPAT" "$INVOCATION_LOG_COMPAT" "$TMPOUT_COMPAT" "$MTLS_TMP" "$INVOCATION_LOG_MTLS" "$TMPOUT_MTLS"' EXIT
-
-env -i PATH="$PATH" HOME="$HOME" \
-  INVOCATION_LOG_MTLS="$INVOCATION_LOG_MTLS" \
-  bash -c "
-    export CONTEXTS_DEV_BROKERS='b1:9093'
-    export CONTEXTS_DEV_TLS_CERT='$MTLS_TMP/client.crt'
-    export CONTEXTS_DEV_TLS_CERTKEY='$MTLS_TMP/client.key'
-    export CONTEXTS_DEV_TLS_CA='$MTLS_TMP/ca.crt'
-    export KAFKA_CONTAINER_RUNTIME='$FAKE_RUNTIME_COMPAT'
-    export INVOCATION_LOG_COMPAT='$INVOCATION_LOG_MTLS'
-    bash '$INTROSPECT' --auth MTLS --context dev --topic t1 --group g1 '$TMPOUT_MTLS'
-  " > /dev/null 2>&1
-mtls_invocation="$(awk '/---END---/{exit} {print}' "$INVOCATION_LOG_MTLS")"
-
-assert_compat_line \
-  "MTLS bind-mounts client cert at <path>:<path>:ro" \
-  "ARG -v" \
-  "$mtls_invocation"
-
-for cert_path in "$MTLS_TMP/client.crt" "$MTLS_TMP/client.key" "$MTLS_TMP/ca.crt"; do
-  assert_compat_line \
-    "MTLS bind-mounts $cert_path :ro into the container" \
-    "ARG ${cert_path}:${cert_path}:ro" \
-    "$mtls_invocation"
-done
-
-# Under MTLS, no SASL_MECHANISM should be in the captured env (the SCRAM
-# translation block in introspect.sh must be skipped). Because the parent
-# shell exports nothing SASL-related, the ENV dump from the fake runtime
-# should not contain SASL_MECHANISM at all.
-if grep -q "ENV CONTEXTS_DEV_SASL_MECHANISM=" <<<"$mtls_invocation"; then
-  FAIL=$((FAIL + 1))
-  FAILURES+=("MTLS run unexpectedly carries CONTEXTS_DEV_SASL_MECHANISM. Captured:
-$mtls_invocation")
-  echo "FAIL: MTLS run does not carry SASL_MECHANISM"
-else
-  PASS=$((PASS + 1))
-  echo "PASS: MTLS run does not carry SASL_MECHANISM"
-fi
-
-# Path-leak prevention: cert paths exported for OTHER contexts must NOT
-# end up as -v mounts when the current --context only names dev. The
-# OTHER context's cert vars get forwarded as env vars (via the same
-# CONTEXTS_*_TLS_* pattern in the env-var filter), but no `-v` mount
-# should reach argv for them — without the mount, kafkactl can't read
-# them inside the container even though it sees the env var.
-INVOCATION_LOG_LEAK="$(mktemp)"
-TMPOUT_LEAK="$(mktemp -d "${TMPDIR:-/tmp}/kafka-introspect-XXXXXX")"
-trap 'rm -rf -- "$FAKE_RUNTIME" "$INVOCATION_LOG" "$TMPOUT" "$SANDBOX_BIN" "$FAKE_RUNTIME_COMPAT" "$INVOCATION_LOG_COMPAT" "$TMPOUT_COMPAT" "$MTLS_TMP" "$INVOCATION_LOG_MTLS" "$TMPOUT_MTLS" "$INVOCATION_LOG_LEAK" "$TMPOUT_LEAK"' EXIT
-
-# Stage two prod cert files at distinct paths.
-PROD_TMP="$(mktemp -d "${TMPDIR:-/tmp}/kafka-mtls-prod-XXXXXX")"
-trap 'rm -rf -- "$FAKE_RUNTIME" "$INVOCATION_LOG" "$TMPOUT" "$SANDBOX_BIN" "$FAKE_RUNTIME_COMPAT" "$INVOCATION_LOG_COMPAT" "$TMPOUT_COMPAT" "$MTLS_TMP" "$INVOCATION_LOG_MTLS" "$TMPOUT_MTLS" "$INVOCATION_LOG_LEAK" "$TMPOUT_LEAK" "$PROD_TMP"' EXIT
-echo "prod-stub" > "$PROD_TMP/prod-client.crt"
-echo "prod-stub" > "$PROD_TMP/prod-client.key"
-echo "prod-stub" > "$PROD_TMP/prod-ca.crt"
-
-env -i PATH="$PATH" HOME="$HOME" \
-  INVOCATION_LOG_COMPAT="$INVOCATION_LOG_LEAK" \
-  bash -c "
-    export CONTEXTS_DEV_BROKERS='b1:9093'
-    export CONTEXTS_DEV_TLS_CERT='$MTLS_TMP/client.crt'
-    export CONTEXTS_DEV_TLS_CERTKEY='$MTLS_TMP/client.key'
-    export CONTEXTS_DEV_TLS_CA='$MTLS_TMP/ca.crt'
-    export CONTEXTS_PROD_BROKERS='prod:9093'
-    export CONTEXTS_PROD_TLS_CERT='$PROD_TMP/prod-client.crt'
-    export CONTEXTS_PROD_TLS_CERTKEY='$PROD_TMP/prod-client.key'
-    export CONTEXTS_PROD_TLS_CA='$PROD_TMP/prod-ca.crt'
-    export KAFKA_CONTAINER_RUNTIME='$FAKE_RUNTIME_COMPAT'
-    bash '$INTROSPECT' --auth MTLS --context dev --topic t1 --group g1 '$TMPOUT_LEAK'
-  " > /dev/null 2>&1
-leak_invocation="$(awk '/---END---/{exit} {print}' "$INVOCATION_LOG_LEAK")"
-
-# Prod cert paths must NOT appear in any -v argv when --context dev was passed.
-if grep -qE "ARG -v ${PROD_TMP}/prod-" <<<"$leak_invocation" \
-   || grep -qE "ARG ${PROD_TMP}/prod-.*:${PROD_TMP}/prod-.*:ro" <<<"$leak_invocation"; then
-  FAIL=$((FAIL + 1))
-  FAILURES+=("path-leak: prod cert paths appeared as -v mounts when --context dev was passed. Captured:
-$leak_invocation")
-  echo "FAIL: --context dev does not bind-mount prod cert paths"
-else
-  PASS=$((PASS + 1))
-  echo "PASS: --context dev does not bind-mount prod cert paths"
-fi
-
-# But the dev cert paths SHOULD appear (sanity).
-if grep -qF "ARG ${MTLS_TMP}/client.crt:${MTLS_TMP}/client.crt:ro" <<<"$leak_invocation"; then
-  PASS=$((PASS + 1))
-  echo "PASS: --context dev still bind-mounts dev cert paths in the leak-prevention test"
-else
-  FAIL=$((FAIL + 1))
-  FAILURES+=("--context dev should still mount dev cert paths. Captured:
-$leak_invocation")
-  echo "FAIL: --context dev still bind-mounts dev cert paths in the leak-prevention test"
-fi
 
 # --- Summary ------------------------------------------------------------------
 

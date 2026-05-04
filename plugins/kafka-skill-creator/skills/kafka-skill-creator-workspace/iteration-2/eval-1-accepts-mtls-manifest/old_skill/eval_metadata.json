@@ -1,0 +1,7 @@
+{
+  "eval_id": 1,
+  "eval_name": "accepts-mtls-manifest",
+  "prompt": "(same as with_skill)",
+  "baseline": "old_skill",
+  "expected_baseline_behavior": "the OLD (pre-MTLS) skill REFUSES this manifest because it hard-fails on auth: MTLS — the very behavior eval id 1 used to assert before the MTLS support was added. This is the contrast that the iteration measures."
+}

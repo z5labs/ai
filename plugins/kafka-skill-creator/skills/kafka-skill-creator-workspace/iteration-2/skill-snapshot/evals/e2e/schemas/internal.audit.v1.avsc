@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "AuditEvent",
+  "namespace": "internal.audit.v1",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "actor", "type": "string"},
+    {"name": "action", "type": "string"},
+    {"name": "resource", "type": "string"},
+    {"name": "occurred_at_epoch_ms", "type": "long"}
+  ]
+}

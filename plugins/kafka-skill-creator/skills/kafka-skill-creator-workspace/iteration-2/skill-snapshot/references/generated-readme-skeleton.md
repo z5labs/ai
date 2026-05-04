@@ -28,22 +28,11 @@ The wrappers refuse any topic or group not in this list. Edit `scripts/manifest.
 
 ## One-time setup
 
-The keys to populate per context depend on `cluster.auth` in `scripts/manifest.yml`. SASL_SCRAM contexts need username/password; MTLS contexts need three absolute paths to cert files the wrapper bind-mounts read-only into the kafkactl container.
-
 \`\`\`bash
 # Per environment the team operates against:
 cp scripts/.env.example .env.dev
-
-# SASL_SCRAM contexts:
-#   fill in CONTEXTS_DEV_BROKERS / _SASL_USERNAME / _SASL_PASSWORD
-#
-# MTLS contexts:
-#   fill in CONTEXTS_DEV_BROKERS / _TLS_CERT / _TLS_CERTKEY / _TLS_CA
-#   each cert/key/CA value must be an absolute path; the wrapper mounts
-#   each :ro into the container at the same path the env var declares.
-#
-# Schema Registry (any auth):
-#   also fill in CONTEXTS_DEV_SCHEMAREGISTRY_* if the manifest declares it
+# edit .env.dev — fill in CONTEXTS_DEV_BROKERS / _SASL_USERNAME / _SASL_PASSWORD
+# (and CONTEXTS_DEV_SCHEMAREGISTRY_* if Schema Registry is configured)
 
 # Add the env files to .gitignore — they contain secrets. Run multiple
 # times safely (the grep guard skips entries that already exist):

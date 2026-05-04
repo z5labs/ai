@@ -9,9 +9,8 @@
 # addresses, SASL passwords, Schema Registry URLs) live in .env.<context>
 # files, not here. Run `cp scripts/.env.example .env.dev` after generation.
 #
-# v1 supports SASL/SCRAM and MTLS (mutual TLS) for broker auth, plus Schema
-# Registry basic auth. SASL/PLAIN (#63) and OAUTHBEARER (#65) are tracked as
-# follow-ups. For an MTLS template, see manifest.example.mtls.yml.
+# v1 supports SASL/SCRAM + Schema Registry basic auth only. mTLS (#64),
+# SASL/PLAIN (#63), and OAUTHBEARER (#65) are tracked as follow-ups.
 
 # Drives the generated skill name (kafka-payments) and its triggering
 # description. Path-safe characters only: [A-Za-z0-9_-].
@@ -30,13 +29,12 @@ consumer_groups:
   - payments-refunds-archiver
 
 cluster:
-  # v1 accepts SASL_SCRAM or MTLS. For MTLS, see manifest.example.mtls.yml.
-  # Other values (SASL_PLAIN #63, OAUTHBEARER #65) are rejected with a
-  # pointer to the tracking issue.
+  # v1: SASL_SCRAM only. Other values are rejected with a pointer to the
+  # tracking issue.
   auth: SASL_SCRAM
 
-  # 'required' = TLS to the brokers (server auth). 'none' is cleartext
-  # SASL on a trusted network. Required to be 'required' when auth: MTLS.
+  # 'required' = TLS to the brokers (server auth). For mTLS (client
+  # certs), see #64.
   tls: required
 
   # Optional. Omit this whole block if the team's topics aren't

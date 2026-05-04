@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "Refund",
+  "namespace": "payments.refunds.v1",
+  "fields": [
+    {"name": "refund_id", "type": "string"},
+    {"name": "order_id", "type": "string"},
+    {"name": "amount_cents", "type": "long"},
+    {"name": "reason", "type": ["null", "string"], "default": null},
+    {"name": "created_at_epoch_ms", "type": "long"}
+  ]
+}

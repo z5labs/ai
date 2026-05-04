@@ -34,15 +34,14 @@ Offset resets are non-destructive at the Kafka layer (they change a consumer's r
 
 ## v1 scope
 
-- **Auth**: SASL/SCRAM, optionally with Schema Registry HTTP basic auth.
-- **Container**: `deviceinsight/kafkactl:v5.18.0-scratch` runs every kafkactl invocation (pinned for reproducibility); the host needs only `docker` or `podman`.
+- **Auth**: SASL/SCRAM or MTLS (mutual TLS) for broker auth, optionally with Schema Registry HTTP basic auth. The schema couples shape to mode: SASL_SCRAM contexts must declare `sasl_mechanism`, MTLS contexts must not (the cert is the auth) and must run with `cluster.tls: required`.
+- **Container**: `deviceinsight/kafkactl:v5.18.0-scratch` runs every kafkactl invocation (pinned for reproducibility); the host needs only `docker` or `podman`. For MTLS contexts the wrapper bind-mounts each cert/key/CA path read-only into the container.
 - **Deferred** (each tracked as a follow-up issue):
   - SASL/PLAIN — [#63](https://github.com/z5labs/ai/issues/63)
-  - mTLS — [#64](https://github.com/z5labs/ai/issues/64)
   - OAUTHBEARER (OIDC) — [#65](https://github.com/z5labs/ai/issues/65)
   - CI workflow that runs the e2e fixture (script-level smoke, no model iteration) — [#77](https://github.com/z5labs/ai/issues/77)
   - macOS support for the e2e fixture — [#78](https://github.com/z5labs/ai/issues/78)
-  - TLS coverage in the e2e fixture — [#79](https://github.com/z5labs/ai/issues/79)
+  - TLS / mTLS coverage in the e2e fixture — [#79](https://github.com/z5labs/ai/issues/79). The fixture's broker still uses cleartext SASL_PLAINTEXT; mTLS is exercised by behavioral evals (script-level + synthetic generation) until cert provisioning lands in the fixture.
 
 A manifest declaring an unsupported auth value is rejected with a one-line pointer to the matching deferred issue.
 
@@ -95,16 +94,21 @@ The leaf directory is overwritten on every run; treat any local edits to generat
 
 ## Connection details and credential routing
 
-All connection details (broker addresses, SASL credentials, Schema Registry credentials) are read from environment variables matching kafkactl's `CONTEXTS_<NAME>_*` convention:
+All connection details (broker addresses, SASL credentials, mTLS cert paths, Schema Registry credentials) are read from environment variables matching kafkactl's `CONTEXTS_<NAME>_*` convention. Required keys depend on `cluster.auth`:
 
-| Variable | Purpose |
-|---|---|
-| `CONTEXTS_<CTX>_BROKERS` | Whitespace-separated `host:port` list. |
-| `CONTEXTS_<CTX>_SASL_USERNAME` | SASL username for this context. |
-| `CONTEXTS_<CTX>_SASL_PASSWORD` | SASL password — never seen by the model, read directly into the kafkactl container. |
-| `CONTEXTS_<CTX>_SCHEMAREGISTRY_URL` | (Optional) Schema Registry endpoint. |
-| `CONTEXTS_<CTX>_SCHEMAREGISTRY_USERNAME` | (Optional, basic auth) SR username. |
-| `CONTEXTS_<CTX>_SCHEMAREGISTRY_PASSWORD` | (Optional, basic auth) SR password. |
+| Variable | Purpose | When required |
+|---|---|---|
+| `CONTEXTS_<CTX>_BROKERS` | Whitespace-separated `host:port` list. | always |
+| `CONTEXTS_<CTX>_SASL_USERNAME` | SASL username for this context. | `auth: SASL_SCRAM` |
+| `CONTEXTS_<CTX>_SASL_PASSWORD` | SASL password — never seen by the model, read directly into the kafkactl container. | `auth: SASL_SCRAM` |
+| `CONTEXTS_<CTX>_TLS_CERT` | Absolute path to the client certificate PEM. The wrapper bind-mounts the file `:ro` into the container at the same path. | `auth: MTLS` |
+| `CONTEXTS_<CTX>_TLS_CERTKEY` | Absolute path to the client key PEM. Bind-mounted `:ro` into the container. | `auth: MTLS` |
+| `CONTEXTS_<CTX>_TLS_CA` | Absolute path to the CA bundle PEM the broker certificate chains to. Bind-mounted `:ro` into the container. | `auth: MTLS` |
+| `CONTEXTS_<CTX>_SCHEMAREGISTRY_URL` | Schema Registry endpoint. | when `cluster.schema_registry` is declared |
+| `CONTEXTS_<CTX>_SCHEMAREGISTRY_USERNAME` | SR username. | `cluster.schema_registry.auth: basic` |
+| `CONTEXTS_<CTX>_SCHEMAREGISTRY_PASSWORD` | SR password. | `cluster.schema_registry.auth: basic` |
+
+For MTLS, each cert path must be **absolute** and exist on the host at validation time. Only the active `--context`'s cert paths get bind-mounted at runtime — paths exported for other contexts are forwarded as env vars by the env-var filter but never get a mount, so kafkactl in the container can't read them. This is what stops a prod cert path from accidentally leaking into a dev container invocation.
 
 Where `<CTX>` is the context's `name` value, uppercased and with `-` replaced by `_`. See `skills/kafka-skill-creator/references/kafkactl-env-vars.md` for the full convention.
 

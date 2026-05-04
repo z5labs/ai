@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://z5labs.dev/kafka-skill-creator/manifest.schema.json",
   "title": "kafka-skill-creator manifest (v1)",
-  "description": "Declares the Kafka topics, consumer groups, cluster shape, and per-environment contexts owned by a team. The generator turns a valid manifest into a kafka-<team> skill. v1 supports SASL/SCRAM and MTLS (mutual TLS) for broker auth, plus Schema Registry basic auth; SASL/PLAIN (#63) and OAUTHBEARER (#65) are tracked separately.",
+  "description": "Declares the Kafka topics, consumer groups, cluster shape, and per-environment contexts owned by a team. The generator turns a valid manifest into a kafka-<team> skill. v1 supports SASL/SCRAM and Schema Registry basic auth only; mTLS (#64), SASL/PLAIN (#63), and OAUTHBEARER (#65) are tracked separately.",
   "type": "object",
   "required": ["team", "topics", "consumer_groups", "cluster", "contexts"],
   "additionalProperties": false,
@@ -38,18 +38,18 @@
     },
     "cluster": {
       "type": "object",
-      "description": "Cluster-wide shape. Per-environment values (broker addresses, credentials, cert paths) live in .env.<context> at runtime, not here.",
+      "description": "Cluster-wide shape. Per-environment values (broker addresses, credentials) live in .env.<context> at runtime, not here.",
       "required": ["auth"],
       "additionalProperties": false,
       "properties": {
         "auth": {
           "type": "string",
-          "description": "Authentication mechanism. v1 accepts SASL_SCRAM and MTLS; other values (SASL_PLAIN #63, OAUTHBEARER #65) are rejected with a pointer to the tracking issue.",
-          "enum": ["SASL_SCRAM", "MTLS"]
+          "description": "Authentication mechanism. v1 accepts SASL_SCRAM only; other values are rejected with a pointer to the tracking issue.",
+          "enum": ["SASL_SCRAM"]
         },
         "tls": {
           "type": "string",
-          "description": "TLS posture for client connections. 'required' means the broker terminates TLS and the client must use it; 'none' is for cleartext SASL on a trusted network. Under auth: MTLS this MUST be 'required' — mutual TLS implies TLS — enforced by the top-level if/then/else below.",
+          "description": "TLS posture for client connections. 'required' means the broker terminates TLS and the client must use it; 'none' is for cleartext SASL on a trusted network. Note: 'required' here is server-auth only — mutual TLS (client certs) is tracked in #64.",
           "enum": ["required", "none"],
           "default": "required"
         },
@@ -74,6 +74,7 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "required": ["name", "sasl_mechanism"],
         "additionalProperties": false,
         "properties": {
           "name": {
@@ -85,59 +86,11 @@
           },
           "sasl_mechanism": {
             "type": "string",
-            "description": "SCRAM variant used by this environment. Required when cluster.auth: SASL_SCRAM; forbidden when cluster.auth: MTLS (the cert is the auth — there's no SASL exchange).",
+            "description": "SCRAM variant used by this environment.",
             "enum": ["SCRAM-SHA-256", "SCRAM-SHA-512"]
           }
         }
       }
     }
-  },
-  "allOf": [
-    {
-      "if": {
-        "properties": {
-          "cluster": {
-            "properties": { "auth": { "const": "SASL_SCRAM" } },
-            "required": ["auth"]
-          }
-        },
-        "required": ["cluster"]
-      },
-      "then": {
-        "properties": {
-          "contexts": {
-            "items": {
-              "required": ["name", "sasl_mechanism"]
-            }
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "cluster": {
-            "properties": { "auth": { "const": "MTLS" } },
-            "required": ["auth"]
-          }
-        },
-        "required": ["cluster"]
-      },
-      "then": {
-        "properties": {
-          "cluster": {
-            "properties": {
-              "tls": { "const": "required" }
-            }
-          },
-          "contexts": {
-            "items": {
-              "required": ["name"],
-              "not": { "required": ["sasl_mechanism"] }
-            }
-          }
-        }
-      }
-    }
-  ]
+  }
 }

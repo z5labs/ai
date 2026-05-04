@@ -1,0 +1,17 @@
+{
+  "users": [
+    {
+      "username": "sruser",
+      "algorithm": "scrypt",
+      "salt": "o08B9pwexFbu02BJ7PeYxw",
+      "password_hash": "Ts/bJsLpPi6S5uWerrqV40VcAy7DDrf3NGgjuuCadUtjSE712fOGKHblhN8745xojUT8bSzKSHBINMmonm6g/g=="
+    }
+  ],
+  "permissions": [
+    {
+      "username": "sruser",
+      "operation": "Write",
+      "resource": ".*"
+    }
+  ]
+}

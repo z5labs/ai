@@ -22,12 +22,13 @@ State this posture in the generated `SKILL.md` so the line doesn't drift toward 
 
 ## v1 scope
 
-- **Auth**: SASL/SCRAM or MTLS (mutual TLS) for broker auth, optionally with Schema Registry HTTP basic auth.
-- **Deferred**: SASL/PLAIN ([#63]), OAUTHBEARER ([#65]), end-to-end eval against a real cluster ([#66]).
+- **Auth**: SASL/SCRAM only (with optional Schema Registry HTTP basic auth).
+- **Deferred**: SASL/PLAIN ([#63]), mTLS ([#64]), OAUTHBEARER ([#65]), end-to-end eval against a real cluster ([#66]).
 
-When a manifest specifies an auth value other than `SASL_SCRAM` or `MTLS`, refuse with a one-line pointer to the matching deferred-auth issue. Do not silently accept and degrade.
+When a manifest specifies an auth value other than `SASL_SCRAM`, refuse with a one-line pointer to the matching deferred-auth issue. Do not silently accept and degrade.
 
 [#63]: https://github.com/z5labs/ai/issues/63
+[#64]: https://github.com/z5labs/ai/issues/64
 [#65]: https://github.com/z5labs/ai/issues/65
 [#66]: https://github.com/z5labs/ai/issues/66
 
@@ -91,34 +92,24 @@ Set these before invoking `/kafka-skill-creator` so introspection runs against t
 Stop and refuse if any of the following are unmet:
 
 1. **Container runtime** — `docker` or `podman` on `PATH` (auto-detected, or override via `KAFKA_CONTAINER_RUNTIME`).
-2. **Manifest validates** against `scripts/manifest.schema.json`. v1 hard-fails on `cluster.auth` values other than `SASL_SCRAM` or `MTLS` and points at the matching deferred issue. The schema also enforces shape coupling via `if/then/else`: under SASL_SCRAM each context must declare `sasl_mechanism`; under MTLS contexts must NOT declare `sasl_mechanism` (the cert is the auth) and `cluster.tls` must be `required` (mTLS implies TLS). The schema annotates `default:` values for two optional fields, but JSON Schema's `default` is documentation, not validator behavior — fill them in explicitly after validation so two runs against the same manifest are deterministic regardless of whether the operator wrote the defaults out:
+2. **Manifest validates** against `scripts/manifest.schema.json`. v1 hard-fails on `cluster.auth` values other than `SASL_SCRAM` and points at the matching deferred issue. The schema annotates `default:` values for two optional fields, but JSON Schema's `default` is documentation, not validator behavior — fill them in explicitly after validation so two runs against the same manifest are deterministic regardless of whether the operator wrote the defaults out:
    - `cluster.tls` defaults to `required` when omitted.
    - `cluster.schema_registry.auth` defaults to `basic` when the `cluster.schema_registry` block is present and `auth` is omitted.
 3. **Context names are unique after normalization.** Two complications stack here. First, JSON Schema's `uniqueItems: true` only rejects fully-identical objects, so two contexts with the same `name` but different `sasl_mechanism` would slip past it. Second, env-var lookup normalizes context names by uppercasing and replacing `-` with `_` — so `dev-1` and `dev_1` are *distinct* raw strings but collide on the same `CONTEXTS_DEV_1_*` env-var prefix. After the schema validates, walk `contexts[]`, normalize each `name` (uppercase + `-` → `_`), and refuse with a named error if any normalized form repeats. Surface both the raw names and the colliding normalized form in the error so the operator can fix the manifest without digging through env-var conventions.
 4. **Path-safety on `team`** — must match `^[A-Za-z0-9_-]+$`. The `--output` path itself is taken at face value (it's an explicit operator choice), but `team` flows into generated frontmatter and the default output path segment, so it stays restricted.
-5. **Per-context env vars are populated** for every context declared in the manifest. For each `<ctx>`, derive `<UPPER>` by uppercasing the name and replacing `-` with `_`. The required keys depend on `cluster.auth`:
-
-   **SASL_SCRAM** (all three must be set and non-empty):
+5. **Per-context env vars are populated** for every context declared in the manifest. For each `<ctx>`, derive `<UPPER>` by uppercasing the name and replacing `-` with `_`, then check that all three are set and non-empty:
    - `CONTEXTS_<UPPER>_BROKERS`
    - `CONTEXTS_<UPPER>_SASL_USERNAME`
    - `CONTEXTS_<UPPER>_SASL_PASSWORD`
 
-   **MTLS** (all four must be set and non-empty):
-   - `CONTEXTS_<UPPER>_BROKERS`
-   - `CONTEXTS_<UPPER>_TLS_CERT`
-   - `CONTEXTS_<UPPER>_TLS_CERTKEY`
-   - `CONTEXTS_<UPPER>_TLS_CA`
-
-   For MTLS, additionally each cert/key/CA value must be an **absolute path** that **exists** on the host. Surface "must be absolute" / "file not found" with the same single-message refusal shape as the missing-env-var case (one message listing every offender, not three rounds of fail-then-retry). Docker's bind-mount syntax requires absolute paths and a missing cert produces an opaque kafkactl error from inside the container — catching both up-front avoids both traps.
-
-   And, if the manifest's `cluster.schema_registry` block is present (regardless of broker auth mode), also:
+   And, if the manifest's `cluster.schema_registry` block is present, also:
    - `CONTEXTS_<UPPER>_SCHEMAREGISTRY_URL`
 
    And, if `cluster.schema_registry.auth: basic`, also:
    - `CONTEXTS_<UPPER>_SCHEMAREGISTRY_USERNAME`
    - `CONTEXTS_<UPPER>_SCHEMAREGISTRY_PASSWORD`
 
-   If **any** are unset (or, for MTLS cert paths, fail the absolute-path / file-exists check) for **any** declared context, stop. Print the full missing list and tell the user to export them — directly, or via a credential helper they already use (`op run --env-file=…`, `vault`, `direnv`, `gcloud`). Do **not** prompt for them, accept them inline, or invent placeholders.
+   If **any** are unset for **any** declared context, stop. Print the full missing list and tell the user to export them — directly, or via a credential helper they already use (`op run --env-file=…`, `vault`, `direnv`, `gcloud`). Do **not** prompt for them, accept them inline, or invent placeholders.
 
    The reason is the same one postgres-skill-creator hardened in [#42](https://github.com/z5labs/ai/issues/42): secrets must reach tools out-of-band, never through model context. The libpq-equivalent here is kafkactl's documented `CONTEXTS_<NAME>_*` convention — see `references/kafkactl-env-vars.md`.
 
@@ -137,34 +128,21 @@ Stop and refuse if any of the following are unmet:
 
 ## Step 1: Run introspection
 
-Before invoking `introspect.sh`, export the manifest's static cluster-shape values for the chosen context. The script needs the manifest's `cluster.auth` value as `--auth SASL_SCRAM|MTLS` so it knows which credential vars to require and (for MTLS) which cert files to bind-mount into the kafkactl container. Setting the manifest's static shape explicitly here also ties the captured references to the same auth shape the generated wrappers will use.
+Before invoking `introspect.sh`, export the manifest's static cluster-shape values for the chosen context. The script treats `CONTEXTS_<NAME>_SASL_MECHANISM` as optional (kafkactl has a default) but kafkactl's default is not guaranteed to match this team's cluster — a SCRAM-SHA-256 broker would silently reject SCRAM-SHA-512 auth and the whole introspection would fail with an opaque error. Setting the manifest values explicitly ties the captured references to the same auth shape the generated wrappers will use.
 
-Under SASL_SCRAM, use the manifest's verbatim mechanism value (`SCRAM-SHA-256` / `SCRAM-SHA-512`); `introspect.sh` re-exports it under the same env-var name in kafkactl's casing convention before invoking the container. The skill compensates for two kafkactl quirks documented in `references/kafkactl-env-vars.md`: (1) env-var contexts must already be declared in a `config.yml` file before overlays apply, so `introspect.sh` writes a one-line config to a temp dir and mounts it; (2) kafkactl's CLI accepts `scram-sha512` but not `SCRAM-SHA-512`, so the env-var value gets translated.
-
-Under MTLS, no SASL exports are emitted — the cert is the auth. The cert paths still flow via `CONTEXTS_<UPPER>_TLS_CERT/CERTKEY/CA` (already validated in Precondition 5) and `introspect.sh` bind-mounts each one read-only into the container so kafkactl reads it at the same path the env var declares.
+Use the manifest's verbatim mechanism value (`SCRAM-SHA-256` / `SCRAM-SHA-512`); `introspect.sh` re-exports it under the same env-var name in kafkactl's casing convention before invoking the container. The skill compensates for two kafkactl quirks documented in `references/kafkactl-env-vars.md`: (1) env-var contexts must already be declared in a `config.yml` file before overlays apply, so `introspect.sh` writes a one-line config to a temp dir and mounts it; (2) kafkactl's CLI accepts `scram-sha512` but not `SCRAM-SHA-512`, so the env-var value gets translated.
 
 ```bash
 upper="$(printf '%s' "$CONTEXT" | tr '[:lower:]' '[:upper:]')"
 upper="${upper//-/_}"
 
 # Static shape from the manifest. None of these are secrets.
-# Pick the export block that matches cluster.auth:
-
-# --- SASL_SCRAM ---
 export CONTEXTS_${upper}_SASL_ENABLED=true
 export CONTEXTS_${upper}_SASL_MECHANISM="<sasl_mechanism for this context from manifest>"
 export CONTEXTS_${upper}_TLS_ENABLED="<true if cluster.tls=required else false>"
-
-# --- MTLS ---
-export CONTEXTS_${upper}_TLS_ENABLED=true
-# No SASL_* exports under MTLS. Cert paths
-# (CONTEXTS_${upper}_TLS_CERT / CERTKEY / CA) come from the operator's
-# environment; introspect.sh bind-mounts them into the kafkactl container.
-
 # (CONTEXTS_${upper}_SCHEMAREGISTRY_AUTH only set in Step 2 when SR is configured)
 
 bash <skill-dir>/scripts/introspect.sh \
-  --auth <SASL_SCRAM|MTLS> \
   --context "$CONTEXT" \
   --topic <T> [--topic <T> ...] \
   --group <G> [--group <G> ...] \
@@ -214,9 +192,9 @@ The description is generated from a fixed template — substitution only, no par
 
 Read `references/generated-skill-scripts.md` for the verbatim bash bodies. Substitute the `<...>` placeholders with the team's topic and group lists from the manifest.
 
-`_common.sh` owns the shared bootstrap: env-file resolution (`--env-file PATH` → `KAFKA_ENV_FILE` → `./.env`, with explicit-path-must-exist semantics), allowlist enforcement (`require_allowed`), per-context env-var validation (auth-mode-aware — see `validate_context_env`), cert mount-args building (`build_cert_mount_args` — empty under SASL_SCRAM, three `-v <path>:<path>:ro` entries under MTLS), container runtime selection, and the kafkactl-shaped env-var forwarding filter (`^(CONTEXTS_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)`).
+`_common.sh` owns the shared bootstrap: env-file resolution (`--env-file PATH` → `KAFKA_ENV_FILE` → `./.env`, with explicit-path-must-exist semantics), allowlist enforcement (`require_allowed`), per-context env-var validation, container runtime selection, and the kafkactl-shaped env-var forwarding filter (`^(CONTEXTS_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)`).
 
-Each wrapper sources `_common.sh`, parses its own flags, calls `require_allowed` against `ALLOWED_TOPICS` or `ALLOWED_GROUPS`, validates the chosen context's env vars, builds the cert mount args, then `exec`s kafkactl in the container with `${MOUNT_ARGS[@]}` spliced into the docker run line. Per-script flag and subcommand specifications:
+Each wrapper sources `_common.sh`, parses its own flags, calls `require_allowed` against `ALLOWED_TOPICS` or `ALLOWED_GROUPS`, validates the chosen context's env vars, then `exec`s kafkactl in the container. Per-script flag and subcommand specifications:
 
 - **`consume.sh <topic> --context <ctx> [--from-beginning] [--max N] [--partition P] [--env-file PATH]`** — `kafkactl consume "$TOPIC" --context "$CONTEXT" --output json --exit` plus `--from-beginning`, `--max-messages N`, `--partitions P` when those flags are present. No `--key-encoding` / `--value-encoding` overrides — kafkactl picks Schema Registry deserialization automatically when SR is configured.
 - **`describe-topic.sh <topic> --context <ctx> [--env-file PATH]`** — `kafkactl describe topic "$TOPIC" --context "$CONTEXT" --output json`. (Worked example in `references/generated-skill-scripts.md`.)
@@ -228,34 +206,7 @@ Each script `chmod +x` after writing. Each script's allowlist re-validation is f
 
 ### `<output>/scripts/.env.example`
 
-A commented template per declared context. The block shape depends on `cluster.auth`. Pre-fill the keys (no values — values are environment-specific):
-
-**SASL_SCRAM context block:**
-
-```
-# ---- context: dev ----
-# CONTEXTS_DEV_BROKERS="b1.dev:9093 b2.dev:9093"
-# CONTEXTS_DEV_SASL_USERNAME=
-# CONTEXTS_DEV_SASL_PASSWORD=
-# CONTEXTS_DEV_SCHEMAREGISTRY_URL=https://sr.dev:8081
-# CONTEXTS_DEV_SCHEMAREGISTRY_USERNAME=
-# CONTEXTS_DEV_SCHEMAREGISTRY_PASSWORD=
-```
-
-**MTLS context block** (cert paths must be absolute; the wrapper bind-mounts each :ro into the kafkactl container):
-
-```
-# ---- context: prod (mTLS) ----
-# CONTEXTS_PROD_BROKERS="b1.prod:9093 b2.prod:9093"
-# CONTEXTS_PROD_TLS_CERT=/etc/ssl/kafka/prod-client.crt
-# CONTEXTS_PROD_TLS_CERTKEY=/etc/ssl/kafka/prod-client.key
-# CONTEXTS_PROD_TLS_CA=/etc/ssl/kafka/prod-ca.crt
-# CONTEXTS_PROD_SCHEMAREGISTRY_URL=https://sr.prod:8081
-# CONTEXTS_PROD_SCHEMAREGISTRY_USERNAME=
-# CONTEXTS_PROD_SCHEMAREGISTRY_PASSWORD=
-```
-
-Wrap the whole file with this header and footer, and emit one block per declared context using the shape above:
+A commented template per declared context. Pre-fill the comments with the keys (no values — values are environment-specific):
 
 ```
 # kafka-<team> .env per environment.
@@ -264,23 +215,34 @@ Wrap the whole file with this header and footer, and emit one block per declared
 # want to populate, fill in real values, and add the chosen filename to
 # .gitignore — these contain secrets.
 
-<one block per context, picking SASL_SCRAM or MTLS shape per cluster.auth>
+# ---- context: dev ----
+# CONTEXTS_DEV_BROKERS="b1.dev:9093 b2.dev:9093"
+# CONTEXTS_DEV_SASL_USERNAME=
+# CONTEXTS_DEV_SASL_PASSWORD=
+# CONTEXTS_DEV_SCHEMAREGISTRY_URL=https://sr.dev:8081
+# CONTEXTS_DEV_SCHEMAREGISTRY_USERNAME=
+# CONTEXTS_DEV_SCHEMAREGISTRY_PASSWORD=
 
-# Any other kafkactl-shaped env var (e.g. CONTEXTS_<NAME>_SASL_MECHANISM to
-# override the default, or a bare BROKERS shorthand for default-context use)
-# set here is also forwarded to kafkactl inside the container, as long as
-# its name matches CONTEXTS_*, TLS_*, SASL_*, SCHEMAREGISTRY_*, or BROKERS.
-# For MTLS contexts the wrapper additionally bind-mounts the three TLS_*
-# cert paths read-only at the same path the env var declares.
+# ---- context: staging ----
+# (same shape, CONTEXTS_STAGING_*)
+
+# ---- context: prod ----
+# (same shape, CONTEXTS_PROD_*)
+
+# Any other kafkactl-shaped env var (e.g. CONTEXTS_<NAME>_TLS_CERTKEY for
+# mTLS-style cert pinning, CONTEXTS_<NAME>_SASL_MECHANISM to override the
+# default, or a bare BROKERS shorthand for default-context use) set here is
+# also forwarded to kafkactl inside the container, as long as its name
+# matches CONTEXTS_*, TLS_*, SASL_*, SCHEMAREGISTRY_*, or BROKERS.
 ```
 
-Emit a `# ---- context: <name> ----` block for **every** context declared in the manifest, picking the SASL_SCRAM or MTLS shape based on `cluster.auth`. Only the active context's cert paths get bind-mounted at runtime — paths exported for other contexts are forwarded as env vars but not mounted, so kafkactl in the container has no way to read them.
+Emit a `# ---- context: <name> ----` block for **every** context declared in the manifest.
 
 ### Per-context static values exported by `_common.sh`
 
 The manifest declares values that are the same across every environment (`sasl_mechanism`, `cluster.tls`, `cluster.schema_registry.auth`). These would normally live in a `kafkactl-config.yml` config file, but mounting that file into the kafkactl container would require pinning a mount path the container expects, and inconsistencies between the file's contents and the env vars are easy to introduce. kafkactl's documented env-var convention (`CONTEXTS_<NAME>_<FIELD>` autocreates the context with that field set), so the wrappers can route everything through env vars and skip the config file entirely.
 
-`_common.sh` therefore exports per-context static values at generation time, one block per declared context. The shape depends on `cluster.auth`:
+`_common.sh` therefore exports per-context static values at generation time, one block per declared context:
 
 ```bash
 # Per-context static values from the manifest. Secrets come from .env at
@@ -288,24 +250,17 @@ The manifest declares values that are the same across every environment (`sasl_m
 # environments. They flow to the container via the same forwarding filter
 # as the .env-supplied secrets (see build_env_args).
 
-# context: dev  (SASL_SCRAM)
+# context: dev
 export CONTEXTS_DEV_SASL_ENABLED=true
-export CONTEXTS_DEV_SASL_MECHANISM=scram-sha512
+export CONTEXTS_DEV_SASL_MECHANISM=SCRAM-SHA-512
 export CONTEXTS_DEV_TLS_ENABLED=true
 export CONTEXTS_DEV_SCHEMAREGISTRY_AUTH=basic   # only when manifest declares schema_registry
 
-# context: prod  (MTLS — example shape)
-# export CONTEXTS_PROD_TLS_ENABLED=true
-# # No SASL_* exports under MTLS. Cert paths come from .env at runtime
-# # (CONTEXTS_PROD_TLS_CERT / CERTKEY / CA) and the wrapper bind-mounts each.
-# export CONTEXTS_PROD_SCHEMAREGISTRY_AUTH=basic   # only when manifest declares schema_registry
+# context: staging  (same shape)
+# context: prod     (same shape)
 ```
 
-For SASL_SCRAM contexts, substitute the manifest's `sasl_mechanism` value translated to kafkactl's casing (`SCRAM-SHA-256` → `scram-sha256`, `SCRAM-SHA-512` → `scram-sha512` — kafkactl rejects the canonical Kafka spelling), and `true`/`false` for `TLS_ENABLED` based on `cluster.tls`.
-
-For MTLS contexts, emit only `CONTEXTS_<UPPER>_TLS_ENABLED=true`. Do **not** emit `SASL_ENABLED` or `SASL_MECHANISM` — `validate_context_env` keys off the absence of `SASL_ENABLED` plus the presence of `TLS_ENABLED` to detect MTLS and require the cert env vars instead. Mixing the two would confuse both the validator and a human reader.
-
-Emit the `SCHEMAREGISTRY_AUTH` line in either case only when the manifest has a `schema_registry` block.
+Substitute `SCRAM-SHA-512` with the manifest's `contexts[].sasl_mechanism`, `true`/`false` for `TLS_ENABLED` based on `cluster.tls`, and emit the `SCHEMAREGISTRY_AUTH` line only when the manifest has a `schema_registry` block.
 
 ### `<output>/scripts/manifest.yml`
 

@@ -1,0 +1,68 @@
+# Single-broker Apache Kafka (KRaft) + Karapace fixture for the
+# kafka-skill-creator end-to-end eval.
+#
+# Why these images:
+#   - apache/kafka — Apache 2.0, no CSL exposure (Confluent's cp-kafka
+#     is CSL-licensed and could change terms in a way that breaks
+#     reproducibility).
+#   - ghcr.io/aiven-open/karapace — Apache 2.0, drop-in compatible with
+#     the Confluent Schema Registry REST API.
+#
+# Karapace runs with network_mode: host so it reaches the broker via
+# localhost:9092 the same way kafkactl on the host does. macOS support
+# for this fixture is tracked in #78.
+
+services:
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: kafka-skill-creator-e2e-kafka
+    ports:
+      - "9092:9092"
+    volumes:
+      # `:z` is the SELinux shared-relabel marker; ignored on systems
+      # without SELinux. Without it, Fedora/RHEL hosts hit "Permission
+      # denied" because the file's host context isn't readable from
+      # inside a container's process context.
+      - ./kafka/server.properties:/etc/kafka/server.properties:ro,z
+      - ./kafka/admin.properties:/etc/kafka/admin.properties:ro,z
+      - ./kafka/start.sh:/usr/local/bin/start.sh:ro,z
+    entrypoint: ["/bin/bash", "/usr/local/bin/start.sh"]
+    healthcheck:
+      # An authenticated probe — TCP-level probes pass before SASL is
+      # ready and produce flaky seed runs.
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 --command-config /etc/kafka/admin.properties >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+  karapace:
+    # Pinned for reproducibility — apache/kafka above is also pinned, and
+    # a moving Karapace tag could change SR API behavior under us without
+    # any repo change. Bump deliberately, not by drift.
+    image: ghcr.io/aiven-open/karapace:6.1.4
+    container_name: kafka-skill-creator-e2e-karapace
+    network_mode: host
+    depends_on:
+      kafka:
+        condition: service_healthy
+    # Karapace's image entrypoint is `python3` — empty argv exits
+    # immediately. Invoke the registry as a module explicitly.
+    command: ["python3", "-m", "karapace"]
+    volumes:
+      - ./karapace/authfile.json:/etc/karapace/authfile.json:ro,z
+    environment:
+      KARAPACE_BOOTSTRAP_URI: localhost:9092
+      KARAPACE_HOST: 0.0.0.0
+      KARAPACE_PORT: 8081
+      KARAPACE_REGISTRY_AUTHFILE: /etc/karapace/authfile.json
+      KARAPACE_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      KARAPACE_SASL_MECHANISM: SCRAM-SHA-512
+      KARAPACE_SASL_PLAIN_USERNAME: app
+      KARAPACE_SASL_PLAIN_PASSWORD: app-secret
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -u sruser:sr-secret http://localhost:8081/subjects >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
