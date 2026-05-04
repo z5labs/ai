@@ -902,6 +902,28 @@ assert_test \
   "export CONTEXTS_DEV_BROKERS=b CONTEXTS_DEV_TLS_CERT=/tmp/does-not-exist.crt CONTEXTS_DEV_TLS_CERTKEY=$MTLS_TMP/client.key CONTEXTS_DEV_TLS_CA=$MTLS_TMP/ca.crt" \
   --auth MTLS --context dev /tmp/kafka-introspect-test
 
+# An unreadable cert (file exists, mode 0000) must also be rejected up front
+# rather than passing -f and failing opaquely inside the container later.
+# Stage a cert file the running test process can't read, then assert the
+# refusal names "not readable" specifically. Skip the test if the test is
+# running as root (root bypasses file mode checks, so -r is true on a 0000
+# file) — rare but worth noting so a CI-as-root run doesn't false-pass.
+UNREADABLE_CERT="$MTLS_TMP/unreadable.crt"
+echo "stub" > "$UNREADABLE_CERT"
+chmod 000 "$UNREADABLE_CERT"
+if [ "$(id -u)" -eq 0 ]; then
+  echo "SKIP: MTLS rejects unreadable cert (running as root; mode bits don't apply)"
+else
+  assert_test \
+    "MTLS rejects unreadable cert path with named error" \
+    2 \
+    "not readable" \
+    "export CONTEXTS_DEV_BROKERS=b CONTEXTS_DEV_TLS_CERT=$UNREADABLE_CERT CONTEXTS_DEV_TLS_CERTKEY=$MTLS_TMP/client.key CONTEXTS_DEV_TLS_CA=$MTLS_TMP/ca.crt" \
+    --auth MTLS --context dev /tmp/kafka-introspect-test
+fi
+# Restore mode so the trap's rm -rf can clean up.
+chmod 600 "$UNREADABLE_CERT" 2>/dev/null || true
+
 # --- MTLS positive-path: cert mounts reach the runtime ------------------------
 #
 # When all cert vars are valid, introspect.sh should bind-mount each cert

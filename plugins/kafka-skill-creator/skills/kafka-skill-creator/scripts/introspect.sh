@@ -396,6 +396,16 @@ if [ "$AUTH" = "MTLS" ]; then
       cert_problems+=("$var=$val (file not found on host)")
       continue
     fi
+    # `-r` is distinct from `-f`: a file the running process cannot read
+    # (wrong owner, restrictive mode, or covered by mandatory access
+    # control like SELinux at the host level) would still pass `-f` and
+    # then fail opaquely inside the container — the wrapper's job is to
+    # surface every preflight problem up front, so reject unreadable
+    # cert paths with a named error too.
+    if [ ! -r "$val" ]; then
+      cert_problems+=("$var=$val (file exists but is not readable by this process; check permissions/SELinux)")
+      continue
+    fi
     CERT_PATHS+=("$val")
   done
   if [ ${#cert_problems[@]} -gt 0 ]; then
@@ -404,7 +414,7 @@ if [ "$AUTH" = "MTLS" ]; then
       for p in "${cert_problems[@]}"; do echo "  - $p"; done
       echo
       echo "each TLS_CERT / TLS_CERTKEY / TLS_CA must be an absolute path to a file the"
-      echo "host can read; the wrapper bind-mounts each path :ro into the kafkactl"
+      echo "host can read; the wrapper bind-mounts each path :ro,z into the kafkactl"
       echo "container at the same path the env var declares."
     } >&2
     exit 2

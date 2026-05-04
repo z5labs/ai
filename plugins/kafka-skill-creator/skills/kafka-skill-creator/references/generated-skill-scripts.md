@@ -160,14 +160,24 @@ validate_context_env() {
         /*) ;;
         *) cert_problems+=("$cert_var=$val (must be an absolute path; got relative)"); continue ;;
       esac
-      [ -f "$val" ] || cert_problems+=("$cert_var=$val (file not found on host)")
+      if [ ! -f "$val" ]; then
+        cert_problems+=("$cert_var=$val (file not found on host)")
+        continue
+      fi
+      # `-r` is distinct from `-f`: a file the running process cannot read
+      # (wrong owner, restrictive mode, or covered by mandatory access
+      # control like SELinux at the host level) would still pass `-f` and
+      # then fail opaquely inside the container. Reject unreadable cert
+      # paths up front so the operator sees the problem here, not as a
+      # cryptic kafkactl error from inside the container.
+      [ -r "$val" ] || cert_problems+=("$cert_var=$val (file exists but is not readable by this process; check permissions/SELinux)")
     done
     if [ ${#cert_problems[@]} -gt 0 ]; then
       {
         echo "error: cert paths for context '$context' are not usable:"
         for p in "${cert_problems[@]}"; do echo "  - $p"; done
         echo "       each TLS_CERT / TLS_CERTKEY / TLS_CA must be an absolute path to a"
-        echo "       file the host can read; the wrapper bind-mounts each :ro into the"
+        echo "       file the host can read; the wrapper bind-mounts each :ro,z into the"
         echo "       kafkactl container at the same path the env var declares."
       } >&2
       exit 2
@@ -175,15 +185,18 @@ validate_context_env() {
   fi
 }
 
-# For MTLS contexts, build -v <path>:<path>:ro args so kafkactl in the
+# For MTLS contexts, build -v <path>:<path>:ro,z args so kafkactl in the
 # container can read each cert at the same path its env var declares.
-# Only the active context's paths reach the runtime — paths exported for
-# OTHER contexts are filtered OUT by build_env_args's per-context-scoped
-# forwarding pattern, so kafkactl in the container neither sees them as
-# env vars nor has a mount to read them through. Empty under SASL_SCRAM.
-# Sets MOUNT_ARGS for the caller. Reads the auth mode from the readonly
-# CONTEXT_AUTH_MODE_<UPPER> constant (same source-of-truth as
-# validate_context_env, for the same .env-can't-flip-it reason).
+# `:z` is the SELinux shared-relabel marker (ignored on systems without
+# SELinux; required on Fedora/RHEL so the container's process context
+# can read the bind-mounted file). Only the active context's paths reach
+# the runtime — paths exported for OTHER contexts are filtered OUT by
+# build_env_args's per-context-scoped forwarding pattern, so kafkactl in
+# the container neither sees them as env vars nor has a mount to read
+# them through. Empty under SASL_SCRAM. Sets MOUNT_ARGS for the caller.
+# Reads the auth mode from the readonly CONTEXT_AUTH_MODE_<UPPER>
+# constant (same source-of-truth as validate_context_env, for the same
+# .env-can't-flip-it reason).
 build_cert_mount_args() {
   local context="$1"
   local upper
@@ -396,7 +409,7 @@ exec "$RUNTIME" run --rm -i \
 
 The `:z` is the SELinux shared-relabel marker; ignored on systems without SELinux. Without it, Fedora/RHEL hosts hit "Permission denied" reading the config because the host's file context isn't accessible from the container's process context.
 
-`build_cert_mount_args` populates `MOUNT_ARGS` with `-v <path>:<path>:ro` entries for each cert path the active context needs. Under SASL_SCRAM the array stays empty, so the splice is a no-op; under MTLS it adds three mounts so kafkactl in the container reads each cert at the same absolute path the env var declares. Splice it BEFORE `${KAFKACTL_ENV_ARGS[@]}` rather than after — argument order doesn't matter to docker, but keeping `-v` flags adjacent makes a `docker run` printout easier to scan during incident debugging.
+`build_cert_mount_args` populates `MOUNT_ARGS` with `-v <path>:<path>:ro,z` entries for each cert path the active context needs (`:z` is the SELinux shared-relabel marker — required on Fedora/RHEL, ignored elsewhere; same flag the config-mount uses for the same reason). Under SASL_SCRAM the array stays empty, so the splice is a no-op; under MTLS it adds three mounts so kafkactl in the container reads each cert at the same absolute path the env var declares. Splice it BEFORE `${KAFKACTL_ENV_ARGS[@]}` rather than after — argument order doesn't matter to docker, but keeping `-v` flags adjacent makes a `docker run` printout easier to scan during incident debugging.
 
 `require_value` and `require_eq_value` come from `_common.sh` (sourced above the flag parser); the wrapper just defines `$USAGE` so those helpers print the right shape on a missing-value error.
 
