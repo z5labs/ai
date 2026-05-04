@@ -4,7 +4,7 @@
     "skill_path": "<path/to/skill>",
     "executor_model": "<model-name>",
     "analyzer_model": "<model-name>",
-    "timestamp": "2026-05-03T23:44:30Z",
+    "timestamp": "2026-05-04T00:05:18Z",
     "evals_run": [
       0,
       1,
@@ -194,9 +194,9 @@
       "run_number": 1,
       "result": {
         "pass_rate": 1.0,
-        "passed": 12,
+        "passed": 14,
         "failed": 0,
-        "total": 12,
+        "total": 14,
         "time_seconds": 213.9,
         "tokens": 37344,
         "tool_calls": 0,
@@ -247,6 +247,16 @@
           "text": "the generated README has no other unsubstituted `<...>` placeholders",
           "passed": true,
           "evidence": "matches: []"
+        },
+        {
+          "text": "the generated SKILL.md's body samples use the resolved output path, not .claude/skills/pg-orders",
+          "passed": true,
+          "evidence": "output path in SKILL.md: True; default path absent: True"
+        },
+        {
+          "text": "the generated SKILL.md has no unsubstituted `<skill-dir>` placeholders",
+          "passed": true,
+          "evidence": "absent"
         },
         {
           "text": "the assistant's report mentions plugin.json registration since --output landed in a plugin tree",

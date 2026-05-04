@@ -1,8 +1,8 @@
 {
   "summary": {
-    "passed": 12,
+    "passed": 14,
     "failed": 0,
-    "total": 12,
+    "total": 14,
     "pass_rate": 1.0
   },
   "expectations": [
@@ -50,6 +50,16 @@
       "text": "the generated README has no other unsubstituted `<...>` placeholders",
       "passed": true,
       "evidence": "matches: []"
+    },
+    {
+      "text": "the generated SKILL.md's body samples use the resolved output path, not .claude/skills/pg-orders",
+      "passed": true,
+      "evidence": "output path in SKILL.md: True; default path absent: True"
+    },
+    {
+      "text": "the generated SKILL.md has no unsubstituted `<skill-dir>` placeholders",
+      "passed": true,
+      "evidence": "absent"
     },
     {
       "text": "the assistant's report mentions plugin.json registration since --output landed in a plugin tree",

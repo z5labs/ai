@@ -1,6 +1,6 @@
 ---
 name: postgres-skill-creator
-description: Introspect a Postgres database and generate a project-level skill (`pg-<dbname>`) that bakes its schema into a reference the model can consult for ad-hoc query/exploration work
+description: Introspect a Postgres database and generate a project-level skill (`pg-<dbname>`) that bakes its schema into a reference the model can consult for ad-hoc query/exploration work. Use whenever the user asks to scaffold a `pg-<dbname>` skill, regenerate one after a schema change, or set up Postgres ad-hoc-query tooling for a specific database. Skip when the user already has an installed `pg-<dbname>` skill and is asking to *use* it (run a query, inspect data, count rows) rather than (re)build it; that's the generated skill's job. Skip too for ordinary "how does Postgres / SQL / `psql` work" questions unrelated to scaffolding a per-database skill — those are general help, not a generator invocation.
 disable-model-invocation: true
 argument-hint: "[--output <skill-dir>]"
 ---
@@ -10,6 +10,23 @@ Generate a project-level skill that captures the schema of the Postgres database
 ## Inputs
 
 This skill takes **no positional arguments**. The only flag it accepts is `--output PATH` (described below). All connection details are read from the standard libpq environment variables, never from arguments — refuse a connection string passed positionally rather than parsing the password out of it, even silently.
+
+### Working-directory precondition
+
+Run this skill from the **project root** — the directory the operator considers the top of their project. The default `./.claude/skills/pg-<dbname>/` path, the Layer 4 symlink-escape check (which compares against `pwd -P`), and the project-root-relative `<skill-dir>` substitutions in generated content all assume CWD is the project root. Invoking from a subdirectory would write the skill to `subdir/.claude/skills/...` (probably not what the operator wanted), pin the symlink-escape check against `pwd -P/subdir`, and bake `subdir/.claude/skills/...`-shaped paths into the generated README — none of which the operator can salvage without regenerating.
+
+Before running anything, sanity-check CWD using `.git/` or `.claude/` as a marker (both are conventional project-root markers; either being present is good enough):
+
+```bash
+if [ ! -d ./.git ] && [ ! -d ./.claude ]; then
+  echo "error: postgres-skill-creator must run from the project root." >&2
+  echo "       neither ./.git nor ./.claude exists in the current directory ($(pwd))." >&2
+  echo "       cd to the project root and re-invoke." >&2
+  exit 2
+fi
+```
+
+This is a heuristic, not a guarantee — a project root without `.git` or `.claude` (a fresh checkout that's never been initialized; a non-git project; a worktree variant) won't match. In those cases the operator can either initialize one of the markers (`mkdir .claude`) or override by running from a parent that does have one. The check is a catch for the common mistake of being one `cd` away from where the skill should land, not a hard refusal of unconventional setups.
 
 ### Output location
 
@@ -108,7 +125,7 @@ Create these files under `<output>/` (the resolved output directory from the Inp
 
 ### `SKILL.md`
 
-Use this skeleton; substitute the `<...>` placeholders with real content. The frontmatter `description` is what determines triggering, so make it specific to this database — name the database, mention that it's for ad-hoc reads/writes, and list the **top 3–5 prominent tables** (computed once from introspection by the deterministic rule below).
+Use this skeleton; substitute the `<...>` placeholders with real content. The frontmatter `description` is what determines triggering, so make it specific to this database — name the database, mention that it's for ad-hoc reads/writes, and list the **top 3–5 prominent tables** (computed once from introspection by the deterministic rule below). The setup and per-invocation samples in the template body use `<skill-dir>` everywhere a path appears — substitute the same project-root-relative path you'll use in `<output>/README.md` (e.g. `.claude/skills/pg-<dbname>` for a default install, `plugins/team-data/skills/pg-orders` for a plugin-tree install). The frontmatter `name` stays `pg-<dbname>` regardless; only paths use `<skill-dir>`.
 
 **Top-table ranking (deterministic).** Both the SKILL.md `<top tables>` list above and the README's `<top tables>` / `<top-table>` substitutions use the same ranked list. Compute it once per generation by sorting all tables in `tables.tsv` by:
 
@@ -136,7 +153,7 @@ Use `scripts/query.sh` to execute SQL. It loads connection details (host, port, 
 
 Copy the example env file and fill in real credentials for whichever environment you connect to:
 
-    cp .claude/skills/pg-<dbname>/scripts/.env.example .env.dev
+    cp <skill-dir>/scripts/.env.example .env.dev
     # edit .env.dev — set PGHOST, PGPORT, PGUSER, PGPASSWORD
 
 Repeat for additional environments (`.env.staging`, `.env.prod`, ...). Add the chosen filename(s) to `.gitignore` so secrets don't get committed:
@@ -154,13 +171,13 @@ Repeat for additional environments (`.env.staging`, `.env.prod`, ...). Add the c
 
 If `--env-file` or `PG_ENV_FILE` is set, it must point to an existing file or the script exits with an error. If neither is set and `./.env` does not exist, the generation-time defaults are used.
 
-    bash .claude/skills/pg-<dbname>/scripts/query.sh "SELECT ..."
+    bash <skill-dir>/scripts/query.sh "SELECT ..."
 
-    bash .claude/skills/pg-<dbname>/scripts/query.sh --env-file .env.prod "SELECT ..."
+    bash <skill-dir>/scripts/query.sh --env-file .env.prod "SELECT ..."
 
 For multi-statement scripts, pipe via stdin:
 
-    PG_ENV_FILE=.env.staging bash .claude/skills/pg-<dbname>/scripts/query.sh < script.sql
+    PG_ENV_FILE=.env.staging bash <skill-dir>/scripts/query.sh < script.sql
 
 ## Schema overview
 
@@ -428,6 +445,7 @@ Only create this file if `enums.tsv` is non-empty.
 After writing files, check (against the resolved `<output>` directory, not a hardcoded `.claude/skills/...` path — the verify step has to follow the skill wherever `--output` landed it):
 
 - `<output>/SKILL.md` exists and is non-empty
+- `<output>/SKILL.md` has no unsubstituted `<...>` placeholders in its body — `grep -E '<dbname>|<skill-dir>|<top tables?>|<count>'` should return nothing inside the rendered file. The generated SKILL.md's setup samples use `<skill-dir>` (which the generator must substitute), and the schema-overview placeholders use `<count>` and `<top tables>` — a generation bug that filled in the description but left the body samples unsubstituted would have Claude tell users to `cp <skill-dir>/scripts/.env.example .env.dev`, which fails to find anything.
 - `<output>/SKILL.md`'s frontmatter `name` is `pg-<dbname>` — driven by `PGDATABASE`, **not** by the leaf segment of `<output>`. A user who passes `--output plugins/team-data/skills/pg-orders/` with `PGDATABASE=orders` should see `name: pg-orders`; a generator bug that takes `name` from `basename <output>` would produce `name: pg-orders` here too (coincidentally correct) but `name: pg-data` if the operator named the leaf carelessly. Verify by reading the frontmatter directly, not by inspecting the path.
 - `<output>/SKILL.md`'s frontmatter does **not** contain `disable-model-invocation: true` (the generated skill must be model-invocable so it fires on natural-language prompts)
 - `<output>/README.md` exists and is non-empty

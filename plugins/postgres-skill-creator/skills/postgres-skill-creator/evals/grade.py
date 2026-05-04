@@ -556,6 +556,13 @@ def grade_honors_output_flag(outputs_dir: Path, _fixture: dict) -> list[dict]:
     other_placeholder_re = re.compile(r"<dbname>|<top tables?>|<top-table>|<table count>|<view count>|<enum count>")
     other_placeholder_residue = bool(other_placeholder_re.search(readme_text))
 
+    # Generated SKILL.md body checks. SKILL.md and README.md are separate files; the
+    # README assertions above don't catch a SKILL.md whose `cp .../scripts/.env.example`
+    # and `bash .../scripts/query.sh` lines still hardcode .claude/skills/pg-orders/.
+    skill_md_uses_output_path = "plugins/team-data/skills/pg-orders/scripts" in skill_text
+    skill_md_avoids_default_path = ".claude/skills/pg-orders/scripts" not in skill_text
+    skill_md_skill_dir_residue = "<skill-dir>" in skill_text
+
     # Regeneration command must include the actual --output flag, not a bare invocation.
     # Match `/postgres-skill-creator --output plugins/team-data/skills/pg-orders` with
     # optional trailing slash, on the same logical line as the slash command. Tolerant
@@ -617,6 +624,12 @@ def grade_honors_output_flag(outputs_dir: Path, _fixture: dict) -> list[dict]:
         {**(passed if not other_placeholder_residue else failed)(
             "the generated README has no other unsubstituted `<...>` placeholders",
             f"matches: {other_placeholder_re.findall(readme_text)[:5]}")},
+        {**(passed if skill_md_uses_output_path and skill_md_avoids_default_path else failed)(
+            "the generated SKILL.md's body samples use the resolved output path, not .claude/skills/pg-orders",
+            f"output path in SKILL.md: {skill_md_uses_output_path}; default path absent: {skill_md_avoids_default_path}")},
+        {**(passed if not skill_md_skill_dir_residue else failed)(
+            "the generated SKILL.md has no unsubstituted `<skill-dir>` placeholders",
+            "absent" if not skill_md_skill_dir_residue else f"<skill-dir> appears {skill_text.count('<skill-dir>')} times in SKILL.md")},
         {**(passed if plugin_json_mentioned else failed)(
             "the assistant's report mentions plugin.json registration since --output landed in a plugin tree",
             "plugin.json mentioned" if plugin_json_mentioned else "no plugin.json mention in response")},
