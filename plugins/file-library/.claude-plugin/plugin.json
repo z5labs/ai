@@ -1,6 +1,6 @@
 {
   "name": "file-library",
-  "description": "Tools for building Go file library packages: scaffolding, spec extraction, and feature implementation",
+  "description": "Tools for building Go file library packages: scaffolding, spec extraction, feature implementation, audit, fixtures, and an autonomous orchestrator agent.",
   "version": "0.1.0",
   "author": {
     "name": "z5labs"

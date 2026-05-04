@@ -1,0 +1,23 @@
+{
+  "name": "file-library",
+  "description": "Tools for building Go file library packages: scaffolding, spec extraction, feature implementation, audit, fixtures, and an autonomous orchestrator agent.",
+  "version": "0.1.0",
+  "author": {
+    "name": "z5labs"
+  },
+  "repository": "https://github.com/z5labs/ai",
+  "license": "MIT",
+  "agents": [
+    "./agents"
+  ],
+  "skills": [
+    "./skills/extract-text-spec",
+    "./skills/extract-binary-spec",
+    "./skills/new-go-text-file-library",
+    "./skills/new-go-binary-file-library",
+    "./skills/implement-go-text-file-library",
+    "./skills/implement-go-binary-file-library",
+    "./skills/review-file-library",
+    "./skills/add-fixture"
+  ]
+}
