@@ -26,7 +26,7 @@ This file works under both Claude Code and GitHub Copilot CLI: the preloaded ski
 ## Outputs
 
 - **A working Go file-library package** at `<parent>/<package-name>/` with green `go test -race ./...`, an `AUDIT.md` showing no missing-coverage findings, and at least one round-trip fixture in `testdata/`.
-- **`<package>/_iteration_log.md`** — per-iteration progress record (passing test count, newly-passing tests, scope of that iteration's implement call). Created fresh each run; **kept** as the durable audit trail of the autonomous run.
+- **`<package>/_iteration_log.md`** — per-iteration progress record (passing test count, newly-passing tests, scope of that iteration's implement call). Overwritten at the start of each run and kept as the durable audit trail of that run. Within a run, it is the orchestrator's working memory — re-read it (with `grep`/`tail`) instead of relying on transcript recall (see `## Context discipline`).
 - **`<package>/_state_of_play.md`** — written **only** on stuck-exit (see `## Termination`). Captures current spec section, failing tests, attempted approaches, and suggested next steps for a human handoff.
 
 ## Termination contract
@@ -37,7 +37,26 @@ This file works under both Claude Code and GitHub Copilot CLI: the preloaded ski
 
 **Hard cap**: 15 implement-loop iterations regardless of progress. If the agent is still iterating after 15 laps, the package is too large for one autonomous run; treat it as stuck even if progress is technically being made, and write `_state_of_play.md` recommending the user re-scope (e.g. "implement the header subset first, then re-run for the body").
 
+## Context discipline
+
+Users of this plugin often run under firewall-imposed request size limits, so context bloat is a hard failure mode, not just a cost concern. Three rules govern how state moves between phases:
+
+1. **Invoke skills as isolated subagents, not inline.** Each skill (`extract-*-spec`, `new-go-*-file-library`, `implement-go-*-file-library`, `review-file-library`, `add-fixture`) produces large outputs — full SPEC.md, full source diffs, full AUDIT.md, full `go test` runs. Run each skill invocation in a fresh subagent context and rely on its return summary plus the on-disk artifacts for what comes next. The orchestrator's own transcript must never accumulate raw skill output.
+2. **Treat the disk as working memory; treat the transcript as ephemeral.** `_iteration_log.md` is the cross-iteration source of truth. Re-read it (with `grep`/`tail`) when you need history; do not rely on what's currently in the transcript, which may have rolled or been compacted. Same for `SPEC.md`, `AUDIT.md`, and source files — read them on demand, drop them after use.
+3. **Read structure, not bodies, when scanning artifacts.** When picking the next iteration's scope, read `SPEC.md` headings only (`grep '^##' <package>/SPEC.md`); the implementer re-reads the body itself. For `AUDIT.md`, read just enough to count blockers and capture each finding's heading/identifier, then drop. Loading whole-file bodies into the orchestrator's context is the failure mode this rule prevents.
+
+These rules apply throughout the workflow below; the steps that produce or consume context call them out where they matter most.
+
 ## Workflow
+
+### Step 0 — entry check (resume vs. fresh)
+
+Before doing anything else, decide whether this is a fresh run or a resume:
+
+- **Fresh run** — `<parent>/<package-name>/SPEC.md` does not exist. Proceed to Step 1.
+- **Resume** — `<parent>/<package-name>/SPEC.md` already exists. Steps 1–3 are already done; skip to Step 4 with the iteration counter starting at 1 of a fresh 15-iteration budget. **The prior `_iteration_log.md` is overwritten** on resume — if the user wants to preserve it for forensics, they should copy it aside before re-invoking. The new log opens with a resume entry (ordinal `0r`, see `## Iteration log format`) capturing the entry test state from one `(cd <package> && go test -race ./...)` run, then proceeds with iteration 1.
+
+There is no partial resume of Steps 1–3: if `SPEC.md` is present, the format decision and scaffold are taken as given (the scaffold skill would refuse to overwrite a populated directory anyway). To redo extraction or scaffolding, the user removes `<package>/` first. The resume path exists so a user can hand-fix a stuck run and re-invoke without losing the implementation work already on disk; the iteration budget resets because the new run is a fresh attempt against a different starting state.
 
 ### Step 1 — detect format type
 
@@ -71,14 +90,14 @@ The scaffold skill runs `go mod tidy`, `go build ./...`, and `go test -race ./..
 
 Loop until either the success or stuck condition fires (see `## Termination contract`). Each iteration:
 
-1. **Choose scope.** On iteration 1: pick the spec sections that map to the most fundamental tokens/types — tokenizer phase for text (start with the smallest token set), types phase for binary (start with the top-level header struct). On later iterations: focus on whichever tests just started failing, or the spec sections corresponding to test failures.
-2. **Invoke implementer.** Call `implement-go-text-file-library` or `implement-go-binary-file-library` with a focused prompt that names the spec sections in scope this iteration. The implementer skill manages its own phase chunking and partition gate per its SKILL.md — don't second-guess it; do pass a narrow scope so the partition gate doesn't trip unnecessarily.
+1. **Choose scope.** Read `SPEC.md` *headings only* (`grep '^##' <package>/SPEC.md`) — never load the body; the implementer re-reads it. On iteration 1: pick the spec sections that map to the most fundamental tokens/types — tokenizer phase for text (start with the smallest token set), types phase for binary (start with the top-level header struct). On later iterations: focus on whichever tests just started failing, or the spec sections corresponding to test failures (use `grep` against `_iteration_log.md` to recall what's already been covered, rather than scrolling the transcript).
+2. **Invoke implementer.** Call `implement-go-text-file-library` or `implement-go-binary-file-library` **as a subagent** with a focused prompt that names the spec sections in scope this iteration. The implementer skill manages its own phase chunking and partition gate per its SKILL.md — don't second-guess it; do pass a narrow scope so the partition gate doesn't trip unnecessarily. Capture only the implementer's return summary in the orchestrator's context; the diffs themselves live on disk in `<package>/`.
 3. **Run tests.** `(cd <package> && go test -race ./...)`. The `cd` is required — this repo has no root `go.mod`.
-4. **Parse results.** Extract: total passing test count, total failing test count, list of failing test names. Compare against the prior iteration's record from `_iteration_log.md`.
+4. **Parse results.** Extract only: total passing test count, total failing test count, list of failing test names. Compare against the prior iteration's record from `_iteration_log.md`. Do not retain the raw `go test` output beyond this extraction — once sub-step 5 has appended the iteration log entry, treat the verbose output as discarded; re-run the tests if you need them again. Long test logs are the single largest context-bloat source in this loop.
 5. **Append iteration log entry** per `## Iteration log format`.
 6. **Decide.** If all tests pass and the in-scope sections are exhausted, advance to Step 5. If new tests started passing, continue (progress made). If no new tests passed AND the failing set is unchanged from last iteration, increment the no-progress counter; on the third consecutive no-progress iteration, declare stuck and skip to `## Termination`.
 
-When a `partition_plan.md` from the implementer skill says a phase was partitioned into sub-units, that's the implementer's internal bookkeeping; the orchestrator counts the whole implementer call as one iteration regardless of sub-units.
+When the implementer skill writes a `partition_plan.md`, that file is its internal bookkeeping — do not read it. The orchestrator counts the whole implementer call as one iteration regardless of sub-units, and lets the implementer manage its own partition state.
 
 ### Step 5 — verify
 
@@ -86,7 +105,7 @@ Three gates, run in order. Each gate that fails sends control back to Step 4 wit
 
 **Gate (a) — `go test -race ./...` is green.** Already enforced by Step 4's exit condition; this is just a final re-run against the converged state to catch races or flakes.
 
-**Gate (b) — spec coverage via `review-file-library`.** Invoke it on the package; it writes `<package>/AUDIT.md`. Read AUDIT.md and count blocker-severity findings. Zero blockers passes the gate. Any blocker sends control back to Step 4 with that finding as next iteration's scope.
+**Gate (b) — spec coverage via `review-file-library`.** Invoke it as a subagent on the package; it writes `<package>/AUDIT.md`. Read AUDIT.md only to count blocker-severity findings and capture each blocker's heading/identifier — do not retain the full audit prose in context. Zero blockers passes the gate. Any blocker sends control back to Step 4 with the blocker's heading/identifier as next iteration's scope (the implementer can re-read AUDIT.md itself for the details).
 
 **Gate (c) — round-trip fixtures via `add-fixture`.** Add 1–2 fixtures appropriate to the format. Pick fixtures that exercise the spec broadly, not edge cases:
 - For text: a minimal-syntax example from the user's spec source if available, else extract one from `<package>/SPEC.md`'s `## Examples` section by writing it to a tempfile.
@@ -112,7 +131,7 @@ If the user provided no real-world fixtures and the spec has no `## Examples`, s
 - Decision: <continue | advance-to-verify | stuck>
 ```
 
-The pre-iteration entries (Step 1 format detection, Step 2 extraction outcome, Step 3 scaffold outcome) use the same heading convention but with `Iteration 0a/0b/0c` ordinals so the file is one chronological log.
+The pre-iteration entries (Step 1 format detection, Step 2 extraction outcome, Step 3 scaffold outcome) use the same heading convention but with `Iteration 0a/0b/0c` ordinals so the file is one chronological log. On a resume run (Step 0), the log opens with a single `Iteration 0r` entry capturing entry test state, instead of 0a/0b/0c.
 
 When writing the third no-progress entry, before declaring stuck, scan the prior two entries' "Recurring failures" lists; the intersection is what `_state_of_play.md` reports as the failing-test list. Don't paraphrase — copy the test names verbatim, since `_state_of_play.md` is a handoff and ambiguity costs a human reader minutes per failing test.
 
@@ -144,6 +163,8 @@ Written only on stuck-exit. The audience is a human about to take over manually:
 <2–4 concrete next-action bullets a human can pick up. Examples: "Re-read SPEC.md section X — the recurring `expected B got A` failure suggests the spec disagrees with our implementation choice at <line range>", or "Re-extract the spec with a tighter scope — current SPEC.md is missing the <feature> section the failing tests target".>
 ```
 
+Source the bullets from disk, not from transcript recall. For "Failing tests": re-run `(cd <package> && go test -race -run '^(TestA|TestB|...)$' ./...)` once at stuck-exit and parse the first failure line per test — by this point in the run, the original failure outputs are long gone from context. For "What was attempted": pull the per-iteration `Scope:` and `Recurring failures:` lines from `_iteration_log.md` directly (`grep -E '^(## Iteration|- (Scope|Recurring))' <package>/_iteration_log.md`); paraphrasing from memory loses fidelity.
+
 The "Suggested next steps" bullets are the most valuable part of this file; spend the time to make them specific (file/line/section pointers, not "look at the failures"). A vague handoff produces a vague follow-up.
 
 ## Constraints
@@ -152,7 +173,7 @@ The "Suggested next steps" bullets are the most valuable part of this file; spen
 - **Do not skip the implement skill's discipline.** The implementers enforce test-first, the inner action loop pattern, exact `Pos` values, the `FieldError → OffsetError → leaf` chain, etc. — those rules are why the resulting package is maintainable. Trust the implementer; don't try to short-circuit it by editing source files yourself between iterations.
 - **Never `git push`, never run destructive operations** (`rm -rf`, `git reset --hard`, force-push). The autonomous loop edits files inside `<package>/` only; commits and pushes are the human's job after the run.
 - **Surface ambiguities, don't bury them.** If a SPEC.md `> **Ambiguity:**` callout shows up, mention it in the success report — the implementer made a choice and the human should review it before merging.
-- **Re-run safety.** This agent is safe to re-run on the same package: `_iteration_log.md` is overwritten on a fresh run (its own log starts at iteration 0), the implementer skills are themselves re-run safe, and the scaffold skill refuses if the directory already exists. To re-run from scratch, the user removes `<package>/` first; to resume after a stuck-exit, the user fixes the issue manually and re-invokes the agent (Step 3 will refuse to re-scaffold, which is correct — the agent jumps to Step 4 if `<package>/SPEC.md` and the source files already exist).
+- **Re-run safety.** This agent is safe to re-run on the same package. The fresh-vs-resume decision happens in Step 0 (which dispatches to Step 1 or Step 4 based on whether `<package>/SPEC.md` is present) and `_iteration_log.md` is overwritten in either case. The implementer skills are themselves re-run safe, and the scaffold skill refuses if the directory already exists. To re-run from scratch, the user removes `<package>/` first; to resume after a stuck-exit, the user fixes the issue manually and re-invokes the agent — Step 0 picks up the resume path automatically.
 
 ## Success report
 
@@ -162,7 +183,7 @@ After Gate (c) passes, report to the user:
 - Iterations used (N of 15 cap).
 - Final test count: passing / total.
 - Fixture count and names.
-- Any `> **Ambiguity:**` callouts surfaced from `SPEC.md` for human review.
+- Any `> **Ambiguity:**` callouts surfaced from `SPEC.md` for human review (find them at report time with `grep -n '> \*\*Ambiguity:\*\*' <package>/SPEC.md` — do not rely on having seen them earlier in the run).
 - Recommended next step: "review the package, commit when satisfied".
 
 Keep the report tight — the proof of success is in `<package>/`, not in the report's prose.
