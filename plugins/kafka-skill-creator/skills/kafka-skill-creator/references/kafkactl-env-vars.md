@@ -75,12 +75,14 @@ Whitespace-separated. `BROKERS="b1.dev:9093 b2.dev:9093"` becomes the broker lis
 
 ## What the forwarding filter passes
 
-`introspect.sh` and the generated wrappers forward env vars whose names match `^(CONTEXTS_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)`. This covers:
+`introspect.sh` and the generated wrappers forward env vars whose names match `^(CONTEXTS_<ACTIVE_UPPER>_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)`, where `<ACTIVE_UPPER>` is the `--context` value uppercased and hyphen-to-underscored. This covers:
 
-- All `CONTEXTS_*` per-context overrides.
+- The **active context's** per-context overrides only (`CONTEXTS_<ACTIVE_UPPER>_*`).
 - The default-context shorthand `BROKERS`, `SASL_*`, `TLS_*`, `SCHEMAREGISTRY_*`.
 
-It does **not** forward names starting with `KAFKA_` — those are reserved for this plugin's internal config (`KAFKA_ENV_FILE`, `KAFKA_DOCKER_ARGS`, `KAFKA_CONTAINER_RUNTIME`) and are not kafkactl-shaped.
+`CONTEXTS_<OTHER>_*` vars (other contexts' per-context overrides) are intentionally **not** forwarded. kafkactl with `--context <active>` only consults the active context's vars anyway, so other-context vars would be functionally useless inside the container — and forwarding e.g. `CONTEXTS_PROD_TLS_CERT` to a `--context dev` container would leak the prod cert path string into the container even though the file is not bind-mounted. Scoping the filter to the active context closes that path-leak.
+
+It also does **not** forward names starting with `KAFKA_` — those are reserved for this plugin's internal config (`KAFKA_ENV_FILE`, `KAFKA_DOCKER_ARGS`, `KAFKA_CONTAINER_RUNTIME`) and are not kafkactl-shaped — nor any name starting with `CONTEXT_AUTH_MODE_`, which is the wrappers' internal auth-mode selector (see `references/generated-skill-scripts.md`).
 
 ## Why we use env vars instead of a connection string
 

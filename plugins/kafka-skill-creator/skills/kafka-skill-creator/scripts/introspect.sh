@@ -448,13 +448,24 @@ EOF
 read -r -a EXTRA_ARGS <<< "${KAFKA_DOCKER_ARGS:-}"
 
 # Forward kafkactl-relevant env vars into the container. The filter is the
-# union of kafkactl's documented prefixes (CONTEXTS_, TLS_, SASL_,
-# SCHEMAREGISTRY_) plus the bare BROKERS shorthand kafkactl honors for the
-# default context. Internal config (KAFKA_DOCKER_ARGS, KAFKA_CONTAINER_RUNTIME,
+# union of:
+#   - CONTEXTS_<ACTIVE_UPPER>_*    (only the active context's per-context vars)
+#   - TLS_*, SASL_*, SCHEMAREGISTRY_*, BROKERS  (kafkactl's bare shorthand
+#     for the `default` context — not per-context, so safe to forward)
+#
+# Other contexts' CONTEXTS_<OTHER>_* vars are intentionally NOT forwarded.
+# kafkactl with --context <active> only consults <active>'s vars anyway, so
+# the OTHER vars are functionally useless inside the container — and (this
+# is the security-relevant part) forwarding e.g. CONTEXTS_PROD_TLS_CERT to
+# a `--context dev` container would leak the prod cert path string into
+# the container's environment even though the file is not bind-mounted.
+# Scoping the pattern to the active context closes that path-leak.
+#
+# Internal config (KAFKA_DOCKER_ARGS, KAFKA_CONTAINER_RUNTIME,
 # KAFKACTL_IMAGE) starts with KAFKA_ and is intentionally excluded — those
 # names are for this script, not for kafkactl, and forwarding them as
 # environment to the container would either be no-ops or actively confusing.
-FORWARD_PATTERN='^(CONTEXTS_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)'
+FORWARD_PATTERN="^(CONTEXTS_${ctx_upper}_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS\$)"
 KAFKACTL_ENV_ARGS=()
 while IFS= read -r var; do
   [ -z "$var" ] && continue

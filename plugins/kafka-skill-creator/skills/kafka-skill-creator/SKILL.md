@@ -214,7 +214,9 @@ The description is generated from a fixed template — substitution only, no par
 
 Read `references/generated-skill-scripts.md` for the verbatim bash bodies. Substitute the `<...>` placeholders with the team's topic and group lists from the manifest.
 
-`_common.sh` owns the shared bootstrap: env-file resolution (`--env-file PATH` → `KAFKA_ENV_FILE` → `./.env`, with explicit-path-must-exist semantics), allowlist enforcement (`require_allowed`), per-context env-var validation (auth-mode-aware — see `validate_context_env`), cert mount-args building (`build_cert_mount_args` — empty under SASL_SCRAM, three `-v <path>:<path>:ro` entries under MTLS), container runtime selection, and the kafkactl-shaped env-var forwarding filter (`^(CONTEXTS_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)`).
+`_common.sh` owns the shared bootstrap: env-file resolution (`--env-file PATH` → `KAFKA_ENV_FILE` → `./.env`, with explicit-path-must-exist semantics), allowlist enforcement (`require_allowed`), per-context env-var validation (auth-mode-aware — see `validate_context_env`), cert mount-args building (`build_cert_mount_args` — empty under SASL_SCRAM, three `-v <path>:<path>:ro` entries under MTLS), container runtime selection, and the kafkactl-shaped env-var forwarding filter (`^(CONTEXTS_<ACTIVE_UPPER>_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)` — scoped to the active context so other contexts' `CONTEXTS_<OTHER>_*` vars don't reach the container).
+
+The auth-mode selector lives in a separate `readonly CONTEXT_AUTH_MODE_<UPPER>=SASL_SCRAM|MTLS` constant per declared context (one per manifest context, baked at generation time). Both `validate_context_env` and `build_cert_mount_args` consult that constant rather than inferring auth from the kafkactl-shaped `CONTEXTS_<UPPER>_SASL_ENABLED` / `_TLS_ENABLED` exports — those exports are still emitted (kafkactl needs them) but they're loaded before `resolve_env_file`, so a `.env` could otherwise flip the wrapper's branch into the wrong validator/mount path. The constant is `readonly` AND `load_env_file` explicitly refuses any `.env` line that tries to set `CONTEXT_AUTH_MODE_*`, both layers belt-and-suspenders.
 
 Each wrapper sources `_common.sh`, parses its own flags, calls `require_allowed` against `ALLOWED_TOPICS` or `ALLOWED_GROUPS`, validates the chosen context's env vars, builds the cert mount args, then `exec`s kafkactl in the container with `${MOUNT_ARGS[@]}` spliced into the docker run line. Per-script flag and subcommand specifications:
 
@@ -280,13 +282,21 @@ Emit a `# ---- context: <name> ----` block for **every** context declared in the
 
 The manifest declares values that are the same across every environment (`sasl_mechanism`, `cluster.tls`, `cluster.schema_registry.auth`). These would normally live in a `kafkactl-config.yml` config file, but mounting that file into the kafkactl container would require pinning a mount path the container expects, and inconsistencies between the file's contents and the env vars are easy to introduce. kafkactl's documented env-var convention (`CONTEXTS_<NAME>_<FIELD>` autocreates the context with that field set), so the wrappers can route everything through env vars and skip the config file entirely.
 
-`_common.sh` therefore exports per-context static values at generation time, one block per declared context. The shape depends on `cluster.auth`:
+`_common.sh` therefore exports per-context static values at generation time, one block per declared context. There are two layers:
+
+1. **`readonly CONTEXT_AUTH_MODE_<UPPER>`** — the wrapper's internal selector for which validation / mount-args branch to take. One per declared context, frozen at generation time. Lives outside the kafkactl env surface so it never reaches the container, and `readonly` + `load_env_file`'s explicit refusal mean `.env` can't redefine it.
+2. **kafkactl-shaped `CONTEXTS_<UPPER>_*` exports** — the cluster-shape fields kafkactl actually consumes via its env-var overlay. These can be operator-overridden via `.env` (that's a feature; it's how the cluster shape stays configurable), which is exactly why the auth-mode selector lives in (1) instead.
 
 ```bash
-# Per-context static values from the manifest. Secrets come from .env at
-# runtime; these are the cluster-shape fields that don't change between
-# environments. They flow to the container via the same forwarding filter
-# as the .env-supplied secrets (see build_env_args).
+# Per-context auth mode. readonly + outside the kafkactl env surface so a
+# .env override can't flip validate_context_env into the wrong branch.
+readonly CONTEXT_AUTH_MODE_DEV=SASL_SCRAM
+readonly CONTEXT_AUTH_MODE_PROD=MTLS
+
+# Per-context kafkactl static values from the manifest. Secrets come from
+# .env at runtime; these are the cluster-shape fields that don't change
+# between environments. They flow to the container via the per-context-
+# scoped forwarding filter (see build_env_args).
 
 # context: dev  (SASL_SCRAM)
 export CONTEXTS_DEV_SASL_ENABLED=true
@@ -294,16 +304,16 @@ export CONTEXTS_DEV_SASL_MECHANISM=scram-sha512
 export CONTEXTS_DEV_TLS_ENABLED=true
 export CONTEXTS_DEV_SCHEMAREGISTRY_AUTH=basic   # only when manifest declares schema_registry
 
-# context: prod  (MTLS — example shape)
-# export CONTEXTS_PROD_TLS_ENABLED=true
-# # No SASL_* exports under MTLS. Cert paths come from .env at runtime
-# # (CONTEXTS_PROD_TLS_CERT / CERTKEY / CA) and the wrapper bind-mounts each.
-# export CONTEXTS_PROD_SCHEMAREGISTRY_AUTH=basic   # only when manifest declares schema_registry
+# context: prod  (MTLS)
+export CONTEXTS_PROD_TLS_ENABLED=true
+# No SASL_* exports under MTLS. Cert paths come from .env at runtime
+# (CONTEXTS_PROD_TLS_CERT / CERTKEY / CA) and the wrapper bind-mounts each.
+export CONTEXTS_PROD_SCHEMAREGISTRY_AUTH=basic   # only when manifest declares schema_registry
 ```
 
 For SASL_SCRAM contexts, substitute the manifest's `sasl_mechanism` value translated to kafkactl's casing (`SCRAM-SHA-256` → `scram-sha256`, `SCRAM-SHA-512` → `scram-sha512` — kafkactl rejects the canonical Kafka spelling), and `true`/`false` for `TLS_ENABLED` based on `cluster.tls`.
 
-For MTLS contexts, emit only `CONTEXTS_<UPPER>_TLS_ENABLED=true`. Do **not** emit `SASL_ENABLED` or `SASL_MECHANISM` — `validate_context_env` keys off the absence of `SASL_ENABLED` plus the presence of `TLS_ENABLED` to detect MTLS and require the cert env vars instead. Mixing the two would confuse both the validator and a human reader.
+For MTLS contexts, emit only `CONTEXTS_<UPPER>_TLS_ENABLED=true`. Do **not** emit `SASL_ENABLED` or `SASL_MECHANISM` — those are kafkactl-shape values and they shouldn't claim SASL is enabled when the cluster runs mTLS. The auth-mode selector (`CONTEXT_AUTH_MODE_<UPPER>`) is the source of truth for the wrapper's branching decision; the kafkactl exports just reflect cluster shape.
 
 Emit the `SCHEMAREGISTRY_AUTH` line in either case only when the manifest has a `schema_registry` block.
 

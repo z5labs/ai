@@ -580,7 +580,9 @@ chmod +x "$FAKE_RUNTIME"
 
 # Run introspect.sh with the fake runtime, a rich set of kafkactl-shaped env
 # vars (TLS_CERTKEY, SCHEMAREGISTRY_URL, plus the bare BROKERS shorthand) and
-# our internal config that must NOT be forwarded.
+# our internal config that must NOT be forwarded. Also export CONTEXTS_PROD_*
+# vars even though we're invoking with --context dev — those must NOT reach
+# the container (path-leak prevention; see FORWARD_PATTERN in introspect.sh).
 env -i PATH="$PATH" HOME="$HOME" \
   INVOCATION_LOG="$INVOCATION_LOG" \
   bash -c "
@@ -589,6 +591,10 @@ env -i PATH="$PATH" HOME="$HOME" \
     export CONTEXTS_DEV_SASL_PASSWORD=secret
     export CONTEXTS_DEV_TLS_CERTKEY=/etc/certs/key.pem
     export CONTEXTS_DEV_SCHEMAREGISTRY_URL=https://sr.internal:8081
+    export CONTEXTS_PROD_BROKERS='prod1:9092'
+    export CONTEXTS_PROD_SASL_USERNAME=prod-app
+    export CONTEXTS_PROD_SASL_PASSWORD=prod-secret
+    export CONTEXTS_PROD_TLS_CERT=/etc/certs/prod-cert.pem
     export BROKERS='b1:9092'
     export TLS_CERTKEY=/etc/certs/key.pem
     export SASL_USERNAME=defaultuser
@@ -645,6 +651,14 @@ done
 check_invocation_absent "does NOT forward internal KAFKA_DOCKER_ARGS as -e" "KAFKA_DOCKER_ARGS"
 check_invocation_absent "does NOT forward internal KAFKA_CONTAINER_RUNTIME as -e" "KAFKA_CONTAINER_RUNTIME"
 check_invocation_absent "does NOT forward KAFKACTL_IMAGE as -e" "KAFKACTL_IMAGE"
+
+# Other contexts' CONTEXTS_<OTHER>_* vars must NOT be forwarded when --context
+# is dev. kafkactl ignores them anyway under --context dev, but forwarding the
+# path strings into the container would leak prod cert paths into a dev
+# invocation — exactly what FORWARD_PATTERN's per-context scoping prevents.
+for v in CONTEXTS_PROD_BROKERS CONTEXTS_PROD_SASL_USERNAME CONTEXTS_PROD_SASL_PASSWORD CONTEXTS_PROD_TLS_CERT; do
+  check_invocation_absent "does NOT forward non-active-context var $v under --context dev" "$v"
+done
 
 # KAFKA_DOCKER_ARGS value must reach the runtime as a standalone argument.
 check_invocation "applies KAFKA_DOCKER_ARGS value to runtime" "--network=host"
