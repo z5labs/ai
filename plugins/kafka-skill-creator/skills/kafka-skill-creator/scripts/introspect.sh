@@ -72,9 +72,11 @@ Required:
                     requires CONTEXTS_<NAME>_SASL_USERNAME / _SASL_PASSWORD.
                     MTLS requires CONTEXTS_<NAME>_TLS_CERT / _TLS_CERTKEY /
                     _TLS_CA, each an absolute path that exists on disk;
-                    the cert files are bind-mounted :ro into the kafkactl
-                    container at the same path. Other auth values are
-                    rejected by the parent SKILL.md before reaching here.
+                    the cert files are bind-mounted :ro,z into the kafkactl
+                    container at the same path (`:z` is the SELinux
+                    shared-relabel marker — required on Fedora/RHEL,
+                    ignored elsewhere). Other auth values are rejected
+                    by the parent SKILL.md before reaching here.
 
   --context NAME    The kafkactl context to introspect against. Must match
                     one of the manifest's contexts[].name values, uppercased
@@ -483,12 +485,15 @@ while IFS= read -r var; do
 done < <(compgen -e | grep -E "$FORWARD_PATTERN" || true)
 
 # Build cert mount args. For MTLS, the three cert paths from CERT_PATHS
-# (already validated absolute + existing) bind-mount :ro into the container
-# at the same path so kafkactl reads them at the path the env var declares.
-# Only the active context's paths reach the runtime: CONTEXTS_<OTHER>_*
-# vars are dropped by the per-context-scoped FORWARD_PATTERN above, so
-# they don't reach the container as env vars OR as mounts. Empty under
-# SASL_SCRAM.
+# (already validated absolute + existing) bind-mount :ro,z into the
+# container at the same path so kafkactl reads them at the path the env
+# var declares. The `:z` is the SELinux shared-relabel marker — required
+# on Fedora/RHEL so the container's process context can read the mounted
+# file, ignored elsewhere; same flag the config-mount uses for the same
+# reason. Only the active context's paths reach the runtime:
+# CONTEXTS_<OTHER>_* vars are dropped by the per-context-scoped
+# FORWARD_PATTERN above, so they don't reach the container as env vars
+# OR as mounts. Empty under SASL_SCRAM.
 MOUNT_ARGS=()
 for cert_path in "${CERT_PATHS[@]}"; do
   # `:z` is the SELinux shared-relabel marker; ignored on systems without

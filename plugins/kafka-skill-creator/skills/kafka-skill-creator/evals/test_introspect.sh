@@ -1011,7 +1011,7 @@ leak_invocation="$(awk '/---END---/{exit} {print}' "$INVOCATION_LOG_LEAK")"
 
 # Prod cert paths must NOT appear in any -v argv when --context dev was passed.
 if grep -qE "ARG -v ${PROD_TMP}/prod-" <<<"$leak_invocation" \
-   || grep -qE "ARG ${PROD_TMP}/prod-.*:${PROD_TMP}/prod-.*:ro" <<<"$leak_invocation"; then
+   || grep -qE "ARG ${PROD_TMP}/prod-.*:${PROD_TMP}/prod-.*:ro,z" <<<"$leak_invocation"; then
   FAIL=$((FAIL + 1))
   FAILURES+=("path-leak: prod cert paths appeared as -v mounts when --context dev was passed. Captured:
 $leak_invocation")

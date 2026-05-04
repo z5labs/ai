@@ -65,7 +65,7 @@ Run from this skill's directory (whatever path the generator wrote it to). The k
     # CONTEXTS_DEV_SASL_PASSWORD.
     # MTLS contexts:       set CONTEXTS_DEV_BROKERS, CONTEXTS_DEV_TLS_CERT,
     # CONTEXTS_DEV_TLS_CERTKEY, CONTEXTS_DEV_TLS_CA — each must be an absolute
-    # path to a file the host can read; the wrapper bind-mounts each :ro into
+    # path to a file the host can read; the wrapper bind-mounts each :ro,z into
     # the kafkactl container at the same path.
     # Schema Registry (any auth): also set CONTEXTS_DEV_SCHEMAREGISTRY_* if the
     # manifest declares schema_registry.

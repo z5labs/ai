@@ -40,7 +40,8 @@ cp scripts/.env.example .env.dev
 # MTLS contexts:
 #   fill in CONTEXTS_DEV_BROKERS / _TLS_CERT / _TLS_CERTKEY / _TLS_CA
 #   each cert/key/CA value must be an absolute path; the wrapper mounts
-#   each :ro into the container at the same path the env var declares.
+#   each :ro,z into the container at the same path the env var declares
+#   (`:z` is the SELinux relabel marker, required on Fedora/RHEL).
 #
 # Schema Registry (any auth):
 #   also fill in CONTEXTS_DEV_SCHEMAREGISTRY_* if the manifest declares it

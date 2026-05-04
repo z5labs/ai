@@ -101,9 +101,9 @@ All connection details (broker addresses, SASL credentials, mTLS cert paths, Sch
 | `CONTEXTS_<CTX>_BROKERS` | Whitespace-separated `host:port` list. | always |
 | `CONTEXTS_<CTX>_SASL_USERNAME` | SASL username for this context. | `auth: SASL_SCRAM` |
 | `CONTEXTS_<CTX>_SASL_PASSWORD` | SASL password — never seen by the model, read directly into the kafkactl container. | `auth: SASL_SCRAM` |
-| `CONTEXTS_<CTX>_TLS_CERT` | Absolute path to the client certificate PEM. The wrapper bind-mounts the file `:ro` into the container at the same path. | `auth: MTLS` |
-| `CONTEXTS_<CTX>_TLS_CERTKEY` | Absolute path to the client key PEM. Bind-mounted `:ro` into the container. | `auth: MTLS` |
-| `CONTEXTS_<CTX>_TLS_CA` | Absolute path to the CA bundle PEM the broker certificate chains to. Bind-mounted `:ro` into the container. | `auth: MTLS` |
+| `CONTEXTS_<CTX>_TLS_CERT` | Absolute path to the client certificate PEM. The wrapper bind-mounts the file `:ro,z` into the container at the same path. | `auth: MTLS` |
+| `CONTEXTS_<CTX>_TLS_CERTKEY` | Absolute path to the client key PEM. Bind-mounted `:ro,z` into the container. | `auth: MTLS` |
+| `CONTEXTS_<CTX>_TLS_CA` | Absolute path to the CA bundle PEM the broker certificate chains to. Bind-mounted `:ro,z` into the container. | `auth: MTLS` |
 | `CONTEXTS_<CTX>_SCHEMAREGISTRY_URL` | Schema Registry endpoint. | when `cluster.schema_registry` is declared |
 | `CONTEXTS_<CTX>_SCHEMAREGISTRY_USERNAME` | SR username. | `cluster.schema_registry.auth: basic` |
 | `CONTEXTS_<CTX>_SCHEMAREGISTRY_PASSWORD` | SR password. | `cluster.schema_registry.auth: basic` |

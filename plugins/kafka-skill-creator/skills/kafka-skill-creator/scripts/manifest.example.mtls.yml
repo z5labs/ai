@@ -53,8 +53,9 @@ cluster:
 #   CONTEXTS_<NAME>_TLS_CA        (absolute path to CA bundle PEM)
 #
 # Plus the SCHEMAREGISTRY_* vars when the schema_registry block above
-# is present. The wrappers bind-mount each cert path :ro into the
-# kafkactl container.
+# is present. The wrappers bind-mount each cert path :ro,z into the
+# kafkactl container (`:z` is the SELinux shared-relabel marker —
+# required on Fedora/RHEL, ignored elsewhere).
 contexts:
   - name: dev
   - name: staging

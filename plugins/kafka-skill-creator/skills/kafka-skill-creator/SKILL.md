@@ -214,7 +214,7 @@ The description is generated from a fixed template — substitution only, no par
 
 Read `references/generated-skill-scripts.md` for the verbatim bash bodies. Substitute the `<...>` placeholders with the team's topic and group lists from the manifest.
 
-`_common.sh` owns the shared bootstrap: env-file resolution (`--env-file PATH` → `KAFKA_ENV_FILE` → `./.env`, with explicit-path-must-exist semantics), allowlist enforcement (`require_allowed`), per-context env-var validation (auth-mode-aware — see `validate_context_env`), cert mount-args building (`build_cert_mount_args` — empty under SASL_SCRAM, three `-v <path>:<path>:ro` entries under MTLS), container runtime selection, and the kafkactl-shaped env-var forwarding filter (`^(CONTEXTS_<ACTIVE_UPPER>_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)` — scoped to the active context so other contexts' `CONTEXTS_<OTHER>_*` vars don't reach the container).
+`_common.sh` owns the shared bootstrap: env-file resolution (`--env-file PATH` → `KAFKA_ENV_FILE` → `./.env`, with explicit-path-must-exist semantics), allowlist enforcement (`require_allowed`), per-context env-var validation (auth-mode-aware — see `validate_context_env`), cert mount-args building (`build_cert_mount_args` — empty under SASL_SCRAM, three `-v <path>:<path>:ro,z` entries under MTLS; `:z` is the SELinux shared-relabel marker that keeps the mounts readable inside the container on Fedora/RHEL), container runtime selection, and the kafkactl-shaped env-var forwarding filter (`^(CONTEXTS_<ACTIVE_UPPER>_|TLS_|SASL_|SCHEMAREGISTRY_|BROKERS$)` — scoped to the active context so other contexts' `CONTEXTS_<OTHER>_*` vars don't reach the container).
 
 The auth-mode selector lives in a separate `readonly CONTEXT_AUTH_MODE_<UPPER>=SASL_SCRAM|MTLS` constant per declared context (one per manifest context, baked at generation time). Both `validate_context_env` and `build_cert_mount_args` consult that constant rather than inferring auth from the kafkactl-shaped `CONTEXTS_<UPPER>_SASL_ENABLED` / `_TLS_ENABLED` exports — those exports are still emitted (kafkactl needs them) but they're loaded before `resolve_env_file`, so a `.env` could otherwise flip the wrapper's branch into the wrong validator/mount path. The constant is `readonly` AND `load_env_file` explicitly refuses any `.env` line that tries to set `CONTEXT_AUTH_MODE_*`, both layers belt-and-suspenders.
 
@@ -244,7 +244,7 @@ A commented template per declared context. The block shape depends on `cluster.a
 # CONTEXTS_DEV_SCHEMAREGISTRY_PASSWORD=
 ```
 
-**MTLS context block** (cert paths must be absolute; the wrapper bind-mounts each :ro into the kafkactl container):
+**MTLS context block** (cert paths must be absolute; the wrapper bind-mounts each `:ro,z` into the kafkactl container — `:z` is the SELinux relabel marker required on Fedora/RHEL):
 
 ```
 # ---- context: prod (mTLS) ----
@@ -276,7 +276,7 @@ Wrap the whole file with this header and footer, and emit one block per declared
 # cert paths read-only at the same path the env var declares.
 ```
 
-Emit a `# ---- context: <name> ----` block for **every** context declared in the manifest, picking the SASL_SCRAM or MTLS shape based on `cluster.auth`. The wrappers' env-forwarding filter is scoped to the active `--context`, so when running `--context dev` the prod block's vars stay in the host environment but never reach the container as env vars or as bind-mounts — only the active context's cert paths reach kafkactl, both as env vars and as `:ro` mounts.
+Emit a `# ---- context: <name> ----` block for **every** context declared in the manifest, picking the SASL_SCRAM or MTLS shape based on `cluster.auth`. The wrappers' env-forwarding filter is scoped to the active `--context`, so when running `--context dev` the prod block's vars stay in the host environment but never reach the container as env vars or as bind-mounts — only the active context's cert paths reach kafkactl, both as env vars and as `:ro,z` mounts (the `:z` is the SELinux shared-relabel marker that keeps the mount readable inside the container on Fedora/RHEL).
 
 ### Per-context static values exported by `_common.sh`
 
