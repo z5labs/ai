@@ -475,10 +475,10 @@ done < <(compgen -e | grep -E "$FORWARD_PATTERN" || true)
 # Build cert mount args. For MTLS, the three cert paths from CERT_PATHS
 # (already validated absolute + existing) bind-mount :ro into the container
 # at the same path so kafkactl reads them at the path the env var declares.
-# Only the active context's paths reach the runtime — paths exported for
-# other contexts (CONTEXTS_OTHER_TLS_*) are forwarded as env vars by the
-# filter above but never get mounted, so kafkactl in the container can't
-# read them. Empty under SASL_SCRAM.
+# Only the active context's paths reach the runtime: CONTEXTS_<OTHER>_*
+# vars are dropped by the per-context-scoped FORWARD_PATTERN above, so
+# they don't reach the container as env vars OR as mounts. Empty under
+# SASL_SCRAM.
 MOUNT_ARGS=()
 for cert_path in "${CERT_PATHS[@]}"; do
   MOUNT_ARGS+=(-v "$cert_path:$cert_path:ro")

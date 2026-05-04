@@ -276,7 +276,7 @@ Wrap the whole file with this header and footer, and emit one block per declared
 # cert paths read-only at the same path the env var declares.
 ```
 
-Emit a `# ---- context: <name> ----` block for **every** context declared in the manifest, picking the SASL_SCRAM or MTLS shape based on `cluster.auth`. Only the active context's cert paths get bind-mounted at runtime — paths exported for other contexts are forwarded as env vars but not mounted, so kafkactl in the container has no way to read them.
+Emit a `# ---- context: <name> ----` block for **every** context declared in the manifest, picking the SASL_SCRAM or MTLS shape based on `cluster.auth`. The wrappers' env-forwarding filter is scoped to the active `--context`, so when running `--context dev` the prod block's vars stay in the host environment but never reach the container as env vars or as bind-mounts — only the active context's cert paths reach kafkactl, both as env vars and as `:ro` mounts.
 
 ### Per-context static values exported by `_common.sh`
 

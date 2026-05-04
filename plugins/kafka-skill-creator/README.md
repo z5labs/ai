@@ -108,7 +108,7 @@ All connection details (broker addresses, SASL credentials, mTLS cert paths, Sch
 | `CONTEXTS_<CTX>_SCHEMAREGISTRY_USERNAME` | SR username. | `cluster.schema_registry.auth: basic` |
 | `CONTEXTS_<CTX>_SCHEMAREGISTRY_PASSWORD` | SR password. | `cluster.schema_registry.auth: basic` |
 
-For MTLS, each cert path must be **absolute** and exist on the host at validation time. Only the active `--context`'s cert paths get bind-mounted at runtime — paths exported for other contexts are forwarded as env vars by the env-var filter but never get a mount, so kafkactl in the container can't read them. This is what stops a prod cert path from accidentally leaking into a dev container invocation.
+For MTLS, each cert path must be **absolute** and exist on the host at validation time. The wrappers' env-forwarding filter is **scoped to the active `--context`** (`CONTEXTS_<ACTIVE_UPPER>_*` plus the bare default-context shorthand), so other contexts' `CONTEXTS_<OTHER>_*` vars don't reach the kafkactl container as env vars at all — and only the active context's cert paths get bind-mounted at runtime. A prod cert path string can't leak into a dev container invocation through either channel.
 
 Where `<CTX>` is the context's `name` value, uppercased and with `-` replaced by `_`. See `skills/kafka-skill-creator/references/kafkactl-env-vars.md` for the full convention.
 

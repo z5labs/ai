@@ -309,10 +309,16 @@ readonly CONTEXT_AUTH_MODE_<UPPER-2>=<SASL_SCRAM|MTLS>
 #     - CONTEXTS_<UPPER>_TLS_ENABLED=true   (mTLS implies TLS, always)
 #     - NO SASL_* exports
 #
-#     The wrapper detects MTLS via the absence of CONTEXTS_<UPPER>_SASL_ENABLED
-#     and the presence of CONTEXTS_<UPPER>_TLS_ENABLED — that's what makes
-#     validate_context_env switch to the cert-vars branch and what makes
-#     build_cert_mount_args emit -v mounts for this context's cert paths.
+#     These are kafkactl-shape: they describe cluster shape so kafkactl
+#     can dial the broker correctly. They do NOT drive the wrapper's
+#     branching decisions — those come from the readonly
+#     `CONTEXT_AUTH_MODE_<UPPER>` constant declared just above this
+#     block. validate_context_env reads CONTEXT_AUTH_MODE_<UPPER> to
+#     pick which credential vars to require, and build_cert_mount_args
+#     reads it to decide whether to emit -v mounts. That separation
+#     is what makes the wrapper resistant to a .env file flipping
+#     CONTEXTS_<UPPER>_TLS_ENABLED out from under us — auth mode is
+#     a manifest fact, kafkactl exports are runtime config.
 #
 # Emit the SCHEMAREGISTRY_AUTH line in either case only when the manifest
 # declares a `schema_registry` block.
